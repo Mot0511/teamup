@@ -8,14 +8,13 @@ import 'package:teamup/theme.dart';
 import 'package:teamup/widgtes/navbar.dart';
 
 class Teamup extends StatefulWidget {
-  Teamup({super.key});
+  const Teamup({super.key});
 
   @override
   State<Teamup> createState() => _TeamupState();
 }
 
 class _TeamupState extends State<Teamup> {
-
   int currentPage = 0;
   List<Navitem> navitems = [
     Navitem(title: 'Главная', icon: Icons.home, page: HomeView()),
@@ -31,12 +30,14 @@ class _TeamupState extends State<Teamup> {
       home: Scaffold(
         body: Column(
           children: [
-            Expanded(
-              child: navitems[currentPage].page
+            Expanded(child: navitems[currentPage].page),
+            Navbar(
+              items: navitems,
+              currentPage: currentPage,
+              onTap: (i) => setState(() => currentPage = i),
             ),
-            Navbar(items: navitems, currentPage: currentPage, onTap: (i) => setState(() => currentPage = i))
           ],
-        )
+        ),
       ),
     );
   }

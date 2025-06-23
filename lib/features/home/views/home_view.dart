@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:teamup/features/home/widgets/drop_down_widget.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -7,8 +8,13 @@ class HomeView extends StatefulWidget {
   State<HomeView> createState() => _HomeViewState();
 }
 
-class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin {
-  late final AnimationController controller = AnimationController(duration: const Duration(milliseconds: 200), vsync: this, value: 1.0);
+class _HomeViewState extends State<HomeView>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController controller = AnimationController(
+    duration: const Duration(milliseconds: 200),
+    vsync: this,
+    value: 1.0,
+  );
   bool isSearching = false;
 
   void searchHandler() {
@@ -20,7 +26,7 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     isSearching = !isSearching;
     setState(() {});
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -32,7 +38,7 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
             flex: 1,
             child: Center(
               child: Text('Teamup', style: theme.textTheme.headlineMedium),
-            )
+            ),
           ),
           Expanded(
             flex: 4,
@@ -55,20 +61,96 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                       customBorder: CircleBorder(),
                       splashColor: theme.primaryColor,
                       child: ScaleTransition(
-                        scale: Tween(begin: 0.7, end: 1.0).animate(CurvedAnimation(parent: controller, curve: Curves.easeInOutCubic)),
-                        child: Icon(Icons.search, color: Colors.white, size: 100)
-                      )
-                    )
+                        scale: Tween(begin: 0.7, end: 1.0).animate(
+                          CurvedAnimation(
+                            parent: controller,
+                            curve: Curves.easeInOutCubic,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.search,
+                          color: Colors.white,
+                          size: 100,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
                 SizedBox(height: 20),
-              ]
-            )
+              ],
+            ),
           ),
           Expanded(
             flex: 4,
-            child: SizedBox.shrink()
-          )
+            child: Column(
+              children: [
+                Text("Фильтры поиска", style: theme.textTheme.headlineMedium),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    padding: EdgeInsets.all(10),
+                    child: Text(
+                      "Игра",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+                DropdowmWidget(
+                  items: [
+                    DropdownItem(text: "Minecraft", value: "Minecraft"),
+                    DropdownItem(text: "Rust", value: "Rust"),
+                  ],
+                  hint: "Выберите игру",
+                ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    padding: EdgeInsets.all(10),
+                    child: Text(
+                      "Кол-во игроков в команде",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+                DropdowmWidget(
+                  items: [
+                    DropdownItem(text: "2", value: "2"),
+                    DropdownItem(text: "3", value: "3"),
+                  ],
+                  hint: "2-3?",
+                ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    padding: EdgeInsets.all(10),
+                    child: Text(
+                      "Пол",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+                DropdowmWidget(
+                  items: [
+                    DropdownItem(text: "Мужской", value: "male"),
+                    DropdownItem(text: "Женский", value: "female"),
+                  ],
+                  hint: "Выберите пол",
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
