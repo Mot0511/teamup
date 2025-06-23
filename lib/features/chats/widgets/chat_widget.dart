@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:teamup/features/chats/views/chat_view.dart';
 import 'package:teamup/features/user/widgets/avatar_widget.dart';
 
 class ChatWidget extends StatelessWidget {
@@ -12,7 +13,7 @@ class ChatWidget extends StatelessWidget {
       key: Key(id), 
       background: Container(color: Colors.red),
       child: ListTile(
-        onTap: () {},
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatView())),
         leading: AvatarWidget(uid: '123', size: 50),
         title: Text('Имя пользователя', style: theme.textTheme.labelMedium),
         subtitle: Text('Последнее сообщение', style: theme.textTheme.labelSmall),

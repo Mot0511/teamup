@@ -15,14 +15,13 @@ import 'package:teamup/theme.dart';
 import 'package:teamup/widgets/navbar_widget.dart';
 
 class Teamup extends StatefulWidget {
-  Teamup({super.key});
+  const Teamup({super.key});
 
   @override
   State<Teamup> createState() => _TeamupState();
 }
 
 class _TeamupState extends State<Teamup> {
-
   int currentPage = 0;
   List<Navitem> navitems = [
     Navitem(title: 'Главная', icon: Icons.home, page: HomeView()),

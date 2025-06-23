@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:teamup/models/navitem.dart';
 
 class Navbar extends StatelessWidget {
-  const Navbar({super.key, required this.items, required this.currentPage, required this.onTap});
+  const Navbar({
+    super.key,
+    required this.items,
+    required this.currentPage,
+    required this.onTap,
+  });
   final List<Navitem> items;
   final int currentPage;
   final onTap;
@@ -16,7 +21,10 @@ class Navbar extends StatelessWidget {
       padding: EdgeInsets.all(5),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20))
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -45,4 +53,3 @@ class Navbar extends StatelessWidget {
     );
   }
 }
-
