@@ -1,4 +1,12 @@
+import 'package:appwrite/appwrite.dart';
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:teamup/features/home/views/all_users_view.dart';
+import 'package:teamup/features/home/widgets/widgets.dart';
+import 'package:teamup/features/user/bloc/user_bloc.dart';
+import 'package:teamup/features/user/bloc/user_events.dart';
+import 'package:teamup/features/user/user_repository.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -7,62 +15,44 @@ class HomeView extends StatefulWidget {
   State<HomeView> createState() => _HomeViewState();
 }
 
-class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin {
-  late final AnimationController controller = AnimationController(duration: const Duration(milliseconds: 200), vsync: this, value: 1.0);
-  bool isSearching = false;
+class _HomeViewState extends State<HomeView>{
 
-  void searchHandler() {
-    if (isSearching) {
-      controller.forward();
-    } else {
-      controller.reverse();
-    }
-    isSearching = !isSearching;
-    setState(() {});
+  final userBloc = GetIt.I<UserBloc>();
+  final supabase = GetIt.I<SupabaseClient>();
+
+  Future<void> loadUser() async {
+    final user = (await supabase.auth.getUser()).user;
+    if (user == null) return;
+    userBloc.add(LoadUser(uid: user.id));
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    loadUser();
   }
   
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     return Scaffold(
+      appBar: AppBar(
+        title: Text('Teamup', style: theme.textTheme.headlineMedium), 
+        centerTitle: true,
+        actions: [
+          IconButton(
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AllUsersView())), 
+            icon: Icon(Icons.people_alt)
+          )
+        ],
+      ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
-            flex: 1,
-            child: Center(
-              child: Text('Teamup', style: theme.textTheme.headlineMedium),
-            )
-          ),
-          Expanded(
             flex: 4,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                AnimatedContainer(
-                  width: isSearching ? 150 : 180,
-                  height: isSearching ? 150 : 180,
-                  duration: Duration(milliseconds: 200),
-                  curve: Curves.easeInOutCubic,
-                  child: Ink(
-                    decoration: BoxDecoration(
-                      color: const Color(0xff004323),
-                      border: Border.all(color: theme.primaryColor, width: 5),
-                      borderRadius: BorderRadius.circular(100),
-                    ),
-                    child: InkWell(
-                      onTap: searchHandler,
-                      customBorder: CircleBorder(),
-                      splashColor: theme.primaryColor,
-                      child: ScaleTransition(
-                        scale: Tween(begin: 0.7, end: 1.0).animate(CurvedAnimation(parent: controller, curve: Curves.easeInOutCubic)),
-                        child: Icon(Icons.search, color: Colors.white, size: 100)
-                      )
-                    )
-                  ),
-                ),
-                SizedBox(height: 20),
-              ]
+            child: Center(
+              child: SearchBtn(),
             )
           ),
           Expanded(

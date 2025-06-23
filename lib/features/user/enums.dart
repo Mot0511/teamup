@@ -1,0 +1,1 @@
+enum FriendState {notFriend, iRequested, requestedToMe, friend}

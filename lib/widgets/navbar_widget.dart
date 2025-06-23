@@ -32,8 +32,8 @@ class Navbar extends StatelessWidget {
                 children: [
                   Icon(items[i].icon, color: currentPage == i ? theme.primaryColor : Colors.white, size: 30),
                   Text(items[i].title, style: currentPage == i 
-                    ? theme.textTheme.labelSmall?.copyWith(color: theme.primaryColor)
-                    : theme.textTheme.labelSmall
+                    ? theme.textTheme.labelSmall?.copyWith(color: theme.primaryColor, fontSize: 10)
+                    : theme.textTheme.labelSmall?.copyWith(fontSize: 10)
                   )
                 ],
               )
