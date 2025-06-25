@@ -7,6 +7,7 @@ import 'package:teamup/features/home/widgets/drop_down_widget.dart';
 import 'package:teamup/features/home/widgets/widgets.dart';
 import 'package:teamup/features/user/bloc/user_bloc.dart';
 import 'package:teamup/features/user/bloc/user_events.dart';
+import 'package:teamup/features/user/bloc/user_states.dart';
 import 'package:teamup/features/user/user_repository.dart';
 
 
@@ -23,9 +24,13 @@ class _HomeViewState extends State<HomeView>{
   final supabase = GetIt.I<SupabaseClient>();
 
   Future<void> loadUser() async {
-    final user = (await supabase.auth.getUser()).user;
-    if (user == null) return;
-    userBloc.add(LoadUser(uid: user.id));
+    if (userBloc.state is UserStateInitial) {
+      try {
+        final user = (await supabase.auth.getUser()).user;
+        if (user == null) return;
+        userBloc.add(LoadUser(uid: user.id));
+      } on AuthSessionMissingException catch (_) {}
+    }
   }
 
   @override

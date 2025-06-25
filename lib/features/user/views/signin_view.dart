@@ -21,7 +21,7 @@ class SigninView extends StatelessWidget {
       ));
     } else {
       if (context.mounted) {
-        Provider.of<GlobalProvider>(context).setIsLogined = true;
+        Provider.of<GlobalProvider>(context, listen: false).isLogined = true;
       }
     }
   }

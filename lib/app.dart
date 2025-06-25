@@ -22,7 +22,6 @@ class Teamup extends StatefulWidget {
 }
 
 class _TeamupState extends State<Teamup> {
-  int currentPage = 0;
   List<Navitem> navitems = [
     Navitem(title: 'Главная', icon: Icons.home, page: HomeView()),
     Navitem(title: 'Команды', icon: Icons.people, page: TeamsView()),
@@ -35,9 +34,10 @@ class _TeamupState extends State<Teamup> {
   Future<void> checkAccount(GlobalProvider globalProvider) async {
     try {
       await supabase.auth.getUser();
-      globalProvider.setIsLogined = true;
-    } on AuthSessionMissingException catch (e) {
-      globalProvider.setIsLogined = false;
+      globalProvider.isLogined = true;
+    } on Exception catch (e) {
+      globalProvider.isLogined = false;
+      globalProvider.currentPage = 0;
     }
   }
 
@@ -53,9 +53,9 @@ class _TeamupState extends State<Teamup> {
             body: Column(
               children: [
                 Expanded(
-                  child: navitems[currentPage].page
+                  child: navitems[globalProvider.currentPage].page
                 ),
-                Navbar(items: navitems, currentPage: currentPage, onTap: (i) => setState(() => currentPage = i))
+                Navbar(items: navitems, currentPage: globalProvider.currentPage, onTap: (i) => setState(() => globalProvider.currentPage = i))
               ],
             )
           )

@@ -123,39 +123,41 @@ class UserRepository {
     await supabase.from('friends').insert([
       {
         'from_user': user.uid,
-        'to_user': friend.uid
+        'to_user': friend.uid,
+        'status': false
       }
     ]);
   }
 
+  Future<void> allowFriendRequest(String uid) async {
+    await supabase.from('friends').update({
+      'status': true
+    }).eq('to_user', uid);
+  }
+
   Future<List<Friendship>> getFriends(String uid) async {
-    final data = await supabase.from('friends').select('from_user(*), to_user(*)').or('from_user.eq.$uid,to_user.eq.$uid');
-    final List<Friendship> friends = [];
-    for (var row1 in data) {
-      if (row1['from_user']['uid'] == uid) {
-        for (var row2 in data) {
-          if (row1['to_user']['uid'] == uid) {
-            friends.add(Friendship(friend: User.fromJSON(row1['to_user']), state: FriendState.friend));
-            data.remove(row1);
-            data.remove(row2);
-          }
+    final List data = await supabase.from('friends').select('from_user(*, favouriteGame(*)), to_user(*, favouriteGame(*)), status').or('from_user.eq.$uid,to_user.eq.$uid');
+    final List<Friendship> friends = data.map((row) {
+      if (row['status']) {
+        if (row['from_user']['uid'] == uid) {
+          return Friendship(friend: User.fromJSON(row['to_user']), state: FriendState.friend);
+        } else {
+          return Friendship(friend: User.fromJSON(row['from_user']), state: FriendState.friend);
+        }
+      } else {
+        if (row['from_user']['uid'] == uid) {
+          return Friendship(friend: User.fromJSON(row['to_user']), state: FriendState.iRequested);
+        } else {
+          return Friendship(friend: User.fromJSON(row['from_user']), state: FriendState.requestedToMe);
         }
       }
-    }
-
-    for (var row in data) {
-      if (row['from_user']['uid'] == uid) {
-        friends.add(Friendship(friend: User.fromJSON(row['to_user']), state: FriendState.iRequested));
-      } else if (row['to_user']['uid'] == uid) {
-        friends.add(Friendship(friend: User.fromJSON(row['from_user']), state: FriendState.requestedToMe));
-      }
-    }
+    }).toList();
 
     return friends;
   }
 
   Future<void> removeFriend(String uid) async {
-    await supabase.from('friends').delete().eq('from_user', uid);
+    await supabase.from('friends').delete().or('from_user.eq.$uid, to_user.eq.$uid');
   }
 
 }

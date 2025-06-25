@@ -3,12 +3,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:teamup/features/chats/bloc/chats_bloc.dart';
+import 'package:teamup/features/chats/bloc/chats_events.dart';
+import 'package:teamup/features/chats/bloc/chats_states.dart';
+import 'package:teamup/features/chats/chats_repository.dart';
+import 'package:teamup/features/chats/models/chat.dart';
+import 'package:teamup/features/chats/views/chat_view.dart';
 import 'package:teamup/features/user/bloc/user_bloc.dart';
 import 'package:teamup/features/user/bloc/user_states.dart';
 import 'package:teamup/features/user/enums.dart';
 import 'package:teamup/features/user/models/friendship.dart';
 import 'package:teamup/features/user/models/user.dart';
 import 'package:teamup/features/user/user_repository.dart';
+import 'package:teamup/features/user/views/friends_requests.dart';
 import 'package:teamup/features/user/views/views.dart';
 import 'package:teamup/features/user/widgets/avatar_widget.dart';
 import 'package:teamup/features/user/widgets/user_widget.dart';
@@ -23,12 +30,15 @@ class ProfileView extends StatefulWidget {
 }
 
 class _ProfileViewState extends State<ProfileView> {
-  final userBloc = GetIt.I<UserBloc>();
 
+  final userBloc = GetIt.I<UserBloc>();
+  final chatsBloc = GetIt.I<ChatsBloc>();
   final userRepository = GetIt.I<UserRepository>();
+  final chatsRepository = GetIt.I<ChatsRepository>();
 
   FriendState? friendState;
   List<User> friends = [];
+  List<User> friendRequests = [];
 
   void loadFriends() async {
     if (userBloc.state is UserStateLoaded) {
@@ -39,13 +49,15 @@ class _ProfileViewState extends State<ProfileView> {
       for (var friendship in friendships) {
         if (friendship.state == FriendState.friend) {
           friends.add(friendship.friend);
+        } else if (friendship.state == FriendState.requestedToMe) {
+          friendRequests.add(friendship.friend);
         }
         if (friendship.friend.uid == state.user.uid) {
           friendState = friendship.state;
         }
       }
       friendState ??= FriendState.notFriend;
-      setState(() {});
+      if (mounted) setState(() {});
     }
   }
 
@@ -58,13 +70,15 @@ class _ProfileViewState extends State<ProfileView> {
 
   void addFriendHandler(User user) async {
     await userRepository.addFriend(user, (widget.user as User));
-    if (friendState == FriendState.notFriend) {
-      friendState = FriendState.requestedToMe;
-    } else if (friendState == FriendState.iRequested) {
-      friendState = FriendState.friend;
-    }
+    friendState = FriendState.requestedToMe;
     setState(() {});
     
+  }
+
+  void allowFriendRequestHandler(String uid) async {
+    await userRepository.allowFriendRequest(uid);
+    friendState = FriendState.friend;
+    setState(() {});
   }
   
   void removeFriendHandler(String uid) async {
@@ -75,7 +89,26 @@ class _ProfileViewState extends State<ProfileView> {
 
   void logoutHandler(context) async {
     await userRepository.signout();
-    Provider.of<GlobalProvider>(context, listen: false).setIsLogined = false;
+  }
+
+  void goToChatHandler(context, userState, chatsState) async {
+    for (Chat chat in chatsState.chats) {
+      if ((chat.user1.uid == widget.user!.uid || chat.user2.uid == widget.user!.uid)) {
+        if (mounted) {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => ChatView(chat: chat)));
+        }
+        return;
+      }
+    }
+
+    final chat = Chat(
+      id: DateTime.now().millisecondsSinceEpoch,
+      user1: userState.user,
+      user2: widget.user!
+    );
+    await chatsRepository.addChat(chat);
+    chatsBloc.add(AddChat(chat: chat));
+    if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => ChatView(chat: chat)));
   }
 
   @override
@@ -134,18 +167,27 @@ class _ProfileViewState extends State<ProfileView> {
                             ? Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  ElevatedButton(
-                                    onPressed: () {}, 
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.chat, color: Colors.white, size: 35),
-                                      ],
-                                    ),
-                                    style: ElevatedButton.styleFrom(
-                                      shape: CircleBorder(),
-                                      padding: EdgeInsets.all(15),
-                                      backgroundColor: theme.primaryColor
-                                    )
+                                  BlocBuilder(
+                                    bloc: chatsBloc,
+                                    builder: (context, chatsState) {
+                                      if (state is ChatsStateLoaded) {
+                                        return ElevatedButton(
+                                          onPressed: () => goToChatHandler(context, state, chatsState), 
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.chat, color: Colors.white, size: 35),
+                                            ],
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            shape: CircleBorder(),
+                                            padding: EdgeInsets.all(15),
+                                            backgroundColor: theme.primaryColor
+                                          )
+                                        );
+                                      } else {
+                                        return SizedBox.shrink();
+                                      }
+                                    }
                                   ),
                                   SizedBox(width: 10),
                                   friendState != null
@@ -162,7 +204,7 @@ class _ProfileViewState extends State<ProfileView> {
                                         )
                                       : friendState == FriendState.iRequested
                                         ? ElevatedButton(
-                                          onPressed: () => addFriendHandler(state.user),
+                                          onPressed: () => allowFriendRequestHandler(state.user.uid),
                                           child: Row(
                                             children: [
                                               Icon(Icons.group_add, color: Colors.white, size: 25),
@@ -207,15 +249,24 @@ class _ProfileViewState extends State<ProfileView> {
                         )
                       ),
                       SizedBox(height: 50),
-                      Text('Друзья ${state.user.username}', style: theme.textTheme.titleLarge),
+                      Row(
+                        children: [
+                          Text('Друзья', style: theme.textTheme.titleLarge),
+                          if (widget.user == null && friendRequests.isNotEmpty)
+                          TextButton(
+                            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => FriendRequests(users: friendRequests))), 
+                            child: Text('${friendRequests.length} запросов в друзья', style: theme.textTheme.labelMedium?.copyWith(decoration: TextDecoration.underline))
+                          )
+                        ],
+                      ),
                       SizedBox(height: 20),
                       
                     ],
                   ),
                 ),
-                // Column(
-                //   children: List.generate(5, (i) => UserWidget(id: i.toString()))
-                // )
+                Column(
+                  children: friends.map((friend) => UserWidget(user: friend)).toList()
+                )
               ],
             );
           } else {

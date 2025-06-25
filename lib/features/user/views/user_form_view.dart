@@ -33,7 +33,7 @@ class _UserFormViewState extends State<UserFormView> {
     );
     await usersRepository.addUserdata(user);
     if (context.mounted) {
-      Provider.of<GlobalProvider>(context).setIsLogined = true;
+      Provider.of<GlobalProvider>(context).isLogined = true;
       Navigator.pop(context);
     }
   }
