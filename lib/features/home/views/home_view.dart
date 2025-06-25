@@ -9,7 +9,6 @@ import 'package:teamup/features/user/bloc/user_bloc.dart';
 import 'package:teamup/features/user/bloc/user_events.dart';
 import 'package:teamup/features/user/user_repository.dart';
 
-
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
 
@@ -17,15 +16,15 @@ class HomeView extends StatefulWidget {
   State<HomeView> createState() => _HomeViewState();
 }
 
-class _HomeViewState extends State<HomeView>{
-
+class _HomeViewState extends State<HomeView> {
   final userBloc = GetIt.I<UserBloc>();
   final supabase = GetIt.I<SupabaseClient>();
 
   Future<void> loadUser() async {
-    final user = (await supabase.auth.getUser()).user;
-    if (user == null) return;
-    userBloc.add(LoadUser(uid: user.id));
+    // final user = (await supabase.auth.getUser()).user;
+    // if (user == null) return;
+    // userBloc.add(LoadUser(uid: user.id));
+    print("asdasda");
   }
 
   @override
@@ -39,24 +38,22 @@ class _HomeViewState extends State<HomeView>{
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('Teamup', style: theme.textTheme.headlineMedium), 
+        title: Text('Teamup', style: theme.textTheme.headlineMedium),
         centerTitle: true,
         actions: [
           IconButton(
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AllUsersView())), 
-            icon: Icon(Icons.people_alt)
-          )
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => AllUsersView()),
+            ),
+            icon: Icon(Icons.people_alt),
+          ),
         ],
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Expanded(
-            flex: 4,
-            child: Center(
-              child: SearchBtn(),
-            )
-          ),
+          Expanded(flex: 4, child: Center(child: SearchBtn())),
           Expanded(
             flex: 4,
             child: Column(

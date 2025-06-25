@@ -45,22 +45,24 @@ class _TeamupState extends State<Teamup> {
   Widget build(BuildContext context) {
     final globalProvider = Provider.of<GlobalProvider>(context);
     checkAccount(globalProvider);
-    return MaterialApp( 
+    return MaterialApp(
       theme: theme,
-      home: globalProvider.isLogined != null
-        ? globalProvider.isLogined == true
-          ? Scaffold(
+      home: //globalProvider.isLogined != null
+          //? globalProvider.isLogined == true    ?
+          Scaffold(
             body: Column(
               children: [
-                Expanded(
-                  child: navitems[currentPage].page
+                Expanded(child: navitems[currentPage].page),
+                Navbar(
+                  items: navitems,
+                  currentPage: currentPage,
+                  onTap: (i) => setState(() => currentPage = i),
                 ),
-                Navbar(items: navitems, currentPage: currentPage, onTap: (i) => setState(() => currentPage = i))
               ],
-            )
-          )
-          : SigninView()
-        : Loading()
+            ),
+          ),
+      //: SigninView()
+      //: Loading(),
     );
   }
 }
