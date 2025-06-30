@@ -25,6 +25,16 @@ class ChatsBloc extends Bloc<ChatsEvent, ChatsState> {
       }
     });
 
+    on<RemoveChat>((event, emit) async {
+      if (state is ChatsStateLoaded) {
+        final List<Chat> chats = (state as ChatsStateLoaded).chats;
+        emit(ChatsStateLoading());
+        await chatsRepository.removeChat(event.chat);
+        chats.remove(event.chat);
+        emit(ChatsStateLoaded(chats: chats));
+      }
+    });
+
 
   }
 

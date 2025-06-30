@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
@@ -10,6 +11,7 @@ import 'package:teamup/features/chats/chats_repository.dart';
 import 'package:teamup/features/chats/models/chat.dart';
 import 'package:teamup/features/chats/views/chat_view.dart';
 import 'package:teamup/features/user/bloc/user_bloc.dart';
+import 'package:teamup/features/user/bloc/user_events.dart';
 import 'package:teamup/features/user/bloc/user_states.dart';
 import 'package:teamup/features/user/enums.dart';
 import 'package:teamup/features/user/models/friendship.dart';
@@ -66,6 +68,10 @@ class _ProfileViewState extends State<ProfileView> {
     super.initState();
 
     loadFriends();
+
+    if (chatsBloc.state is ChatsStateInitial && userBloc.state is UserStateLoaded) {
+      chatsBloc.add(LoadChats(uid: (userBloc.state as UserStateLoaded).user.uid));
+    }
   }
 
   void addFriendHandler(User user) async {
@@ -88,12 +94,13 @@ class _ProfileViewState extends State<ProfileView> {
   }
 
   void logoutHandler(context) async {
+    userBloc.add(Signout());
     await userRepository.signout();
   }
 
   void goToChatHandler(context, userState, chatsState) async {
     for (Chat chat in chatsState.chats) {
-      if ((chat.user1.uid == widget.user!.uid || chat.user2.uid == widget.user!.uid)) {
+      if ((chat.users[0].uid == widget.user!.uid || chat.users[1].uid == widget.user!.uid)) {
         if (mounted) {
           Navigator.push(context, MaterialPageRoute(builder: (_) => ChatView(chat: chat)));
         }
@@ -103,8 +110,7 @@ class _ProfileViewState extends State<ProfileView> {
 
     final chat = Chat(
       id: DateTime.now().millisecondsSinceEpoch,
-      user1: userState.user,
-      user2: widget.user!
+      users: [userState.user, widget.user!],
     );
     await chatsRepository.addChat(chat);
     chatsBloc.add(AddChat(chat: chat));
@@ -170,7 +176,7 @@ class _ProfileViewState extends State<ProfileView> {
                                   BlocBuilder(
                                     bloc: chatsBloc,
                                     builder: (context, chatsState) {
-                                      if (state is ChatsStateLoaded) {
+                                      if (chatsState is ChatsStateLoaded) {
                                         return ElevatedButton(
                                           onPressed: () => goToChatHandler(context, state, chatsState), 
                                           child: Row(
@@ -185,6 +191,7 @@ class _ProfileViewState extends State<ProfileView> {
                                           )
                                         );
                                       } else {
+                                        if (chatsState is ChatsStateError) Fluttertoast.showToast(msg: 'Произошла ошибка при загрузке чатов');
                                         return SizedBox.shrink();
                                       }
                                     }

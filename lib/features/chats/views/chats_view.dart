@@ -22,7 +22,6 @@ class _ChatsViewState extends State<ChatsView> {
   final chatsRepository = GetIt.I<ChatsRepository>();
 
   final userBloc = GetIt.I<UserBloc>();
-
   final chatsBloc = GetIt.I<ChatsBloc>();
 
   @override
@@ -50,7 +49,7 @@ class _ChatsViewState extends State<ChatsView> {
                     children: chatsState.chats.map((Chat chat) => ChatWidget(chat: chat)).toList()
                   );
                 } else {
-                  return Center(child: Text('У вас нет личных чатов', style: theme.textTheme.titleMedium));
+                  return Center(child: Text('У тебя нет личных чатов', style: theme.textTheme.titleMedium));
                 }
               } else if (userState is UserStateError || chatsState is ChatsStateError) {
                 return Center(child: Text('Произошла ошибка при загрузке чатов', style: theme.textTheme.titleMedium));

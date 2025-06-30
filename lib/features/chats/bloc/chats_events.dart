@@ -19,3 +19,12 @@ class AddChat extends ChatsEvent {
   @override
   List get props => [chat];
 }
+
+class RemoveChat extends ChatsEvent {
+  final Chat chat;
+
+  RemoveChat({required this.chat});
+
+  @override
+  List get props => [chat];
+}

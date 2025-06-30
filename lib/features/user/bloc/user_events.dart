@@ -25,29 +25,7 @@ class UpdateUser extends UserEvent {
   List get props => [user, choosenAvatar];
 }
 
-class AddFriend extends UserEvent {
-  final Friendship friendship;
-
-  AddFriend({required this.friendship});
-
+class Signout extends UserEvent {
   @override
-  List get props => [friendship];
-}
-
-class AllowFriendRequest extends UserEvent {
-  final Friendship friendship;
-
-  AllowFriendRequest({required this.friendship});
-
-  @override
-  List get props => [friendship];
-}
-
-class RemoveFriend extends UserEvent {
-  final Friendship friendship;
-
-  RemoveFriend({required this.friendship});
-
-  @override
-  List get props => [friendship];
+  List get props => [];
 }

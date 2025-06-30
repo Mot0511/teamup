@@ -29,30 +29,9 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       emit(UserStateLoaded(user: event.user));
     });
 
-    // on<AddFriend>((event, emit) async {
-    //   emit(UserStateLoading());
-    //   await userRepository.addFriend(event.friendship);
-    //   (state as UserStateLoaded).user.friends.add(event.friendship);
-    //   emit(UserStateLoaded(user: (state as UserStateLoaded).user));
-    // });
-
-    // on<AllowFriendRequest>((event, emit) async {
-    //   emit(UserStateLoading());
-    //   await userRepository.allowFriendRequest(event.friendship);
-    //   (state as UserStateLoaded).user.friends.forEach((friendship) {
-    //     if (friendship.id == event.friendship.id) {
-    //       friendship.status = true;
-    //     }
-    //   });
-    //   emit(UserStateLoaded(user: (state as UserStateLoaded).user));
-    // });
-
-    // on<RemoveFriend>((event, emit) async {
-    //   emit(UserStateLoading());
-    //   await userRepository.removeFriend(event.friendship);
-    //   (state as UserStateLoaded).user.friends.remove(event.friendship);
-    //   emit(UserStateLoaded(user: (state as UserStateLoaded).user));
-    // });
+    on<Signout>((event, emit) {
+      emit(UserStateInitial());
+    });
   }
 
   final UserRepository userRepository;

@@ -61,7 +61,7 @@ class UserRepository {
         await supabase.auth.signInWithOAuth(
           sb.OAuthProvider.google,
           redirectTo: 'https://google.com',
-          authScreenLaunchMode: kIsWeb ? sb.LaunchMode.externalApplication : sb.LaunchMode.platformDefault,
+          authScreenLaunchMode: sb.LaunchMode.externalApplication,
         );
       }
 
@@ -97,7 +97,7 @@ class UserRepository {
   }
 
   Future<User> getUserdata(String uid) async {
-    final userdata = (await supabase.from('users').select('*, favouriteGame(*)').eq('uid', uid))[0];
+    final userdata = await supabase.from('users').select('*, favouriteGame(*)').eq('uid', uid).single();
     return User.fromJSON(userdata);
   }
 
