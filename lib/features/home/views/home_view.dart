@@ -23,20 +23,11 @@ class _HomeViewState extends State<HomeView>{
   final userBloc = GetIt.I<UserBloc>();
   final supabase = GetIt.I<SupabaseClient>();
 
-  Future<void> loadUser() async {
-    if (userBloc.state is UserStateInitial) {
-      try {
-        final user = (await supabase.auth.getUser()).user;
-        if (user == null) return;
-        userBloc.add(LoadUser(uid: user.id));
-      } on AuthSessionMissingException catch (_) {}
-    }
-  }
-
   @override
   void initState() {
     super.initState();
-    loadUser();
+    final user = supabase.auth.currentSession!.user;
+    userBloc.add(LoadUser(uid: user.id));
   }
 
   @override

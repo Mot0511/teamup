@@ -29,7 +29,7 @@ class UserRepository {
     ).eq('uid', user.uid);
   }
 
-  Future<AuthResult?> googleSignIn() async {
+  Future<AuthResult?> googleSignIn(context) async {
     try {
       const androidClientId = '677191252450-plq6hd0tkmh0befgpm2lrh06hpf7mj37.apps.googleusercontent.com';
       const desktopClientId = '677191252450-ibg34ij1u3kcjo5pid4ptjtf8dadp10f.apps.googleusercontent.com';
@@ -68,7 +68,7 @@ class UserRepository {
       final userdata = (await supabase.auth.getUser()).user;
 
       if (userdata != null) {
-        final users = await supabase.from('users').select();
+        final users = await supabase.from('users').select().eq('uid', userdata.id);
         if (users.isEmpty) {
           return AuthResult(
             userdata: userdata,
@@ -80,8 +80,6 @@ class UserRepository {
           isNew: false
         );
       }
-
-      
     } on AppwriteException catch (e) {
       Fluttertoast.showToast(msg: 'Произошла ошибка при авторизации');
     }

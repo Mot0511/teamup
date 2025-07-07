@@ -94,6 +94,7 @@ class _ProfileViewState extends State<ProfileView> {
   }
 
   void logoutHandler(context) async {
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SigninView()));
     userBloc.add(Signout());
     await userRepository.signout();
   }

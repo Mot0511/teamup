@@ -85,10 +85,10 @@ class _CreateTeamViewState extends State<CreateTeamView> {
   }
 
   void chooseMembers() async {
-    final choosenMembers = await Navigator.push(context, MaterialPageRoute(builder: (_) => ChooseMembersView()));
+    final List<User>? choosenMembers = await Navigator.push(context, MaterialPageRoute(builder: (_) => ChooseMembersView()));
     if (choosenMembers == null) return;
-    members += choosenMembers;
-    addedMembers += choosenMembers;
+    members += choosenMembers.where((member) => !members.contains(member)).toList();
+    addedMembers += choosenMembers.where((member) => !choosenMembers.contains(member)).toList();
     setState(() {});
   }
 
@@ -140,6 +140,7 @@ class _CreateTeamViewState extends State<CreateTeamView> {
                       onPressed: () {
                         members.remove(member);
                         removedMembers.add(member);
+                        setState(() {});
                       },
                       icon: Icon(Icons.delete, color: Colors.red, size: 30)
                     )

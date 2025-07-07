@@ -53,7 +53,7 @@ class TeamsRepository {
   }
 
   Future<void> removeTeam(Team team, String uid) async {
-    await supabase.from('members').delete().eq('chat', team.id).eq('member', uid);
+    await supabase.from('members').delete().eq('member', uid).eq('chat', team.id);
     if (team.users.length == 1) {
       await supabase.from('chats').delete().eq('id', team.id);
     }

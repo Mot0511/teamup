@@ -18,6 +18,7 @@ class ChatsRepository {
     final List<Chat> chats = [];
     for (Map row in data) {
       final chat = row['chat'];
+      if (chat == null) continue;
       final members = await supabase.from('members').select('member(*, favouriteGame(*))').eq('chat', chat['id']);
       chats.add(Chat(
         id: chat['id'],

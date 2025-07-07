@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:teamup/features/user/user_repository.dart';
 import 'package:teamup/features/user/views/user_form_view.dart';
+import 'package:teamup/nav_screen.dart';
 import 'package:teamup/providers/global_provider.dart';
 
 class SigninView extends StatelessWidget {
@@ -12,16 +13,18 @@ class SigninView extends StatelessWidget {
   final UserRepository usersRepository = GetIt.I<UserRepository>();
 
   Future<void> googleSignInHandler(BuildContext context) async {
-    final AuthResult? res = await usersRepository.googleSignIn();
+    final AuthResult? res = await usersRepository.googleSignIn(context);
     
     if (res == null) return;
-    if (res.isNew) {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => 
-        UserFormView(userdata: res.userdata)
-      ));
-    } else {
-      if (context.mounted) {
-        Provider.of<GlobalProvider>(context, listen: false).isLogined = true;
+    if (context.mounted) {
+      if (res.isNew) {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => 
+          UserFormView(userdata: res.userdata)
+        ));
+      } else {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => 
+          NavScreen()
+        ));
       }
     }
   }
@@ -58,7 +61,7 @@ class SigninView extends StatelessWidget {
                 // ),
                 SizedBox(height: 5),
                 ElevatedButton(
-                  onPressed: () => googleSignInHandler(context),
+                  onPressed: () async => await googleSignInHandler(context),
                   style: ButtonStyle(backgroundColor: MaterialStateProperty.all<Color>(const Color.fromARGB(255, 0, 0, 0))),
                   child: Text('Войти через Google', style: theme.textTheme.labelMedium)
                 ),

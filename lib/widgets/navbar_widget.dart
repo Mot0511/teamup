@@ -5,11 +5,11 @@ class Navbar extends StatelessWidget {
   const Navbar({
     super.key,
     required this.items,
-    required this.currentPage,
+    required this.currentView,
     required this.onTap,
   });
   final List<Navitem> items;
-  final int currentPage;
+  final int currentView;
   final onTap;
 
   @override
@@ -38,8 +38,8 @@ class Navbar extends StatelessWidget {
               padding: EdgeInsets.all(10),
               child: Column(
                 children: [
-                  Icon(items[i].icon, color: currentPage == i ? theme.primaryColor : Colors.white, size: 30),
-                  Text(items[i].title, style: currentPage == i 
+                  Icon(items[i].icon, color: currentView == i ? theme.primaryColor : Colors.white, size: 30),
+                  Text(items[i].title, style: currentView == i 
                     ? theme.textTheme.labelSmall?.copyWith(color: theme.primaryColor, fontSize: 10)
                     : theme.textTheme.labelSmall?.copyWith(fontSize: 10)
                   )

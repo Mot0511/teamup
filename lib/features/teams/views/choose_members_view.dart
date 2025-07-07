@@ -57,11 +57,11 @@ class _ChooseMembersViewState extends State<ChooseMembersView> {
                       user: friend,
                       trailing: members.contains(friend)
                         ? IconButton(
-                            onPressed: () => members.remove(friend),
+                            onPressed: () => setState(() => members.remove(friend)),
                             icon: Icon(Icons.check, size: 40, color: Colors.green)
                           )
                         : IconButton(
-                          onPressed: () => members.add(friend),
+                          onPressed: () => setState(() => members.add(friend)),
                           icon: Icon(Icons.add, size: 40)
                         )
                     )).toList()

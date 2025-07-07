@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import 'package:teamup/features/user/models/models.dart';
 import 'package:teamup/features/user/user_repository.dart';
+import 'package:teamup/nav_screen.dart';
 import 'package:teamup/providers/global_provider.dart';
 import 'package:teamup/widgets/widgets.dart';
 
@@ -23,7 +24,7 @@ class _UserFormViewState extends State<UserFormView> {
 
   final usersRepository = GetIt.I<UserRepository>();
 
-  Future<void> submit(context) async {
+  Future<void> submit() async {
     final user = User(
       uid: widget.userdata.id,
       email: widget.userdata.email ?? '',
@@ -32,9 +33,10 @@ class _UserFormViewState extends State<UserFormView> {
       gender: gender,
     );
     await usersRepository.addUserdata(user);
-    if (context.mounted) {
-      Provider.of<GlobalProvider>(context).isLogined = true;
-      Navigator.pop(context);
+    if (mounted) {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => 
+        NavScreen()
+      ));
     }
   }
 
@@ -81,7 +83,7 @@ class _UserFormViewState extends State<UserFormView> {
             flex: 2,
             child: Center(
               child: ElevatedButton(
-                onPressed: () => submit(context), 
+                onPressed: submit, 
                 child: Icon(Icons.arrow_forward_ios, color: Colors.white, size: 40),
                 style: ElevatedButton.styleFrom(
                   shape: CircleBorder(),
