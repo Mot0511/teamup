@@ -25,6 +25,8 @@ dependencies:
   provider: ^6.1.5
   flutter_dotenv: ^5.2.1
   dotenv: ^4.2.0
+  zego_uikit_prebuilt_call: ^4.16.23
+  zego_express_engine: ^3.21.0
 
 
 dev_dependencies:

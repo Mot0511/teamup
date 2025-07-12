@@ -9,7 +9,7 @@ import 'package:teamup/features/user/models/models.dart' as models;
 class TeamsRepository {
   final supabase = GetIt.I<SupabaseClient>();
 
-    Future<List<Team>> getTeams(String uid) async {
+  Future<List<Team>> getTeams(String uid) async {
     final data = await supabase
       .from('members')
       .select('chat(*)')

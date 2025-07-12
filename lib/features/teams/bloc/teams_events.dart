@@ -49,3 +49,8 @@ class RemoveTeam extends TeamsEvent {
   @override
   List get props => [team];
 }
+
+class ClearTeams extends TeamsEvent {
+  @override
+  List get props => [];
+}

@@ -28,3 +28,8 @@ class RemoveChat extends ChatsEvent {
   @override
   List get props => [chat];
 }
+
+class ClearChats extends ChatsEvent {
+  @override
+  List get props => [];
+}

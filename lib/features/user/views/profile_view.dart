@@ -10,6 +10,8 @@ import 'package:teamup/features/chats/bloc/chats_states.dart';
 import 'package:teamup/features/chats/chats_repository.dart';
 import 'package:teamup/features/chats/models/chat.dart';
 import 'package:teamup/features/chats/views/chat_view.dart';
+import 'package:teamup/features/teams/bloc/teams_bloc.dart';
+import 'package:teamup/features/teams/bloc/teams_events.dart';
 import 'package:teamup/features/user/bloc/user_bloc.dart';
 import 'package:teamup/features/user/bloc/user_events.dart';
 import 'package:teamup/features/user/bloc/user_states.dart';
@@ -35,6 +37,7 @@ class _ProfileViewState extends State<ProfileView> {
 
   final userBloc = GetIt.I<UserBloc>();
   final chatsBloc = GetIt.I<ChatsBloc>();
+  final teamsBloc = GetIt.I<TeamsBloc>();
   final userRepository = GetIt.I<UserRepository>();
   final chatsRepository = GetIt.I<ChatsRepository>();
 
@@ -93,13 +96,15 @@ class _ProfileViewState extends State<ProfileView> {
     setState(() {});
   }
 
-  void logoutHandler(context) async {
+  void singoutHandler() async {
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SigninView()));
     userBloc.add(Signout());
+    chatsBloc.add(ClearChats());
+    teamsBloc.add(ClearTeams());
     await userRepository.signout();
   }
 
-  void goToChatHandler(context, userState, chatsState) async {
+  void goToChatHandler(userState, chatsState) async {
     for (Chat chat in chatsState.chats) {
       if ((chat.users[0].uid == widget.user!.uid || chat.users[1].uid == widget.user!.uid)) {
         if (mounted) {
@@ -136,7 +141,7 @@ class _ProfileViewState extends State<ProfileView> {
                       icon: Icon(Icons.edit)
                     ),
                     IconButton(
-                      onPressed: () => logoutHandler(context), 
+                      onPressed: singoutHandler, 
                       icon: Icon(Icons.logout)
                     ),
                   ],
@@ -179,7 +184,7 @@ class _ProfileViewState extends State<ProfileView> {
                                     builder: (context, chatsState) {
                                       if (chatsState is ChatsStateLoaded) {
                                         return ElevatedButton(
-                                          onPressed: () => goToChatHandler(context, state, chatsState), 
+                                          onPressed: () => goToChatHandler(state, chatsState), 
                                           child: Row(
                                             children: [
                                               Icon(Icons.chat, color: Colors.white, size: 35),

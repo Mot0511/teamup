@@ -35,6 +35,10 @@ class ChatsBloc extends Bloc<ChatsEvent, ChatsState> {
       }
     });
 
+    on<ClearChats>((event, emit) async {
+      emit(ChatsStateInitial());
+    });
+
 
   }
 

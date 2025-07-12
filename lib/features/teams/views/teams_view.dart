@@ -26,7 +26,7 @@ class _TeamsViewState extends State<TeamsView> {
   @override
   void initState() {
     super.initState();
-
+    
     if (teamsBloc.state is TeamsStateInitial && userBloc.state is UserStateLoaded) {
       teamsBloc.add(LoadTeams(uid: (userBloc.state as UserStateLoaded).user.uid));
     }

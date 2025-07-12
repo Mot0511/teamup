@@ -59,6 +59,10 @@ class TeamsBloc extends Bloc<TeamsEvent, TeamsState> {
       }
     });
 
+    on<ClearTeams>((event, emit) async {
+      emit(TeamsStateInitial());
+    });
+
 
   }
 
