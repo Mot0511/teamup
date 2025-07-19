@@ -27,56 +27,6 @@ class _TeamViewState extends State<TeamView> {
   final userBloc = GetIt.I<UserBloc>();
   final voiceService = GetIt.I<VoiceService>();
 
-  void startListenEvent() {
-    ZegoExpressEngine.onRoomUserUpdate = (roomID, updateType, List<ZegoUser> userList) {
-      debugPrint(
-          'onRoomUserUpdate: roomID: $roomID, updateType: ${updateType.name}, userList: ${userList.map((e) => e.userID)}');
-    };
-    ZegoExpressEngine.onRoomStreamUpdate = (roomID, updateType, List<ZegoStream> streamList, extendedData) {
-      debugPrint(
-          'onRoomStreamUpdate: roomID: $roomID, updateType: $updateType, streamList: ${streamList.map((e) => e.streamID)}, extendedData: $extendedData');
-      if (updateType == ZegoUpdateType.Add) {
-        for (final stream in streamList) {
-          voiceService.startPlayStream(stream.streamID);
-        }
-      } else {
-        for (final stream in streamList) {
-          voiceService.stopPlayStream(stream.streamID);
-        }
-      }
-    };
-    ZegoExpressEngine.onRoomStateUpdate = (roomID, state, errorCode, extendedData) {
-      debugPrint(
-          'onRoomStateUpdate: roomID: $roomID, state: ${state.name}, errorCode: $errorCode, extendedData: $extendedData');
-    };
-
-    ZegoExpressEngine.onPublisherStateUpdate = (streamID, state, errorCode, extendedData) {
-      debugPrint(
-          'onPublisherStateUpdate: streamID: $streamID, state: ${state.name}, errorCode: $errorCode, extendedData: $extendedData');
-    };
-  }
-
-  void stopListenEvent() {
-    ZegoExpressEngine.onRoomUserUpdate = null;
-    ZegoExpressEngine.onRoomStreamUpdate = null;
-    ZegoExpressEngine.onRoomStateUpdate = null;
-    ZegoExpressEngine.onPublisherStateUpdate = null;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    startListenEvent();
-    voiceService.loginRoom((userBloc.state as UserStateLoaded).user, widget.team);
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    stopListenEvent();
-    voiceService.logoutRoom(widget.team);
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
