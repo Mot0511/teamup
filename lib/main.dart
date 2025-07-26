@@ -37,7 +37,6 @@ void main() async {
   GetIt.I.registerSingleton(SearchRepository());
   GetIt.I.registerSingleton(ChatsRepository());
   GetIt.I.registerSingleton(TeamsRepository());
-  GetIt.I.registerSingleton(VoiceService());
   GetIt.I.registerSingleton(UserBloc(userRepository: GetIt.I<UserRepository>()));
   GetIt.I.registerSingleton(ChatsBloc(chatsRepository: GetIt.I<ChatsRepository>()));
   GetIt.I.registerSingleton(TeamsBloc(teamsRepository: GetIt.I<TeamsRepository>()));

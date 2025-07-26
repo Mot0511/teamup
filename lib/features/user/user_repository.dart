@@ -38,7 +38,8 @@ class UserRepository {
       if (Platform.isAndroid) {
         final googleSignIn = GoogleSignIn(
           clientId: androidClientId,
-          serverClientId: webClientId
+          serverClientId: webClientId,
+          scopes: ["profile", "email"],
         );
         final googleUser = await googleSignIn.signIn();
         final googleAuth = await googleUser!.authentication;
@@ -61,24 +62,23 @@ class UserRepository {
         await supabase.auth.signInWithOAuth(
           sb.OAuthProvider.google,
           redirectTo: 'https://google.com',
-          authScreenLaunchMode: sb.LaunchMode.externalApplication,
+          authScreenLaunchMode: sb.LaunchMode.inAppWebView,
         );
       }
 
       final userdata = (await supabase.auth.getUser()).user;
-
       if (userdata != null) {
-        final users = await supabase.from('users').select().eq('uid', userdata.id);
-        if (users.isEmpty) {
+          final users = await supabase.from('users').select().eq('uid', userdata.id);
+          if (users.isEmpty) {
+            return AuthResult(
+              userdata: userdata,
+              isNew: true
+            );
+          }
           return AuthResult(
             userdata: userdata,
-            isNew: true
+            isNew: false
           );
-        }
-        return AuthResult(
-          userdata: userdata,
-          isNew: false
-        );
       }
     } on AppwriteException catch (e) {
       Fluttertoast.showToast(msg: 'Произошла ошибка при авторизации');

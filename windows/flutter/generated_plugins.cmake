@@ -6,6 +6,8 @@ list(APPEND FLUTTER_PLUGIN_LIST
   app_links
   desktop_webview_window
   file_selector_windows
+  flutter_webrtc
+  permission_handler_windows
   url_launcher_windows
   window_to_front
   zego_express_engine
