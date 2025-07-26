@@ -6,7 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:teamup/features/chats/models/chat.dart';
 import 'package:teamup/features/teams/models/team.dart';
 import 'package:teamup/features/teams/views/create_team_view.dart';
-import 'package:teamup/features/teams/voice_service.dart';
+import 'package:teamup/features/teams/signaling_service.dart';
 import 'package:teamup/features/teams/widgets/team_icon_widget.dart';
 import 'package:teamup/features/user/bloc/user_bloc.dart';
 import 'package:teamup/features/user/bloc/user_states.dart';
@@ -27,23 +27,25 @@ class _TeamViewState extends State<TeamView> {
   bool isSoundOn = true;
 
   final userBloc = GetIt.I<UserBloc>();
+  final signalingService = GetIt.I<SignalingService>();
   
-  final socket = VoiceService.instance.socket;
-
   final localRTCVideoRenderer = RTCVideoRenderer();
-  List<RTCVideoRenderer> remoteRTCVideoRenderers = [];
-
-  MediaStream? localStream;
-  Map<String, RTCPeerConnection> rtcPeerConnections = {};
-  List<RTCIceCandidate> rtcIceCandidates = [];
+  final remoteRTCVideoRenderer = RTCVideoRenderer();
 
   @override
   void initState() {
     super.initState();
-    // initializing renderers 
+
     localRTCVideoRenderer.initialize();
-    // setup Peer Connection
-    setupPeerConnection();
+    remoteRTCVideoRenderer.initialize();
+
+    signalingService.onLocalStream = (stream) {
+      localRTCVideoRenderer.srcObject = stream;
+    };
+
+    signalingService.onRemoteStream = (stream) {
+      remoteRTCVideoRenderer.srcObject = stream;
+    };
   }
 
   @override

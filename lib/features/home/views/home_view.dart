@@ -5,7 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:teamup/features/home/views/all_users_view.dart';
 import 'package:teamup/features/home/widgets/drop_down_widget.dart';
 import 'package:teamup/features/home/widgets/widgets.dart';
-import 'package:teamup/features/teams/voice_service.dart';
+import 'package:teamup/features/teams/signaling_service.dart';
 import 'package:teamup/features/user/bloc/user_bloc.dart';
 import 'package:teamup/features/user/bloc/user_events.dart';
 import 'package:teamup/features/user/bloc/user_states.dart';
@@ -28,10 +28,10 @@ class _HomeViewState extends State<HomeView>{
   void initState() {
     super.initState();
     final user = supabase.auth.currentSession!.user;
-    VoiceService.instance.init(
+    GetIt.I.registerSingleton(SignalingService(
       websocketUrl: 'http://192.168.0.75:9000',
       callerID: user.id
-    );
+    ));
     userBloc.add(LoadUser(uid: user.id));
   }
 

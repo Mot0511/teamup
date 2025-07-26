@@ -9,7 +9,7 @@ import 'package:teamup/features/chats/chats_repository.dart';
 import 'package:teamup/features/home/repositories/search_repository.dart';
 import 'package:teamup/features/teams/bloc/teams_bloc.dart';
 import 'package:teamup/features/teams/teams_repository.dart';
-import 'package:teamup/features/teams/voice_service.dart';
+import 'package:teamup/features/teams/signaling_service.dart';
 import 'package:teamup/features/user/bloc/user_bloc.dart';
 import 'package:teamup/features/user/user_repository.dart';
 import 'package:teamup/providers/global_provider.dart';
