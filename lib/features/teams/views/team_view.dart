@@ -27,25 +27,32 @@ class _TeamViewState extends State<TeamView> {
   bool isSoundOn = true;
 
   final userBloc = GetIt.I<UserBloc>();
-  final signalingService = GetIt.I<SignalingService>();
+  SignalingService? signalingService;
   
-  final localRTCVideoRenderer = RTCVideoRenderer();
-  final remoteRTCVideoRenderer = RTCVideoRenderer();
+  final List<RTCVideoRenderer> remoteRTCVideoRenderers = [];
 
   @override
   void initState() {
     super.initState();
 
-    localRTCVideoRenderer.initialize();
-    remoteRTCVideoRenderer.initialize();
+    final uid = (userBloc.state as UserStateLoaded).user.uid;
 
-    signalingService.onLocalStream = (stream) {
-      localRTCVideoRenderer.srcObject = stream;
+    signalingService = SignalingService(
+      websocketUrl: 'http://192.168.0.75:9000',
+      uid: uid
+    );
+    setState(() {});
+
+    signalingService?.onRemoteStreams = (streams) async {
+      for (MediaStream stream in streams) {
+        final renderer = RTCVideoRenderer();
+        await renderer.initialize();
+        renderer.srcObject = stream;
+        setState(() {});
+      }
     };
 
-    signalingService.onRemoteStream = (stream) {
-      remoteRTCVideoRenderer.srcObject = stream;
-    };
+    signalingService?.setupPeerConnection(widget.team.id);
   }
 
   @override
@@ -55,229 +62,9 @@ class _TeamViewState extends State<TeamView> {
     }
   }
 
-  setupPeerConnection() async {
-    final uid = (userBloc.state as UserStateLoaded).user.uid;
-    socket!.emit('join', {
-      'room': widget.team.id,
-      'user': uid,
-    });
-
-    // when call is accepted by remote peer
-    socket!.on("callAnswered", (data) async {
-      final callerID = data['callerID'];
-      if (callerID == uid) {
-        
-        await rtcPeerConnections[callerID]?.setRemoteDescription(
-          RTCSessionDescription(
-            data["sdpAnswer"]["sdp"],
-            data["sdpAnswer"]["type"],
-          ),
-        );
-
-        // send iceCandidate generated to remote peer over signalling
-        for (RTCIceCandidate candidate in rtcIceCandidates) {
-          socket!.emit("IceCandidate", {
-            "callerID": callerID,
-            "room": widget.team.id,
-            "iceCandidate": {
-              "id": candidate.sdpMid,
-              "label": candidate.sdpMLineIndex,
-              "candidate": candidate.candidate
-            }
-          });
-        }
-        rtcIceCandidates.clear();
-      }
-    });
-
-    final rtcPeerConnection = await getPeerConnection();
-    RTCSessionDescription offer = await rtcPeerConnection.createOffer({
-      'mandatory': {
-        'OfferToReceiveVideo': true,
-        'OfferToReceiveAudio': true,
-      },
-      'optional': [
-        {'googImprovedWifiBwe': true},
-        {'googScreencastMinBitrate': 30000.0},
-      ],
-    });
-
-    // set SDP offer as localDescription for peerConnection
-    await rtcPeerConnection.setLocalDescription(offer);
-
-    rtcPeerConnections[uid] = rtcPeerConnection;
-    setState(() {});
-
-    // make a call to remote peer over signalling
-    socket!.emit('makeCall', {
-      "room": widget.team.id,
-      "callerID": uid,
-      "sdpOffer": offer.toMap(),
-    });
-
-    // listen for Remote IceCandidate
-    socket!.on("IceCandidate", (data) {
-      final callerID = data['callerID'];
-      if (callerID == uid) return;
-      final String candidate = data["iceCandidate"]["candidate"];
-      final String sdpMid = data["iceCandidate"]["id"];
-      final int sdpMLineIndex = data["iceCandidate"]["label"];
-
-      // add iceCandidate
-      rtcPeerConnections[callerID]?.addCandidate(RTCIceCandidate(
-          candidate,
-          sdpMid,
-          sdpMLineIndex,
-        ));
-      }
-    );
-
-    socket!.on('newCall', (data) async {
-      if (data['callerID'] == uid) return;
-      final offer = data['sdpOffer'];
-      final callerID = data['callerID'];
-
-      final rtcPeerConnection = await getPeerConnection();
-      await rtcPeerConnection.setRemoteDescription(
-        RTCSessionDescription(offer["sdp"], offer["type"]),
-      );
-
-      // create SDP answer
-      RTCSessionDescription answer = await rtcPeerConnection.createAnswer();
-
-      // set SDP answer as localDescription for peerConnection
-      rtcPeerConnection.setLocalDescription(answer);
-
-      rtcPeerConnections[callerID] = rtcPeerConnection;
-      setState(() {});
-
-      // send SDP answer to remote peer over signalling
-      socket!.emit("answerCall", {
-        "room": widget.team.id,
-        "callerID": callerID,
-        "sdpAnswer": answer.toMap(),
-      });
-    });
-  }
-
-  Future<RTCPeerConnection> getPeerConnection() async {
-    final rtcPeerConnection = await createPeerConnection({
-      "iceServers": [
-        {
-          "urls": "stun:stun.relay.metered.ca:80",
-        },
-        {
-          "urls": "turn:global.relay.metered.ca:80",
-          "username": "5db6bd697c3849fa85812cb3",
-          "credential": "UiNaqoi4aJNKIkTx",
-        },
-        {
-          "urls": "turn:global.relay.metered.ca:80?transport=tcp",
-          "username": "5db6bd697c3849fa85812cb3",
-          "credential": "UiNaqoi4aJNKIkTx",
-        },
-        {
-          "urls": "turn:global.relay.metered.ca:443",
-          "username": "5db6bd697c3849fa85812cb3",
-          "credential": "UiNaqoi4aJNKIkTx",
-        },
-        {
-          "urls": "turns:global.relay.metered.ca:443?transport=tcp",
-          "username": "5db6bd697c3849fa85812cb3",
-          "credential": "UiNaqoi4aJNKIkTx",
-        },
-      ],
-      'codecs': {
-        'video': ['VP8', 'H264'], // Явно указываем предпочтительные кодеки
-        'audio': ['opus']
-      }
-    });
-
-    // listen for remotePeer mediaTrack event
-    rtcPeerConnection.onTrack = (event) async {
-      if (event.track.kind != 'video') return;
-      for (var stream in event.streams) {
-        await Future.doWhile(() async {
-          await Future.delayed(Duration(milliseconds: 100));
-          return stream.getVideoTracks().isEmpty;
-        }).timeout(Duration(seconds: 5));
-      
-        final renderer = RTCVideoRenderer();
-        await renderer.initialize();
-        event.track.onEnded = () {
-          print('Video track ended');
-          renderer.srcObject = null;
-        };
-        renderer.srcObject = stream;
-        renderer.onFirstFrameRendered = () {
-          print('Получен перывй кадр');
-        };
-        remoteRTCVideoRenderers.add(renderer);
-        setState(() {});
-      }
-    };
-
-    final micStatus = await Permission.microphone.request();
-    final cameraStatus = await Permission.camera.request();
-    if (!micStatus.isGranted || !cameraStatus.isGranted) {
-      throw Exception("Разрешения не получены!");
-    }
-    // get localStream
-    localStream = await navigator.mediaDevices.getUserMedia({
-      'audio': true,
-      'video': true
-    });
-    // add mediaTrack to peerConnection
-    localStream!.getTracks().forEach((track) {
-      rtcPeerConnection.addTrack(track, localStream!);
-    });
-
-    localRTCVideoRenderer.srcObject = localStream;
-    setState(() {});
-
-    // listen for local iceCandidate and add it to the list of IceCandidate
-    rtcPeerConnection.onIceCandidate = 
-        (RTCIceCandidate candidate) => rtcIceCandidates.add(candidate);
-
-    rtcPeerConnection.onIceConnectionState = (state) {
-      print('ICE connection state: $state');
-      if (state == RTCIceConnectionState.RTCIceConnectionStateFailed) {
-        print('ICE connection failed');
-      }
-    };
-
-    return rtcPeerConnection;
-  }
-
-  leaveCall() {
-    Navigator.pop(context);
-  }
-
-  toggleMic() {
-    // change status
-    isVoiceOn = !isVoiceOn;
-    isSoundOn = !isSoundOn;
-    // enable or disable audio track
-    localStream?.getAudioTracks().forEach((track) {
-      track.enabled = isSoundOn;
-    });
-    setState(() {});
-  }
-
   @override
   void dispose() {
-    localRTCVideoRenderer.dispose();
-    for (RTCVideoRenderer renderer in remoteRTCVideoRenderers!) {
-      renderer.dispose();
-    }
-    localStream?.dispose();
-    for (RTCPeerConnection peerConnection in rtcPeerConnections.values) {
-      peerConnection.dispose();
-    }
-    socket!.emit('leave', {
-      'user': (userBloc.state as UserStateLoaded).user.uid,
-      'room': widget.team.id
-    });
+    signalingService?.dispose();
     super.dispose();
   }
 
@@ -308,13 +95,10 @@ class _TeamViewState extends State<TeamView> {
               ],
             ),
             body: Column(
-              children: remoteRTCVideoRenderers.isNotEmpty
-                ? remoteRTCVideoRenderers.map((renderer) => 
-                  Expanded(child: RTCVideoView(renderer))
-                ).toList()
-                : [Text("remoteRTCVideoRenderers is empty")]
+              children: remoteRTCVideoRenderers.map((renderer) => 
+                RTCVideoView(renderer)
+              ).toList()
             )
-            
           );
         } else {
           return Scaffold();

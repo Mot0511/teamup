@@ -1,6 +1,7 @@
 import 'package:appwrite/appwrite.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:teamup/features/home/views/all_users_view.dart';
 import 'package:teamup/features/home/widgets/drop_down_widget.dart';
@@ -28,10 +29,6 @@ class _HomeViewState extends State<HomeView>{
   void initState() {
     super.initState();
     final user = supabase.auth.currentSession!.user;
-    GetIt.I.registerSingleton(SignalingService(
-      websocketUrl: 'http://192.168.0.75:9000',
-      callerID: user.id
-    ));
     userBloc.add(LoadUser(uid: user.id));
   }
 

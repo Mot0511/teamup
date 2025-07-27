@@ -29,6 +29,8 @@ dependencies:
   flutter_webrtc: ^0.14.2
   socket_io_client: ^3.1.2
   permission_handler: ^12.0.1
+  audioplayers: ^6.5.0
+  just_audio: ^0.10.4
 
 
 dev_dependencies:
@@ -40,4 +42,5 @@ flutter:
   uses-material-design: true
   assets:
     - assets/
+    - assets/audio/
     - .env
