@@ -4,12 +4,14 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:teamup/features/chats/models/chat.dart';
+import 'package:teamup/features/chats/widgets/messenger_widget.dart';
 import 'package:teamup/features/teams/models/team.dart';
 import 'package:teamup/features/teams/views/create_team_view.dart';
 import 'package:teamup/features/teams/signaling_service.dart';
 import 'package:teamup/features/teams/widgets/team_icon_widget.dart';
 import 'package:teamup/features/user/bloc/user_bloc.dart';
 import 'package:teamup/features/user/bloc/user_states.dart';
+import 'package:teamup/features/user/models/models.dart';
 import 'package:teamup/features/user/widgets/avatar_widget.dart';
 import 'package:zego_express_engine/zego_express_engine.dart';
 
@@ -31,6 +33,8 @@ class _TeamViewState extends State<TeamView> {
   
   final List<RTCVideoRenderer> remoteRTCVideoRenderers = [];
 
+  final List<User> onlineUsers = [];
+
   @override
   void initState() {
     super.initState();
@@ -48,8 +52,14 @@ class _TeamViewState extends State<TeamView> {
         final renderer = RTCVideoRenderer();
         await renderer.initialize();
         renderer.srcObject = stream;
+        remoteRTCVideoRenderers.add(renderer);
         setState(() {});
       }
+    };
+
+    signalingService?.onNewConnection = (userID) {
+      onlineUsers.add(widget.team.users.where((user) => user.uid == userID).toList()[0]);
+      setState(() {});
     };
 
     signalingService?.setupPeerConnection(widget.team.id);
@@ -94,11 +104,7 @@ class _TeamViewState extends State<TeamView> {
                   ),
               ],
             ),
-            body: Column(
-              children: remoteRTCVideoRenderers.map((renderer) => 
-                RTCVideoView(renderer)
-              ).toList()
-            )
+            body: MessengerWidget(chat: widget.team)
           );
         } else {
           return Scaffold();

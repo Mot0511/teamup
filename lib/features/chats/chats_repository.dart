@@ -42,4 +42,24 @@ class ChatsRepository {
     await supabase.from('chats').delete().eq('id', chat.id);
     await supabase.from('members').delete().eq('chat', chat.id);
   }
+
+  Future<List<Message>> getMessages(int chatID) async {
+    final data = await supabase.from('messages').select('*, sender(*, favouriteGame(*))').eq('chat', chatID);
+    final List<Message> messages = data.map((message) => Message.fromJSON(message)).toList();
+    return messages;
+  }
+
+  Future<void> sendMessage(Message message) async {
+    await supabase.from('messages').insert(message.toJSON()); 
+  }
+
+  Future<void> editMessage(int id, String text) async {
+    await supabase.from('messages').update({
+      'text': text
+    }).eq('id', id);
+  }
+
+  Future<void> deleteMessage(int id) async {
+    await supabase.from('messages').delete().eq('id', id);
+  }
 }

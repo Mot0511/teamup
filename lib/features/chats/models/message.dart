@@ -4,21 +4,39 @@ import 'package:teamup/features/user/models/models.dart';
 class Message {
   final int id;
   final int chatId;
-  final ChatType chatType;
   final User user;
-  final String text;
+  String text;
+  final int? repliedMesssageID;
   final DateTime time;
 
-  Message({required this.id, required this.chatId, required this.chatType, required this.user, required this.text, required this.time});
+  Message({
+    required this.id, 
+    required this.chatId, 
+    required this.user, 
+    required this.text, 
+    this.repliedMesssageID,
+    required this.time
+  });
 
   factory Message.fromJSON(Map data) {
     return Message(
       id: data['id'],
       chatId: data['chat'],
-      chatType: data['chat_type'] == 'chat' ? ChatType.chat : ChatType.team,
       user: User.fromJSON(data['sender']),
       text: data['text'],
+      repliedMesssageID: data['repliedMessage'],
       time: DateTime.parse(data['created_at']),
     );
+  }
+
+  Map toJSON() {
+    return {
+      'id': id,
+      'chat': chatId,
+      'sender': user.uid,
+      'text': text,
+      'repliedMessage': repliedMesssageID,
+      'created_at': time.toString()
+    };
   }
 }
