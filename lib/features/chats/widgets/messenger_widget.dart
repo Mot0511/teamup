@@ -215,18 +215,30 @@ class _MessengerWidgetState extends State<MessengerWidget> {
               Expanded(
                 child: messages != null
                 ? messages!.isNotEmpty
-                  ? ListView(
+                  ? ListView.builder(
                       controller: scrollController,
-                      children: messages!
-                          .map(
-                            (message) => Row(
+                      itemCount: messages!.length,
+                      itemBuilder: (context, i) {
+                        return Column(
+                          children: [
+                            if (i > 0 && (messages![i].time.day != messages![i - 1].time.day ||
+                              messages![i].time.month != messages![i - 1].time.month ||
+                              messages![i].time.year != messages![i - 1].time.year)
+                            )
+                            Center(
+                              child: Text(
+                                '${messages![i].time.day.toString().padLeft(2, '0')}.${messages![i].time.month.toString().padLeft(2, '0')}.${messages![i].time.year}',
+                                style: TextStyle(fontSize: 18, color: Colors.grey),
+                              ),
+                            ),
+                            Row(
                               mainAxisAlignment:
-                                  message.user.uid == state.user.uid
+                                  messages![i].user.uid == state.user.uid
                                   ? MainAxisAlignment.end
                                   : MainAxisAlignment.start,
                               children: [
                                 MessageWidget(
-                                  message: message,
+                                  message: messages![i],
                                   onEditMessage: onSetEditing,
                                   onDeleteMessage: onDeleteMessage,
                                   messages: messages!,
@@ -234,8 +246,9 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                                 ),
                               ],
                             ),
-                          )
-                          .toList(),
+                          ],
+                        );
+                      },
                     )
                   : Center(
                       child: Text(

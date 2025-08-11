@@ -6,6 +6,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:teamup/app.dart';
 import 'package:teamup/features/chats/bloc/chats_bloc.dart';
 import 'package:teamup/features/chats/chats_repository.dart';
+import 'package:teamup/features/home/bloc/search_bloc.dart';
+import 'package:teamup/features/home/home_provider.dart';
 import 'package:teamup/features/home/repositories/search_repository.dart';
 import 'package:teamup/features/teams/bloc/teams_bloc.dart';
 import 'package:teamup/features/teams/teams_repository.dart';
@@ -40,9 +42,15 @@ void main() async {
   GetIt.I.registerSingleton(UserBloc(userRepository: GetIt.I<UserRepository>()));
   GetIt.I.registerSingleton(ChatsBloc(chatsRepository: GetIt.I<ChatsRepository>()));
   GetIt.I.registerSingleton(TeamsBloc(teamsRepository: GetIt.I<TeamsRepository>()));
+  GetIt.I.registerSingleton(SearchBloc(searchRepository: GetIt.I<SearchRepository>()));
   
-  runApp(ChangeNotifierProvider<GlobalProvider>(
-    create: (context) => GlobalProvider(),
-    child: Teamup()
-  ));
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<GlobalProvider>(create: (context) => GlobalProvider()),
+        ChangeNotifierProvider<HomeProvider>(create: (context) => HomeProvider())
+      ],
+      child: Teamup(),
+    )
+  );
 }
