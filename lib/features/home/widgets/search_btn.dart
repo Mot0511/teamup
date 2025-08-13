@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
@@ -23,22 +25,39 @@ class SearchBtn extends StatefulWidget {
 
 class _SearchBtnState extends State<SearchBtn>
     with SingleTickerProviderStateMixin {
-  late final AnimationController controller = AnimationController(
-    duration: const Duration(milliseconds: 200),
-    vsync: this,
-    value: 1.0,
-  );
+  late final AnimationController animationController;
+  late final Animation colorAnimation;
 
   final searchBloc = GetIt.I<SearchBloc>();
 
+  void initState() {
+    super.initState();
+
+    animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+      value: 1.0,
+    );
+    if (searchBloc.state is SearchStateSearching) {
+      animationController.repeat(reverse: true);
+    }
+
+    colorAnimation = ColorTween(begin: const Color.fromARGB(255, 0, 88, 46), end: const Color(0xff004323)).animate(animationController);
+  }
+
   void searchHandler(state) {
     if (state is SearchStateSearching) {
+      animationController.stop();
       widget.onStopSearching();
-      controller.forward();
     } else {
+      animationController.repeat(reverse: true);
       widget.onStartSearching();
-      controller.reverse();
     }
+  }
+
+  void dispose() {
+    animationController.stop();
+    super.dispose();
   }
 
   @override
@@ -47,32 +66,27 @@ class _SearchBtnState extends State<SearchBtn>
     return BlocBuilder<SearchBloc, SearchState>(
       bloc: searchBloc,
       builder: (context, state) {
-        return AnimatedContainer(
-          width: state is SearchStateSearching ? 150 : 180,
-          height: state is SearchStateSearching ? 150 : 180,
-          duration: Duration(milliseconds: 200),
-          curve: Curves.easeInOutCubic,
-          child: Ink(
-            decoration: BoxDecoration(
-              color: const Color(0xff004323),
-              border: Border.all(color: theme.primaryColor, width: 5),
-              borderRadius: BorderRadius.circular(100),
-            ),
-            child: InkWell(
-              onTap: () => searchHandler(state),
-              customBorder: CircleBorder(),
-              splashColor: theme.primaryColor,
-              child: ScaleTransition(
-                scale: Tween(begin: 0.7, end: 1.0).animate(
-                  CurvedAnimation(
-                    parent: controller,
-                    curve: Curves.easeInOutCubic,
-                  ),
+        return AnimatedBuilder(
+          animation: animationController,
+          builder: (context, color) {
+            return Container(
+              width: 180,
+              height: 180,
+              child: Ink(
+                decoration: BoxDecoration(
+                  color: colorAnimation.value,
+                  border: Border.all(color: theme.primaryColor, width: 5),
+                  borderRadius: BorderRadius.circular(100),
                 ),
-                child: Icon(Icons.search, color: Colors.white, size: 100),
+                child: InkWell(
+                  onTap: () => searchHandler(state),
+                  customBorder: CircleBorder(),
+                  splashColor: theme.primaryColor,
+                  child: Icon(Icons.search, color: Colors.white, size: 100),
+                ),
               ),
-            ),
-          ),
+            );
+          }
         );
       },
     );

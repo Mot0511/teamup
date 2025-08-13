@@ -9,6 +9,7 @@ import 'package:teamup/features/chats/widgets/message_widget.dart';
 import 'package:teamup/features/chats/widgets/messenger_widget.dart';
 import 'package:teamup/features/user/bloc/user_bloc.dart';
 import 'package:teamup/features/user/bloc/user_states.dart';
+import 'package:teamup/features/user/views/views.dart';
 import 'package:teamup/features/user/widgets/avatar_widget.dart';
 
 class ChatView extends StatefulWidget {
@@ -36,6 +37,7 @@ class _ChatViewState extends State<ChatView> {
           return Scaffold(
             appBar: AppBar(
               title: ListTile(
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProfileView(user: user))),
                 leading: AvatarWidget(uid: user.uid, size: 50),
                 title: Text(user.username, style: theme.textTheme.labelMedium),
                 subtitle: Text('В сети', style: theme.textTheme.labelSmall),

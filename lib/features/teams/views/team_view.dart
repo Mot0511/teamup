@@ -87,11 +87,22 @@ class _TeamViewState extends State<TeamView> {
         if (state is UserStateLoaded) {
           return Scaffold(
             appBar: AppBar(
+              titleSpacing: 0.0,
               title: ListTile(
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CreateTeamView(team: widget.team))),
                 leading: TeamIconWidget(id: widget.team.id, size: 50),
-                title: Text(widget.team.name, style: theme.textTheme.labelMedium),
-                subtitle: Text('${widget.team.users.length} участников', style: theme.textTheme.labelSmall),
+                title: Text(
+                  widget.team.name, 
+                  style: theme.textTheme.labelMedium,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(
+                  '${widget.team.users.length} участников', 
+                  style: theme.textTheme.labelSmall,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               actions: [
                 IconButton(

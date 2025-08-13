@@ -12,6 +12,7 @@ class UserWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ListTile(
+      contentPadding: EdgeInsetsDirectional.only(start: 0.0),
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProfileView(user: user))),
       leading: AvatarWidget(uid: user.uid, size: 45),
       title: Text(user.username, style: theme.textTheme.labelLarge),

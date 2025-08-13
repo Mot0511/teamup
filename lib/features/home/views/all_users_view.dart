@@ -34,9 +34,12 @@ class _AllUsersViewState extends State<AllUsersView> {
     return Scaffold(
       appBar: AppBar(title: Text('Все пользователи')),
       body: users != null
-        ? ListView(
-          children: users!.map((user) => UserWidget(user: user)).toList()
-        )
+        ? Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: ListView(
+              children: users!.map((user) => UserWidget(user: user)).toList()
+            ),
+          )
         : Center(child: CircularProgressIndicator())
     );
   }

@@ -46,28 +46,31 @@ class _ChooseMembersViewState extends State<ChooseMembersView> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text('Выбор участников в команду')),
+      appBar: AppBar(title: Text('Добавить тиммейта')),
       body: Column(
         children: [
           Expanded(
-            child: friends != null
-              ? friends!.isNotEmpty
-                ? ListView(
-                    children: friends!.map((friend) => UserWidget(
-                      user: friend,
-                      trailing: members.contains(friend)
-                        ? IconButton(
-                            onPressed: () => setState(() => members.remove(friend)),
-                            icon: Icon(Icons.check, size: 40, color: Colors.green)
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: friends != null
+                ? friends!.isNotEmpty
+                  ? ListView(
+                      children: friends!.map((friend) => UserWidget(
+                        user: friend,
+                        trailing: members.contains(friend)
+                          ? IconButton(
+                              onPressed: () => setState(() => members.remove(friend)),
+                              icon: Icon(Icons.check, size: 40, color: Colors.green)
+                            )
+                          : IconButton(
+                            onPressed: () => setState(() => members.add(friend)),
+                            icon: Icon(Icons.add, size: 40)
                           )
-                        : IconButton(
-                          onPressed: () => setState(() => members.add(friend)),
-                          icon: Icon(Icons.add, size: 40)
-                        )
-                    )).toList()
-                  )
-                : Center(child: Text('У вас нет друзей'))
-              : Center(child: CircularProgressIndicator())
+                      )).toList()
+                    )
+                  : Center(child: Text('У вас нет друзей'))
+                : Center(child: CircularProgressIndicator()),
+            )
           ),
            Center(
             child: ElevatedButton(

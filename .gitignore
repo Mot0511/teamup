@@ -47,3 +47,4 @@ app.*.map.json
 .env
 /android/debug.keystore
 /android/key.properties
+/supabase/functions/service-account.json

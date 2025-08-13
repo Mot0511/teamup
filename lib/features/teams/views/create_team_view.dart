@@ -88,7 +88,7 @@ class _CreateTeamViewState extends State<CreateTeamView> {
     final List<User>? choosenMembers = await Navigator.push(context, MaterialPageRoute(builder: (_) => ChooseMembersView()));
     if (choosenMembers == null) return;
     members += choosenMembers.where((member) => !members.contains(member)).toList();
-    addedMembers += choosenMembers.where((member) => !choosenMembers.contains(member)).toList();
+    addedMembers += choosenMembers.where((member) => !addedMembers.contains(member)).toList();
     setState(() {});
   }
 
@@ -96,7 +96,7 @@ class _CreateTeamViewState extends State<CreateTeamView> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text('Создание команды')),
+      appBar: AppBar(title: Text('${widget.team != null ? 'Изменение' : 'Создание'} команды')),
       body: Padding(
         padding: EdgeInsets.all(20),
         child: ListView(

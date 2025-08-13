@@ -9,12 +9,14 @@ abstract class SearchEvent extends Equatable {}
 class StartSearching extends SearchEvent {
   final User user;
   final SearchParams params;
-  final Function(Team team) onTeamFormed;
 
-  StartSearching({required this.user, required this.params, required this.onTeamFormed});
+  StartSearching({
+    required this.user, 
+    required this.params, 
+  });
 
   @override
-  List get props => [user, params, onTeamFormed]; 
+  List get props => [user, params]; 
 }
 
 class StopSearching extends SearchEvent {

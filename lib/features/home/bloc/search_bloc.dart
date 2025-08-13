@@ -10,7 +10,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     on<StartSearching>((event, emit) async {
         try {
           emit(SearchStateSearching(params: event.params));
-          await searchRepository.startSearching(event.user, event.params, event.onTeamFormed);
+          await searchRepository.startSearching(event.user, event.params);
         } on Exception catch (e) {
           emit(SearchStateSearchingFailure(e: e));
         }
@@ -18,8 +18,8 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
 
     on<StopSearching>((event, emit) async {
       try {
-        await searchRepository.stopSearching(event.user);
         emit(SearchStateInitial());
+        await searchRepository.stopSearching(event.user);
       } on Exception catch (e) {
         emit(SearchStateSearchingFailure(e: e));
       }

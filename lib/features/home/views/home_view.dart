@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:teamup/features/home/bloc/search_bloc.dart';
 import 'package:teamup/features/home/bloc/search_events.dart';
 import 'package:teamup/features/home/bloc/search_states.dart';
@@ -13,13 +13,17 @@ import 'package:teamup/features/home/models/search_params.dart';
 import 'package:teamup/features/home/repositories/search_repository.dart';
 import 'package:teamup/features/home/views/all_users_view.dart';
 import 'package:teamup/features/home/widgets/drop_down_widget.dart';
+import 'package:teamup/features/home/widgets/info_widget.dart';
 import 'package:teamup/features/home/widgets/widgets.dart';
+import 'package:teamup/features/teams/models/team.dart';
 import 'package:teamup/features/teams/signaling_service.dart';
 import 'package:teamup/features/teams/views/team_view.dart';
 import 'package:teamup/features/user/bloc/user_bloc.dart';
 import 'package:teamup/features/user/bloc/user_events.dart';
 import 'package:teamup/features/user/bloc/user_states.dart';
+import 'package:teamup/features/user/models/models.dart';
 import 'package:teamup/features/user/user_repository.dart';
+import 'package:teamup/features/user/widgets/user_widget.dart';
 import 'package:teamup/models/game.dart';
 
 class HomeView extends StatefulWidget {
@@ -29,7 +33,14 @@ class HomeView extends StatefulWidget {
   State<HomeView> createState() => _HomeViewState();
 }
 
-class _HomeViewState extends State<HomeView> {
+class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin {
+
+  late final AnimationController animationController = AnimationController(
+    duration: const Duration(milliseconds: 200),
+    vsync: this,
+    value: 1.0,
+  );
+
   final userBloc = GetIt.I<UserBloc>();
   final searchBloc = GetIt.I<SearchBloc>();
   final supabase = GetIt.I<SupabaseClient>();
@@ -38,6 +49,8 @@ class _HomeViewState extends State<HomeView> {
   String currentGame = '1';
   String currentTeamSize = '2';
   String currentGender = 'male';
+
+  List<User> pendingUsers = [];
 
   @override
   void initState() {
@@ -49,6 +62,22 @@ class _HomeViewState extends State<HomeView> {
     if (homeProvider.games == null) {
       homeProvider.loadGames();
     }
+
+    searchRepository.onTeamFormed = (Team team) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => TeamView(team: team)));
+      searchBloc.add(StopSearching(user: (userBloc.state as UserStateLoaded).user, params: getParams()));
+    };
+    searchRepository.onTeamFound = (List<User> users) {
+      pendingUsers = users;
+      setState(() {});
+    };
+    searchRepository.onNewPendingUser = (User user) {
+      pendingUsers.add(user);
+      setState(() {});
+    };
+    searchRepository.onRemovePendingUser = (String userID) {
+      pendingUsers = pendingUsers.where((pendingUser) => pendingUser.uid != userID).toList();
+    };
   }
 
   SearchParams getParams() {
@@ -60,22 +89,30 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  void onStartSearching() {
+  void onStartSearching() async {
+    await animationController.reverse();
     searchBloc.add(StartSearching(
       user: (userBloc.state as UserStateLoaded).user,
       params: getParams(),
-      onTeamFormed: (team) {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => TeamView(team: team)));
-        searchBloc.add(StopSearching(user: (userBloc.state as UserStateLoaded).user, params: getParams()));
-      }
     ));
+    await animationController.forward();
   }
 
-  void onStopSearching() {
+  void onStopSearching() async {
+    await animationController.reverse();
     searchBloc.add(StopSearching(
       user: (userBloc.state as UserStateLoaded).user,
       params: getParams(),
     ));
+    pendingUsers.clear();
+    setState(() {});
+    await animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    animationController.dispose();
+    super.dispose();
   }
 
   @override
@@ -116,74 +153,20 @@ class _HomeViewState extends State<HomeView> {
                     if (homeProvider.games != null)
                       Expanded(
                         flex: 4,
-                        child: BlocBuilder(
-                          bloc: searchBloc,
-                          builder: (context, state) {
-                            if (state is SearchStateInitial) {
-                              return Padding(
-                                padding: EdgeInsetsGeometry.symmetric(horizontal: 10),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Center(
-                                      child: Text(
-                                        "Фильтры поиска",
-                                        style: theme.textTheme.headlineMedium,
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ),
-                                    Text("Игра", style: theme.textTheme.labelMedium),
-                                    DropdowmWidget(
-                                      items: homeProvider.games!
-                                          .map(
-                                            (game) => DropdownItem(
-                                              text: game.name,
-                                              value: game.id.toString(),
-                                            ),
-                                          )
-                                          .toList(),
-                                      value: currentGame,
-                                      onChange: (value) =>
-                                          setState(() => currentGame = (value as String)),
-                                    ),
-                                    Text(
-                                      "Кол-во игроков в команде",
-                                      style: theme.textTheme.labelMedium,
-                                    ),
-                                    DropdowmWidget(
-                                      items: [
-                                        DropdownItem(text: '2', value: '2'),
-                                        DropdownItem(text: '3', value: '3'),
-                                        DropdownItem(text: '4', value: '4'),
-                                        DropdownItem(text: '5', value: '5'),
-                                        DropdownItem(text: '6', value: '6'),
-                                        DropdownItem(text: '7', value: '7'),
-                                        DropdownItem(text: '8', value: '8'),
-                                        DropdownItem(text: '9', value: '9'),
-                                        DropdownItem(text: '10', value: '10'),
-                                      ],
-                                      value: currentTeamSize,
-                                      onChange: (value) =>
-                                          setState(() => currentTeamSize = (value as String)),
-                                    ),
-                                    Text("Пол", style: theme.textTheme.labelMedium),
-                                    DropdowmWidget(
-                                      items: [
-                                        DropdownItem(text: "Не важно", value: "null"),
-                                        DropdownItem(text: "Мужской", value: "male"),
-                                        DropdownItem(text: "Женский", value: "female"),
-                                      ],
-                                      value: currentGender,
-                                      onChange: (value) =>
-                                          setState(() => currentGender = (value as String)),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            } else {
-                              return Center(child: Text('Идет поиск...', style: theme.textTheme.titleLarge));
-                            }
-                          }
+                        child: Padding(
+                          padding: EdgeInsetsGeometry.symmetric(horizontal: 18),
+                          child: InfoWidget(
+                            currentGame: currentGame, 
+                            games: homeProvider.games!, 
+                            onSetGame: (value) => setState(() {currentGame = value;}), 
+                            currentGender: currentGender, 
+                            onSetGender: (value) => setState(() {currentGender = value;}), 
+                            currentTeamSize: currentTeamSize, 
+                            onSetTeamSize: (value) => setState(() {currentTeamSize = value;}), 
+                            animationController: animationController,
+
+                            pendingUsers: pendingUsers
+                          )
                         )
                       ),
                   ],

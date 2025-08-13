@@ -273,13 +273,13 @@ class _ProfileViewState extends State<ProfileView> {
                         ],
                       ),
                       SizedBox(height: 20),
-                      
+                      Column(
+                        children: friends.map((friend) => UserWidget(user: friend)).toList()
+                      ),
                     ],
                   ),
                 ),
-                Column(
-                  children: friends.map((friend) => UserWidget(user: friend)).toList()
-                )
+                
               ],
             );
           } else {

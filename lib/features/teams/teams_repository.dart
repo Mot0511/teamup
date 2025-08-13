@@ -31,6 +31,16 @@ class TeamsRepository {
     return teams;
   }
 
+  Future<Team> getTeam(int id) async {
+    final teams_data = (await supabase.from('chats').select().eq('id', id))[0];
+    final members =  await supabase.from('members').select('member(*, favouriteGame(*))').eq('chat', id);
+    return Team(
+      id: id,
+      users: members.map((member) => models.User.fromJSON(member['member'])).toList(),
+      name: teams_data['name']
+    );
+  }
+
   Future<void> addTeam(Team team) async {
     await supabase.from('chats').insert(team.toJSON());
     for (models.User user in team.users) {

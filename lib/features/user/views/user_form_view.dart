@@ -33,6 +33,7 @@ class _UserFormViewState extends State<UserFormView> {
       gender: gender,
     );
     await usersRepository.addUserdata(user);
+    
     if (mounted) {
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => 
         NavScreen()
