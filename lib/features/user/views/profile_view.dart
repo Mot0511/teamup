@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -24,6 +26,7 @@ import 'package:teamup/features/user/views/views.dart';
 import 'package:teamup/features/user/widgets/avatar_widget.dart';
 import 'package:teamup/features/user/widgets/user_widget.dart';
 import 'package:teamup/providers/global_provider.dart';
+import 'package:teamup/widgets/shimmer_widget.dart';
 
 class ProfileView extends StatefulWidget {
   ProfileView({super.key, this.user});
@@ -283,7 +286,14 @@ class _ProfileViewState extends State<ProfileView> {
               ],
             );
           } else {
-            return Center(child: CircularProgressIndicator());
+            return ListView.builder(
+              itemCount: 3 + Random().nextInt(5),
+              itemBuilder: (context, state) => 
+                Padding(
+                  padding: EdgeInsets.only(bottom: 10),
+                  child: SihmmerWidget(),
+                )
+            );
           }
         }
       )

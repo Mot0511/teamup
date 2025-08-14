@@ -38,6 +38,14 @@ class ChatsRepository {
     }
   }
 
+  Future<Chat> getChat(int id) async {
+    final members = await supabase.from('members').select('member(*, favouriteGame(*))').eq('chat', id);
+    return Chat(
+      id: id,
+      users: members.map((member) => models.User.fromJSON(member['member'])).toList(),
+    );
+  }
+
   Future<void> removeChat(Chat chat) async {
     await supabase.from('chats').delete().eq('id', chat.id);
     await supabase.from('members').delete().eq('chat', chat.id);

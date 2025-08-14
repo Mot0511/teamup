@@ -36,8 +36,7 @@ class _FiltersWidgetState extends State<FiltersWidget> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return ListView(
       children: [
         Center(
           child: Text(

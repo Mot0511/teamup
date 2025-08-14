@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
@@ -6,6 +8,7 @@ import 'package:teamup/features/chats/chats_repository.dart';
 import 'package:teamup/features/chats/models/chat.dart';
 import 'package:teamup/features/chats/models/message.dart';
 import 'package:teamup/features/chats/widgets/message_widget.dart';
+import 'package:teamup/widgets/shimmer_widget.dart';
 import 'package:teamup/features/user/bloc/user_bloc.dart';
 import 'package:teamup/features/user/bloc/user_states.dart';
 
@@ -258,7 +261,20 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                         ),
                       ),
                     )
-                : Center(child: CircularProgressIndicator()),
+                : ListView.builder(
+                    itemCount: 3 + Random().nextInt(4),
+                    itemBuilder: (context, index) {
+                      return Row(
+                        mainAxisAlignment: Random().nextInt(2) == 1 ? MainAxisAlignment.start : MainAxisAlignment.end,
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.all(10),
+                            child: SihmmerWidget(width: 300, height: 80)
+                          )
+                        ]
+                      );
+                    },
+                )
               ),
               Padding(
                 padding: const EdgeInsets.all(10.0),

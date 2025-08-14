@@ -10,8 +10,11 @@ class FriendRequests extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Заявки в друзья')),
-      body: ListView(
-        children: users.map((user) => UserWidget(user: user)).toList()
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: ListView(
+          children: users.map((user) => UserWidget(user: user)).toList()
+        ),
       )
     );
   }

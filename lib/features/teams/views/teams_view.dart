@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
@@ -9,6 +11,7 @@ import 'package:teamup/features/teams/views/create_team_view.dart';
 import 'package:teamup/features/teams/widgets/team_widget.dart';
 import 'package:teamup/features/user/bloc/user_bloc.dart';
 import 'package:teamup/features/user/bloc/user_states.dart';
+import 'package:teamup/widgets/shimmer_widget.dart';
 
 class TeamsView extends StatefulWidget {
   const TeamsView({super.key});
@@ -55,7 +58,14 @@ class _TeamsViewState extends State<TeamsView> {
                 } else if (state is TeamsStateError) {
                   return Center(child: Text('Произошла ошибка при загрузке команд', textAlign: TextAlign.center, style: theme.textTheme.titleMedium));
                 } else {
-                  return Center(child: CircularProgressIndicator());
+                  return ListView.builder(
+                    itemCount: 3 + Random().nextInt(5),
+                    itemBuilder: (context, state) => 
+                      Padding(
+                        padding: EdgeInsets.all(8),
+                        child: SihmmerWidget(),
+                      )
+                  );
                 }
               }
             )

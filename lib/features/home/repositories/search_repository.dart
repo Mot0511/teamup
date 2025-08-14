@@ -19,11 +19,19 @@ class SearchRepository {
   Function? onNewPendingUser;
   Function? onRemovePendingUser;
 
-  Future<List<User>> getUsers() async {
+  Future<List<User>> getUsers(String? request) async {
+    if (request != null) {
+      final res = await supabase.from('users').select('*, favouriteGame(*)').like('username', '%$request%');
+      final users = res.map((user) => User.fromJSON(user)).toList();
+      return users;
+    }
+
     final res = await supabase.from('users').select('*, favouriteGame(*)');
     final users = res.map((user) => User.fromJSON(user)).toList();
     return users;
+    
   }
+
 
   Future<List<Game>> getGames() async {
     final res = await supabase.from('games').select();

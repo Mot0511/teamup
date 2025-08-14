@@ -47,7 +47,7 @@ void main() async {
   GetIt.I.registerSingleton(ChatsBloc(chatsRepository: GetIt.I<ChatsRepository>()));
   GetIt.I.registerSingleton(TeamsBloc(teamsRepository: GetIt.I<TeamsRepository>()));
   GetIt.I.registerSingleton(SearchBloc(searchRepository: GetIt.I<SearchRepository>()));
-  
+
   runApp(
     MultiProvider(
       providers: [

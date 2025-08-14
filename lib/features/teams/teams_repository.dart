@@ -9,6 +9,8 @@ import 'package:teamup/features/user/models/models.dart' as models;
 class TeamsRepository {
   final supabase = GetIt.I<SupabaseClient>();
 
+  final Map<int, ImageProvider> iconProviders = {};
+
   Future<List<Team>> getTeams(String uid) async {
     final data = await supabase
       .from('members')
@@ -70,12 +72,20 @@ class TeamsRepository {
   }
 
   Future<ImageProvider> getIcon(int id) async {
+    final ImageProvider? iconProvider = iconProviders[id];
+    if (iconProvider != null) {
+      return iconProvider;
+    }
     final storage = supabase.storage.from('main');
     if (await storage.exists('team_icons/$id.png')){
       final imageUrl = supabase.storage.from('main').getPublicUrl('team_icons/$id.png');
-      return NetworkImage(imageUrl);
+      final provider = NetworkImage(imageUrl);
+      iconProviders[id] = provider;
+      return provider;
     }
-    return AssetImage('assets/default_team_icon.png');
+    final provider = AssetImage('assets/default_team_icon.png');
+    iconProviders[id] = provider;
+    return provider;
 
   }
 

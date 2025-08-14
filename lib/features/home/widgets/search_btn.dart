@@ -82,7 +82,11 @@ class _SearchBtnState extends State<SearchBtn>
                   onTap: () => searchHandler(state),
                   customBorder: CircleBorder(),
                   splashColor: theme.primaryColor,
-                  child: Icon(Icons.search, color: Colors.white, size: 100),
+                  child: Icon(
+                    Icons.search,
+                    color: Colors.white, 
+                    size: 100
+                  ),
                 ),
               ),
             );

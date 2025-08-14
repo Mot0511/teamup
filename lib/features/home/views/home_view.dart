@@ -11,7 +11,7 @@ import 'package:teamup/features/home/bloc/search_states.dart';
 import 'package:teamup/features/home/home_provider.dart';
 import 'package:teamup/features/home/models/search_params.dart';
 import 'package:teamup/features/home/repositories/search_repository.dart';
-import 'package:teamup/features/home/views/all_users_view.dart';
+import 'package:teamup/features/home/views/search_view.dart';
 import 'package:teamup/features/home/widgets/drop_down_widget.dart';
 import 'package:teamup/features/home/widgets/info_widget.dart';
 import 'package:teamup/features/home/widgets/widgets.dart';
@@ -130,7 +130,7 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                   context,
                   MaterialPageRoute(builder: (_) => AllUsersView()),
                 ),
-                icon: Icon(Icons.people_alt),
+                icon: Icon(Icons.search),
               ),
             ],
           ),

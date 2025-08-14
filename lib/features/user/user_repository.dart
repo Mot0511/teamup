@@ -23,6 +23,8 @@ class UserRepository {
 
   final sb.SupabaseClient supabase = GetIt.I<sb.SupabaseClient>();
 
+  final Map<String, ImageProvider> avatarProviders = {};
+
   Future<void> updateUser(User user) async {
     await supabase.from('users').update(
       user.toJSON()
@@ -100,12 +102,20 @@ class UserRepository {
   }
 
   Future<ImageProvider> getAvatar(String uid) async {
+    final ImageProvider? avatarProvider = avatarProviders[uid];
+    if (avatarProvider != null) {
+      return avatarProvider;
+    }
     final storage = supabase.storage.from('main');
     if (await storage.exists('avatars/$uid.png')){
       final imageUrl = supabase.storage.from('main').getPublicUrl('avatars/$uid.png');
-      return NetworkImage(imageUrl);
+      final provider = NetworkImage(imageUrl);
+      avatarProviders[uid] = provider;
+      return provider;
     }
-    return AssetImage('assets/default_avatar.png');
+    final provider = AssetImage('assets/default_avatar.png');
+    avatarProviders[uid] = provider;
+    return provider;
 
   }
 

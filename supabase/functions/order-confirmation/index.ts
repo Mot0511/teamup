@@ -18,41 +18,56 @@ const supabase = createClient(
 )
 Deno.serve(async (req) => {
   const payload: WebhookPayload = await req.json()
-  const { data } = await supabase
-    .from('fcm_tokens')
-    .select('fcm_token')
-    .eq('userID', payload.record.sender)
-    .single()
+  const message = payload.record
+  const chatID = message.chat
+  const teamName = (await supabase.from('chats').select('name').eq('id', chatID).single()).data.name
+  const users = await supabase.from('members').select('member').eq('chat', chatID)
+
+  const fcmTokens = []
+  for (const user of users.data) {
+    const fcmToken = await supabase.from('fcm_tokens').select('fcm_token').eq('userID', user.member).single()
+    fcmTokens.push(fcmToken.data.fcm_token)
+  }
 
   const sender = await supabase.from('users').select('username').eq('uid', payload.record.sender).single();
-  
-  const fcmToken = data!.fcm_token as string
+  const storage = supabase.storage.from('main');
+
   const accessToken = await getAccessToken({
     clientEmail: serviceAccount.client_email,
     privateKey: serviceAccount.private_key,
   })
-  const res = await fetch(
-    `https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        message: {
-          token: fcmToken,
-          notification: {
-            title: sender.data.username,
-            body: payload.record.text,
-          },
+
+  for (const token of fcmTokens) {
+    console.log(teamName)
+    const res = await fetch(
+      `https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
         },
-      }),
+        body: JSON.stringify({
+          message: {
+            token: token,
+            notification: {
+              title: sender.data.username,
+              body: payload.record.text,
+            },
+            data: {
+              click_action: "FLUTTER_NOTIFICATION_CLICK",
+              sound: "default", 
+              status: "done",
+              screen: teamName != null ? `team-${chatID}` : `chat-${chatID}`
+            }
+          },
+        }),
+      }
+    )
+    const resData = await res.json()
+    if (res.status < 200 || 299 < res.status) {
+      throw resData
     }
-  )
-  const resData = await res.json()
-  if (res.status < 200 || 299 < res.status) {
-    throw resData
   }
   return new Response(JSON.stringify(resData), {
     headers: { 'Content-Type': 'application/json' },
