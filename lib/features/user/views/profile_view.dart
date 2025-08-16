@@ -74,7 +74,14 @@ class _ProfileViewState extends State<ProfileView> {
     super.initState();
 
     loadFriends();
+    loadChats();    
+    userBloc.stream.listen((state) {
+      loadFriends();
+      loadChats();
+    });
+  }
 
+  void loadChats() {
     if (chatsBloc.state is ChatsStateInitial && userBloc.state is UserStateLoaded) {
       chatsBloc.add(LoadChats(uid: (userBloc.state as UserStateLoaded).user.uid));
     }
@@ -159,142 +166,145 @@ class _ProfileViewState extends State<ProfileView> {
       body: BlocBuilder<UserBloc, UserState>(
         bloc: userBloc,
         builder: (context, state) {
-          if (state is UserStateLoaded) {
-            return ListView(
-              children: [
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                        child: Column(
-                          children: [
-                            SizedBox(height: 100),
-                            AvatarWidget(uid: widget.user != null ? widget.user!.uid : state.user.uid, size: 150),
-                            SizedBox(height: 10),
-                            Text(widget.user != null ? widget.user!.username : state.user.username, style: theme.textTheme.headlineLarge, textAlign: TextAlign.center),
-                            SizedBox(height: 10),
-                            if (widget.user?.description != null || (widget.user == null && state.user.description != null))
-                            Text(widget.user != null ? (widget.user?.description as String) : (state.user.description as String), style: theme.textTheme.titleMedium, textAlign: TextAlign.center),
-                            SizedBox(height: 20),
-                            widget.user != null && widget.user?.uid != state.user.uid
-                            ? Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  BlocBuilder(
-                                    bloc: chatsBloc,
-                                    builder: (context, chatsState) {
-                                      if (chatsState is ChatsStateLoaded) {
-                                        return ElevatedButton(
-                                          onPressed: () => goToChatHandler(state, chatsState), 
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.chat, color: Colors.white, size: 35),
-                                            ],
-                                          ),
-                                          style: ElevatedButton.styleFrom(
-                                            shape: CircleBorder(),
-                                            padding: EdgeInsets.all(15),
-                                            backgroundColor: theme.primaryColor
-                                          )
-                                        );
-                                      } else {
-                                        if (chatsState is ChatsStateError) Fluttertoast.showToast(msg: 'Произошла ошибка при загрузке чатов');
-                                        return SizedBox.shrink();
-                                      }
+          final user = state is UserStateLoaded ? state.user : null;
+          return ListView(
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Column(
+                        children: [
+                          SizedBox(height: 100),
+                          if (user != null)
+                          AvatarWidget(uid: widget.user != null ? widget.user!.uid : user.uid, size: 150),
+                          SizedBox(height: 10),
+                          if (user != null)
+                          Text(widget.user != null ? widget.user!.username : user.username, style: theme.textTheme.headlineLarge, textAlign: TextAlign.center)
+                          else
+                          SihmmerWidget(width: 200, height: 30),
+                          SizedBox(height: 10),
+                          if (user != null)
+                          if (widget.user?.description != null || (widget.user == null && user.description != null))
+                          Text(widget.user != null ? (widget.user?.description as String) : (user.description as String), style: theme.textTheme.titleMedium, textAlign: TextAlign.center)
+                          else
+                          SizedBox.shrink()
+                          else
+                          SihmmerWidget(width: 500, height: 30),
+                          SizedBox(height: 20),
+                          user != null && widget.user != null && widget.user?.uid != user.uid
+                          ? Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                BlocBuilder(
+                                  bloc: chatsBloc,
+                                  builder: (context, chatsState) {
+                                    if (chatsState is ChatsStateLoaded) {
+                                      return ElevatedButton(
+                                        onPressed: () => goToChatHandler(state, chatsState), 
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.chat, color: Colors.white, size: 35),
+                                          ],
+                                        ),
+                                        style: ElevatedButton.styleFrom(
+                                          shape: CircleBorder(),
+                                          padding: EdgeInsets.all(15),
+                                          backgroundColor: theme.primaryColor
+                                        )
+                                      );
+                                    } else if (chatsState is ChatsStateError) {
+                                      Fluttertoast.showToast(msg: 'Произошла ошибка при загрузке чатов');
+                                      return SizedBox.shrink();
+                                    } else {
+                                      return SihmmerWidget(width: 70, height: 70, radius: 50);
                                     }
-                                  ),
-                                  SizedBox(width: 10),
-                                  friendState != null
-                                    ? friendState == FriendState.notFriend
+                                  }
+                                ),
+                                SizedBox(width: 10),
+                                friendState != null
+                                  ? friendState == FriendState.notFriend
+                                    ? ElevatedButton(
+                                        onPressed: () => addFriendHandler(user),
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.group_add, color: Colors.white, size: 25),
+                                            SizedBox(width: 5),
+                                            Text('Добавить в друзья', style: theme.textTheme.labelMedium)
+                                          ],
+                                        )
+                                      )
+                                    : friendState == FriendState.iRequested
                                       ? ElevatedButton(
-                                          onPressed: () => addFriendHandler(state.user),
+                                        onPressed: () => allowFriendRequestHandler(user.uid),
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.group_add, color: Colors.white, size: 25),
+                                            SizedBox(width: 5),
+                                            Text('Принять заявку в друзья', style: theme.textTheme.labelMedium)
+                                          ],
+                                        )
+                                      )
+                                      : friendState == FriendState.requestedToMe
+                                        ? OutlinedButton(
+                                          onPressed: () => removeFriendHandler(user.uid),
+                                          style: OutlinedButton.styleFrom(
+                                            side: BorderSide(color: theme.primaryColor)
+                                          ),
                                           child: Row(
                                             children: [
                                               Icon(Icons.group_add, color: Colors.white, size: 25),
                                               SizedBox(width: 5),
-                                              Text('Добавить в друзья', style: theme.textTheme.labelMedium)
+                                              Text('Заявка отправлена', style: theme.textTheme.labelMedium)
                                             ],
                                           )
                                         )
-                                      : friendState == FriendState.iRequested
-                                        ? ElevatedButton(
-                                          onPressed: () => allowFriendRequestHandler(state.user.uid),
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.group_add, color: Colors.white, size: 25),
-                                              SizedBox(width: 5),
-                                              Text('Принять заявку в друзья', style: theme.textTheme.labelMedium)
-                                            ],
-                                          )
-                                        )
-                                        : friendState == FriendState.requestedToMe
-                                          ? OutlinedButton(
-                                            onPressed: () => removeFriendHandler(state.user.uid),
+                                        : OutlinedButton(
+                                            onPressed: () => removeFriendHandler(user.uid), 
                                             style: OutlinedButton.styleFrom(
-                                              side: BorderSide(color: theme.primaryColor)
+                                              side: BorderSide(color: Colors.red)
                                             ),
                                             child: Row(
                                               children: [
                                                 Icon(Icons.group_add, color: Colors.white, size: 25),
                                                 SizedBox(width: 5),
-                                                Text('Заявка отправлена', style: theme.textTheme.labelMedium)
+                                                Text('Удалить из друзей', style: theme.textTheme.labelMedium)
                                               ],
                                             )
                                           )
-                                          : OutlinedButton(
-                                              onPressed: () => removeFriendHandler(state.user.uid), 
-                                              style: OutlinedButton.styleFrom(
-                                                side: BorderSide(color: Colors.red)
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.group_add, color: Colors.white, size: 25),
-                                                  SizedBox(width: 5),
-                                                  Text('Удалить из друзей', style: theme.textTheme.labelMedium)
-                                                ],
-                                              )
-                                            )
-                                    : SizedBox.shrink()
-                                ],
-                              )
-                            : SizedBox.shrink()
-                            
-                          ],
-                        )
-                      ),
-                      SizedBox(height: 50),
-                      Row(
-                        children: [
-                          Text('Друзья', style: theme.textTheme.titleLarge),
-                          if (widget.user == null && friendRequests.isNotEmpty)
-                          TextButton(
-                            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => FriendRequests(users: friendRequests))), 
-                            child: Text('${friendRequests.length} запросов в друзья', style: theme.textTheme.labelMedium?.copyWith(decoration: TextDecoration.underline))
-                          )
+                                  : SihmmerWidget(width: 200, height: 40, radius: 50)
+                              ],
+                            )
+                          : SizedBox.shrink()
+                          
                         ],
-                      ),
-                      SizedBox(height: 20),
-                      Column(
-                        children: friends.map((friend) => UserWidget(user: friend)).toList()
-                      ),
-                    ],
-                  ),
+                      )
+                    ),
+                    SizedBox(height: 50),
+                    if (user != null)
+                    Row(
+                      children: [
+                        Text('Друзья', style: theme.textTheme.titleLarge),
+                        if (widget.user == null && friendRequests.isNotEmpty)
+                        TextButton(
+                          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => FriendRequests(users: friendRequests))), 
+                          child: Text('${friendRequests.length} запросов в друзья', style: theme.textTheme.labelMedium?.copyWith(decoration: TextDecoration.underline))
+                        )
+                      ],
+                    )
+                    else
+                    SihmmerWidget(height: 300),
+                    SizedBox(height: 20),
+                    Column(
+                      children: friends.map((friend) => UserWidget(user: friend)).toList()
+                    ),
+                  ],
                 ),
-                
-              ],
-            );
-          } else {
-            return ListView.builder(
-              itemCount: 3 + Random().nextInt(5),
-              itemBuilder: (context, state) => 
-                Padding(
-                  padding: EdgeInsets.only(bottom: 10),
-                  child: SihmmerWidget(),
-                )
-            );
-          }
+              ),
+            ],
+          );
         }
       )
     );

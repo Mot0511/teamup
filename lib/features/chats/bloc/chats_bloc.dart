@@ -7,10 +7,11 @@ import 'package:teamup/features/chats/models/chat.dart';
 class ChatsBloc extends Bloc<ChatsEvent, ChatsState> {
   ChatsBloc({required this.chatsRepository}) : super(ChatsStateInitial()) {
     on<LoadChats>((event, emit) async {
-      emit(ChatsStateLoading());
+      if (event.completer == null) emit(ChatsStateLoading());
       try {
         final chats = await chatsRepository.getChats(event.uid);
         emit(ChatsStateLoaded(chats: chats));
+        event.completer?.complete();
       } on Exception catch (e) {
         emit(ChatsStateError(e: e));
       }

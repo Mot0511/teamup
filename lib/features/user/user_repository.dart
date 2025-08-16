@@ -168,4 +168,16 @@ class UserRepository {
     await supabase.from('friends').delete().or('from_user.eq.$uid, to_user.eq.$uid');
   }
 
+  Future<void> setOnline(String uid) async {
+    await supabase.from('users').update({
+      'isOnline': true
+    }).eq('uid', uid);
+  }
+
+  Future<void> setOffline(String uid) async {
+    await supabase.from('users').update({
+      'isOnline': false
+    }).eq('uid', uid);
+  }
+
 }

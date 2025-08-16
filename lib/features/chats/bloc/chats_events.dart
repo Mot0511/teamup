@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:teamup/features/chats/models/chat.dart';
 
@@ -5,7 +7,8 @@ abstract class ChatsEvent extends Equatable {}
 
 class LoadChats extends ChatsEvent {
   final String uid;
-  LoadChats({required this.uid});
+  final Completer? completer;
+  LoadChats({required this.uid, this.completer});
 
   @override
   List get props => [uid];

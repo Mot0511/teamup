@@ -28,6 +28,7 @@ class _MessageWidgetState extends State<MessageWidget> {
   final userBloc = GetIt.I<UserBloc>();
 
   Offset? tapPosition;
+  double offsetX = 0.0;
 
   void showContextMenu() async {
     if (tapPosition == null) return;
@@ -77,52 +78,68 @@ class _MessageWidgetState extends State<MessageWidget> {
           return GestureDetector(
             onTapDown: (details) => setState(() => tapPosition = details.globalPosition),
             onLongPress: showContextMenu,
+            onHorizontalDragUpdate: (details) {
+              offsetX += details.delta.dx;
+
+              if (offsetX >= 0) offsetX = 0;
+              if (offsetX < -100) offsetX = -100;
+              setState(() {});
+            },
+            onHorizontalDragEnd: (details) {
+              if (offsetX < -80) {
+                widget.onReplyMessage!(widget.message);
+              }
+              setState(() => offsetX = 0.0);
+            },
             child: SizedBox(
               width: 300,
-              child: Container(
-              margin: EdgeInsets.all(5),
-              padding: EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: widget.message.user.uid == state.user.uid ? theme.primaryColor : Colors.cyan[800],
-                borderRadius: BorderRadius.circular(10)
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Transform.translate(
+                offset: Offset(offsetX, 0),
+                child: Container(
+                  margin: EdgeInsets.all(5),
+                  padding: EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: widget.message.user.uid == state.user.uid ? theme.primaryColor : Colors.cyan[800],
+                    borderRadius: BorderRadius.circular(10)
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(widget.message.user.username, style: theme.textTheme.bodyMedium),
-                            SizedBox(width: 10),
-                            if (widget.message.repliedMesssageID != null)
-                            Expanded(
-                              child: Align(
-                                alignment: Alignment.centerRight,
-                                child: Text(
-                                  widget.messages.where((message) => message.id == widget.message.repliedMesssageID).toList()[0].text, 
-                                  style: theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
-                                  overflow: TextOverflow.ellipsis,
-                                )
-                              )
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(widget.message.user.username, style: theme.textTheme.bodyMedium),
+                                SizedBox(width: 10),
+                                if (widget.message.repliedMesssageID != null)
+                                Expanded(
+                                  child: Align(
+                                    alignment: Alignment.centerRight,
+                                    child: Text(
+                                      widget.messages.where((message) => message.id == widget.message.repliedMesssageID).toList()[0].text, 
+                                      style: theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
+                                      overflow: TextOverflow.ellipsis,
+                                    )
+                                  )
+                                ),
+                              ],
                             ),
+                            Text(widget.message.text, style: theme.textTheme.titleMedium),
                           ],
                         ),
-                        Text(widget.message.text, style: theme.textTheme.titleMedium),
-                      ],
-                    ),
-                  ),
-                  SizedBox(width: 5),
-                  Text(
-                    '${widget.message.time.hour}:${(widget.message.time.minute.toString().padLeft(2, '0'))}', 
-                    style: TextStyle(fontSize: 14, color: Colors.grey)
-                  ),
-                ],
+                      ),
+                      SizedBox(width: 5),
+                      Text(
+                        '${widget.message.time.hour}:${(widget.message.time.minute.toString().padLeft(2, '0'))}', 
+                        style: TextStyle(fontSize: 14, color: Colors.grey)
+                      ),
+                    ],
+                  )
+                ),
               )
-            )
             )
           );
         }

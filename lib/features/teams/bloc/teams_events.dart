@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:equatable/equatable.dart';
 import 'package:teamup/features/teams/models/team.dart';
@@ -7,7 +8,8 @@ abstract class TeamsEvent extends Equatable {}
 
 class LoadTeams extends TeamsEvent {
   final String uid;
-  LoadTeams({required this.uid});
+  final Completer? completer;
+  LoadTeams({required this.uid, this.completer});
 
   @override
   List get props => [uid];

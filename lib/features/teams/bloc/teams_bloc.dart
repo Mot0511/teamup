@@ -8,10 +8,11 @@ import 'package:teamup/features/teams/teams_repository.dart';
 class TeamsBloc extends Bloc<TeamsEvent, TeamsState> {
   TeamsBloc({required this.teamsRepository}) : super(TeamsStateInitial()) {
     on<LoadTeams>((event, emit) async {
-      emit(TeamsStateLoading());
+      if (event.completer == null) emit(TeamsStateLoading());
       try {
         final teams = await teamsRepository.getTeams(event.uid);
         emit(TeamsStateLoaded(teams: teams));
+        event.completer?.complete();
       } on Exception catch (e) {
         emit(TeamsStateError(e: e));
       }

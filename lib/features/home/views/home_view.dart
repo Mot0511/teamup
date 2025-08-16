@@ -25,6 +25,7 @@ import 'package:teamup/features/user/models/models.dart';
 import 'package:teamup/features/user/user_repository.dart';
 import 'package:teamup/features/user/widgets/user_widget.dart';
 import 'package:teamup/models/game.dart';
+import 'package:teamup/widgets/shimmer_widget.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -55,8 +56,6 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
   @override
   void initState() {
     super.initState();
-    final user = supabase.auth.currentSession!.user;
-    userBloc.add(LoadUser(uid: user.id));
 
     final homeProvider = Provider.of<HomeProvider>(context, listen: false);
     if (homeProvider.games == null) {
@@ -111,7 +110,6 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
 
   @override
   void dispose() {
-    animationController.dispose();
     super.dispose();
   }
 
@@ -150,25 +148,29 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                         )
                       )
                     ),
-                    if (homeProvider.games != null)
                       Expanded(
                         flex: 4,
-                        child: Padding(
-                          padding: EdgeInsetsGeometry.symmetric(horizontal: 18),
-                          child: InfoWidget(
-                            currentGame: currentGame, 
-                            games: homeProvider.games!, 
-                            onSetGame: (value) => setState(() {currentGame = value;}), 
-                            currentGender: currentGender, 
-                            onSetGender: (value) => setState(() {currentGender = value;}), 
-                            currentTeamSize: currentTeamSize, 
-                            onSetTeamSize: (value) => setState(() {currentTeamSize = value;}), 
-                            animationController: animationController,
+                        child: homeProvider.games != null
+                          ? Padding(
+                              padding: EdgeInsetsGeometry.symmetric(horizontal: 18),
+                              child: InfoWidget(
+                                currentGame: currentGame, 
+                                games: homeProvider.games!, 
+                                onSetGame: (value) => setState(() {currentGame = value;}), 
+                                currentGender: currentGender, 
+                                onSetGender: (value) => setState(() {currentGender = value;}), 
+                                currentTeamSize: currentTeamSize, 
+                                onSetTeamSize: (value) => setState(() {currentTeamSize = value;}), 
+                                animationController: animationController,
 
-                            pendingUsers: pendingUsers
-                          )
-                        )
-                      ),
+                                pendingUsers: pendingUsers
+                              )
+                            )
+                          : Padding(
+                              padding: EdgeInsets.all(16),
+                              child: SihmmerWidget(width: double.infinity, height: double.infinity),
+                            )
+                      )
                   ],
                 );
               } else {

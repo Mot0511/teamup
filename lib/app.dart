@@ -9,9 +9,14 @@ import 'package:teamup/features/chats/views/chat_view.dart';
 import 'package:teamup/features/home/views/views.dart';
 import 'package:teamup/features/teams/teams_repository.dart';
 import 'package:teamup/features/teams/views/team_view.dart';
+import 'package:teamup/features/user/bloc/user_bloc.dart';
+import 'package:teamup/features/user/bloc/user_events.dart';
+import 'package:teamup/features/user/bloc/user_states.dart';
+import 'package:teamup/features/user/user_repository.dart';
 import 'package:teamup/features/user/views/signin_view.dart';
 import 'package:teamup/loading.dart';
 import 'package:teamup/nav_screen.dart';
+import 'package:teamup/services/messaging_service.dart';
 import 'package:teamup/theme.dart';
 
 enum LoginState {notLogined, noUserdata, logined}
@@ -23,67 +28,55 @@ class Teamup extends StatefulWidget {
   State<Teamup> createState() => _TeamupState();
 }
 
-class _TeamupState extends State<Teamup> {
+class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
 
   final supabase = GetIt.I<SupabaseClient>();
   late final StreamSubscription<AuthState> _authStateSubscription;
+
+  final userBloc = GetIt.I<UserBloc>();
   final chatsRepository = GetIt.I<ChatsRepository>();
   final teamsRepository = GetIt.I<TeamsRepository>();
+  final userRepository = GetIt.I<UserRepository>();
 
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
   void initState() {
     super.initState();
     _authStateSubscription = supabase.auth.onAuthStateChange.listen((data) async {
+      final uid = supabase.auth.currentUser?.id;
+      if (uid != null) {
+        userBloc.add(LoadUser(uid: uid));
+        userRepository.setOnline(uid);
+      }
       if (data.event == AuthChangeEvent.signedIn) {
-        await FirebaseMessaging.instance.requestPermission();
-        await FirebaseMessaging.instance.getAPNSToken();
-        final fcmToken = await FirebaseMessaging.instance.getToken();
-        if (fcmToken != null) {
-           await supabase.from('fcm_tokens').insert([
-            {
-              'userID': supabase.auth.currentUser?.id,
-              'fcm_token': fcmToken
-            }
-           ]);
-        }
+        MessagingService.init(uid!);
       }
     });
 
-    FirebaseMessaging.instance.onTokenRefresh.listen((fcmToken) async {
-      final userID = supabase.auth.currentUser?.id;
-      if (userID != null) {
-        await supabase.from('fcm_tokens').upsert(
-          {
-            'userID': userID,
-            'fcm_token': fcmToken
-          }
-        );
-      }
-    });
+    MessagingService.setListeners(navigatorKey);
+    WidgetsBinding.instance.addObserver(this);
+  }
 
-    FirebaseMessaging.onMessageOpenedApp.listen((message) async {
-      final type = message.data['screen'].split('-')[0];
-      final id = message.data['screen'].split('-')[1];
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
 
-      if (type == 'chat') {
-        final chat = await chatsRepository.getChat(int.parse(id));
-        navigatorKey.currentState?.push(
-          MaterialPageRoute(builder: (_) => ChatView(chat: chat))
-        );
-      } else {
-        final team = await teamsRepository.getTeam(int.parse(id));
-        navigatorKey.currentState?.push(
-          MaterialPageRoute(builder: (_) => TeamView(team: team))
-        );
-      }
-
-    });
+    final uid = supabase.auth.currentUser?.id;
+    if (state == AppLifecycleState.resumed && uid != null) {
+      userRepository.setOnline(uid);
+    } else if (
+      (state == AppLifecycleState.paused || 
+      state == AppLifecycleState.inactive || 
+      state == AppLifecycleState.detached) && uid != null
+    ) {
+      userRepository.setOffline(uid);
+    }
   }
 
   @override
   void dispose() {
     _authStateSubscription.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -29,9 +30,16 @@ class _TeamsViewState extends State<TeamsView> {
   @override
   void initState() {
     super.initState();
-    
-    if (teamsBloc.state is TeamsStateInitial && userBloc.state is UserStateLoaded) {
-      teamsBloc.add(LoadTeams(uid: (userBloc.state as UserStateLoaded).user.uid));
+
+    loadTeams();
+    userBloc.stream.listen((state) {
+      loadTeams();
+    });
+  }
+
+  void loadTeams({Completer? completer}) {
+    if ((teamsBloc.state is TeamsStateInitial || completer != null) && userBloc.state is UserStateLoaded) {
+      teamsBloc.add(LoadTeams(uid: (userBloc.state as UserStateLoaded).user.uid, completer: completer));
     }
   }
 
@@ -48,13 +56,19 @@ class _TeamsViewState extends State<TeamsView> {
               builder: (context, state) {
                 if (state is TeamsStateLoaded) {
                   if (state.teams.isNotEmpty) {
-                    return ListView(
-                      children: state.teams.map((team) => TeamWidget(team: team)).toList(),
+                    return RefreshIndicator(
+                      onRefresh: () async {
+                        final completer = Completer();
+                        loadTeams(completer: completer);
+                        return completer.future;
+                      },
+                      child: ListView(
+                        children: state.teams.map((team) => TeamWidget(team: team)).toList(),
+                      )
                     );
                   } else {
                     return Center(child: Text('Ты не состоишь ни в одной команде', textAlign: TextAlign.center, style: theme.textTheme.titleMedium));
                   }
-                  
                 } else if (state is TeamsStateError) {
                   return Center(child: Text('Произошла ошибка при загрузке команд', textAlign: TextAlign.center, style: theme.textTheme.titleMedium));
                 } else {

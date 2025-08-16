@@ -20,8 +20,6 @@ class _AllUsersViewState extends State<AllUsersView> {
   final searchRepository = GetIt.I<SearchRepository>();
 
   Future<void> getUsers([String? request]) async {
-    users = null;
-    setState(() {});
     users = await searchRepository.getUsers(request);
     setState(() {});
   }

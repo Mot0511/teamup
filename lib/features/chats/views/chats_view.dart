@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -30,8 +31,16 @@ class _ChatsViewState extends State<ChatsView> {
   @override
   void initState() {
     super.initState();
-    if (userBloc.state is UserStateLoaded && chatsBloc.state is ChatsStateInitial) {
-      chatsBloc.add(LoadChats(uid: (userBloc.state as UserStateLoaded).user.uid));
+
+    loadChats();
+    userBloc.stream.listen((state) async {
+      loadChats();
+    });
+  }
+
+  void loadChats({Completer? completer}) {
+    if (userBloc.state is UserStateLoaded && (chatsBloc.state is ChatsStateInitial || completer != null)) {
+      chatsBloc.add(LoadChats(uid: (userBloc.state as UserStateLoaded).user.uid, completer: completer));
     }
   }
 
@@ -48,8 +57,15 @@ class _ChatsViewState extends State<ChatsView> {
             builder: (context, chatsState) {
               if (userState is UserStateLoaded && chatsState is ChatsStateLoaded) {
                 if (chatsState.chats.isNotEmpty) {
-                  return ListView(
-                    children: chatsState.chats.map((Chat chat) => ChatWidget(chat: chat)).toList()
+                  return RefreshIndicator(
+                    onRefresh: () {
+                      final completer = Completer();
+                      loadChats(completer: completer);
+                      return completer.future;
+                    },
+                    child: ListView(
+                      children: chatsState.chats.map((Chat chat) => ChatWidget(chat: chat)).toList()
+                    ),
                   );
                 } else {
                   return Center(child: Text('У тебя нет личных чатов', style: theme.textTheme.titleMedium));

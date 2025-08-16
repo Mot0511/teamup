@@ -44,14 +44,25 @@ class SearchRepository {
     SearchParams params,
   ) async {
     // Getting existing suitable pending teams
-    final pendingTeams = await supabase
-      .from('pending_teams')
-      .select()
-      .eq('gender', params.gender)
-      .eq('size', params.teamSize)
-      .eq('game', params.gameID)
-      .lte('min_age', params.age)
-      .gte('max_age', params.age);
+    late final List pendingTeams;
+    if (params.gender == 'null') {
+      pendingTeams = await supabase
+        .from('pending_teams')
+        .select()
+        .eq('size', params.teamSize)
+        .eq('game', params.gameID)
+        .lte('min_age', params.age)
+        .gte('max_age', params.age);
+    } else {
+      pendingTeams = await supabase
+        .from('pending_teams')
+        .select()
+        .eq('gender', params.gender)
+        .eq('size', params.teamSize)
+        .eq('game', params.gameID)
+        .lte('min_age', params.age)
+        .gte('max_age', params.age);
+    }
 
     // Creating a channel to listen new teams;
     channel = supabase.channel('teams-channel');
