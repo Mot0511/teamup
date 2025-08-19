@@ -69,7 +69,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
         payload.newRecord['sender'] = sender.toJSON();
         messages?.add(Message.fromJSON(payload.newRecord));
         setState(() {});
-        scrollToBottom();
+        scrollToBottomAnimated();
         sortMessages();
       },
     );
@@ -102,7 +102,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
             ?.where((message) => message.id != payload.oldRecord['id'])
             .toList();
         setState(() {});
-        scrollToBottom();
+        scrollToBottomAnimated();
         sortMessages();
       },
     );
@@ -126,7 +126,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
 
     messageController.text = '';
     replyMessage = null;
-    scrollToBottom();
+    scrollToBottomAnimated();
     sortMessages();
   }
 
@@ -172,32 +172,44 @@ class _MessengerWidgetState extends State<MessengerWidget> {
   void onDeleteMessage(int id) {
     messages = messages?.where((message) => message.id != id).toList();
     setState(() {});
-    scrollToBottom();
+    scrollToBottomAnimated();
     sortMessages();
     chatsRepository.deleteMessage(id);
   }
 
   void scrollToBottom() {
     if (scrollController.hasClients) {
-      Future.delayed(Duration(milliseconds: 10)).then((val) => scrollController.jumpTo(scrollController.position.maxScrollExtent));
+      Future.delayed(Duration(milliseconds: 20)).then((_) => scrollController.jumpTo(scrollController.position.maxScrollExtent));
       return;
     }
     Future.delayed(Duration(milliseconds: 1)).then((val) => scrollToBottom());
   }
 
-  void sortMessages() {
-    if (messages != null) {
-      for (int i = 0; i < messages!.length - 1; i++) {
-        for (int j = 0; j < messages!.length - i - 1; j++) {
-          if (messages![j].time.millisecondsSinceEpoch > messages![j + 1].time.millisecondsSinceEpoch) {
-            Message tmp = messages![j];
-            messages![j] = messages![j + 1];
-            messages![j + 1] = tmp;
-          }
-        }
-      }
-      setState(() {});
+  void scrollToBottomAnimated() {
+    if (messages!.isNotEmpty) {
+      Future.delayed(Duration(milliseconds: 20)).then((val) {
+        scrollController.animateTo(
+          scrollController.position.maxScrollExtent, 
+          duration: Duration(milliseconds: 250),
+          curve: Curves.ease,
+        );
+      });
     }
+  }
+
+  void sortMessages() {
+    // if (messages != null) {
+    //   for (int i = 0; i < messages!.length - 1; i++) {
+    //     for (int j = 0; j < messages!.length - i - 1; j++) {
+    //       if (messages![j].time.millisecondsSinceEpoch > messages![j + 1].time.millisecondsSinceEpoch) {
+    //         Message tmp = messages![j];
+    //         messages![j] = messages![j + 1];
+    //         messages![j + 1] = tmp;
+    //       }
+    //     }
+    //   }
+    //   setState(() {});
+    // }
   }
 
   @override

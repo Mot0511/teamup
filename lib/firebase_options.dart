@@ -87,4 +87,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'teamup-c302c.firebasestorage.app',
     measurementId: 'G-ZQRVLC7J6X',
   );
+
 }

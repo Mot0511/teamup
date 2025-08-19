@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -16,8 +17,9 @@ import 'package:teamup/features/user/user_repository.dart';
 import 'package:teamup/features/user/views/signin_view.dart';
 import 'package:teamup/loading.dart';
 import 'package:teamup/nav_screen.dart';
-import 'package:teamup/services/messaging_service.dart';
+import 'package:teamup/services/notifications_service.dart';
 import 'package:teamup/theme.dart';
+import 'package:teamup/features/user/views/user_form_view.dart';
 
 enum LoginState {notLogined, noUserdata, logined}
 
@@ -43,17 +45,28 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     _authStateSubscription = supabase.auth.onAuthStateChange.listen((data) async {
-      final uid = supabase.auth.currentUser?.id;
-      if (uid != null) {
-        userBloc.add(LoadUser(uid: uid));
-        userRepository.setOnline(uid);
-      }
-      if (data.event == AuthChangeEvent.signedIn) {
-        MessagingService.init(uid!);
+      final userdata = supabase.auth.currentUser;
+      if (userdata?.id != null) {
+        if (data.event == AuthChangeEvent.signedIn) {
+          final users = await supabase.from('users').select().eq('uid', userdata!.id);
+          if (users.isEmpty) {
+            navigatorKey.currentState?.pushReplacement(
+              MaterialPageRoute(builder: (_) => UserFormView(userdata: userdata))
+            );
+            return;
+          }
+          navigatorKey.currentState?.pushReplacement(
+            MaterialPageRoute(builder: (_) => NavScreen())
+          );
+          NotificationsService.init(userdata.id);
+        }
+        
+        userBloc.add(LoadUser(uid: userdata!.id));
+        userRepository.setOnline(userdata.id);
       }
     });
 
-    MessagingService.setListeners(navigatorKey);
+    NotificationsService.setListeners(navigatorKey);
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -91,11 +104,9 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
           if (!snap.hasData) {
             return Loading();
           }
-
           if (snap.data?.session == null) {
             return SigninView();
           }
-
           return NavScreen();
         }
       )

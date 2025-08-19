@@ -9,6 +9,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_webrtc
   gtk
   url_launcher_linux
+  window_size
   window_to_front
   zego_express_engine
 )

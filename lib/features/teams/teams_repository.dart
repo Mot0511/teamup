@@ -69,6 +69,7 @@ class TeamsRepository {
     if (team.users.length == 1) {
       await supabase.from('chats').delete().eq('id', team.id);
     }
+    await supabase.from('messages').delete().eq('chat', team.id);
   }
 
   Future<ImageProvider> getIcon(int id) async {

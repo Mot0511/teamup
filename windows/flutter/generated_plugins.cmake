@@ -11,7 +11,9 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_webrtc
   permission_handler_windows
   url_launcher_windows
+  window_size
   window_to_front
+  windows_notification
   zego_express_engine
 )
 

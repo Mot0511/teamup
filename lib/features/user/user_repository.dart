@@ -1,9 +1,11 @@
 import 'dart:io';
 
-import 'package:appwrite/appwrite.dart';
-import 'package:appwrite/models.dart' as models;
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get_it/get_it.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -11,6 +13,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import 'package:teamup/features/user/enums.dart';
 import 'package:teamup/features/user/models/friendship.dart';
 import 'package:teamup/features/user/models/models.dart';
+import 'package:teamup/nav_screen.dart';
 
 class AuthResult {
   final sb.User userdata;
@@ -31,11 +34,11 @@ class UserRepository {
     ).eq('uid', user.uid);
   }
 
-  Future<AuthResult?> googleSignIn(context) async {
-    try {
+  Future<void> googleSignIn(context) async {
       const androidClientId = '677191252450-plq6hd0tkmh0befgpm2lrh06hpf7mj37.apps.googleusercontent.com';
       const desktopClientId = '677191252450-ibg34ij1u3kcjo5pid4ptjtf8dadp10f.apps.googleusercontent.com';
       const webClientId = '677191252450-s6a7kuf9dek6arhufeot9i968a8bhloh.apps.googleusercontent.com';
+      
       
       if (Platform.isAndroid) {
         final googleSignIn = GoogleSignIn(
@@ -61,35 +64,29 @@ class UserRepository {
           accessToken: accessToken,
         );
       } else {
-        await supabase.auth.signInWithOAuth(
-          sb.OAuthProvider.google,
-          redirectTo: 'https://google.com',
-          authScreenLaunchMode: sb.LaunchMode.inAppWebView,
-        );
-      }
+        final loginUrl = (await supabase.auth.getOAuthSignInUrl(
+          provider: sb.OAuthProvider.google,
+          redirectTo: "https://flvcuqostwctdicmncrb.supabase.co/auth/v1/callback"
+        )).url;
 
-      final userdata = (await supabase.auth.getUser()).user;
-      if (userdata != null) {
-          final users = await supabase.from('users').select().eq('uid', userdata.id);
-          if (users.isEmpty) {
-            return AuthResult(
-              userdata: userdata,
-              isNew: true
-            );
-          }
-          return AuthResult(
-            userdata: userdata,
-            isNew: false
-          );
+        final result = await FlutterWebAuth2.authenticate(
+          url: loginUrl,
+          callbackUrlScheme: "http://localhost:3000/auth/v1/callback",
+          options: FlutterWebAuth2Options(useWebview: false)
+        );
+        await supabase.auth.getSessionFromUrl(Uri.parse(result));
       }
-    } on AppwriteException catch (e) {
-      Fluttertoast.showToast(msg: 'Произошла ошибка при авторизации');
-    }
   }
+  
 
   Future<void> signout() async {
-    await GoogleSignIn().disconnect();
+    try {
+      await GoogleSignIn().disconnect();
+    } on MissingPluginException catch (_) {}
+    final uid = supabase.auth.currentUser!.id;
+    await supabase.from('fcm_tokens').delete().eq('userID', uid);
     await supabase.auth.signOut();
+    
   }
 
   Future<void> addUserdata(User userdata) async {
@@ -178,6 +175,10 @@ class UserRepository {
     await supabase.from('users').update({
       'isOnline': false
     }).eq('uid', uid);
+  }
+  
+  Future<bool> getIsOnline(String uid) async {
+    return (await supabase.from('users').select('isOnline').eq('uid', uid).single())['isOnline'];
   }
 
 }

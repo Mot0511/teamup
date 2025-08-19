@@ -49,6 +49,7 @@ class ChatsRepository {
   Future<void> removeChat(Chat chat) async {
     await supabase.from('chats').delete().eq('id', chat.id);
     await supabase.from('members').delete().eq('chat', chat.id);
+    await supabase.from('messages').delete().eq('chat', chat.id);
   }
 
   Future<List<Message>> getMessages(int chatID) async {

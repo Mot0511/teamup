@@ -12,23 +12,6 @@ class SigninView extends StatelessWidget {
 
   final UserRepository usersRepository = GetIt.I<UserRepository>();
 
-  Future<void> googleSignInHandler(BuildContext context) async {
-    final AuthResult? res = await usersRepository.googleSignIn(context);
-    
-    if (res == null) return;
-    if (context.mounted) {
-      if (res.isNew) {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => 
-          UserFormView(userdata: res.userdata)
-        ));
-      } else {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => 
-          NavScreen()
-        ));
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -61,7 +44,7 @@ class SigninView extends StatelessWidget {
                 // ),
                 SizedBox(height: 5),
                 ElevatedButton(
-                  onPressed: () async => await googleSignInHandler(context),
+                  onPressed: () async => await usersRepository.googleSignIn(context),
                   style: ButtonStyle(backgroundColor: MaterialStateProperty.all<Color>(const Color.fromARGB(255, 0, 0, 0))),
                   child: Text('Войти через Google', style: theme.textTheme.labelMedium)
                 ),

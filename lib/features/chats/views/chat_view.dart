@@ -9,6 +9,7 @@ import 'package:teamup/features/chats/widgets/message_widget.dart';
 import 'package:teamup/features/chats/widgets/messenger_widget.dart';
 import 'package:teamup/features/user/bloc/user_bloc.dart';
 import 'package:teamup/features/user/bloc/user_states.dart';
+import 'package:teamup/features/user/user_repository.dart';
 import 'package:teamup/features/user/views/views.dart';
 import 'package:teamup/features/user/widgets/avatar_widget.dart';
 
@@ -23,17 +24,27 @@ class ChatView extends StatefulWidget {
 class _ChatViewState extends State<ChatView> {
 
   final userBloc = GetIt.I<UserBloc>();
+  final userRepository = GetIt.I<UserRepository>();
   final supabase = GetIt.I<SupabaseClient>();
   late RealtimeChannel isOnlineChannel;
 
   bool isOnline = false;
 
+  @override
   void initState() {
     super.initState();
     
+    getIsOnline();
+  }
+
+  Future<void> getIsOnline() async {
     final user = (userBloc.state as UserStateLoaded).user;
     final user1 = widget.chat.users[0];
     final user2 = widget.chat.users[1];
+
+    isOnline = await userRepository.getIsOnline(user1.uid == user.uid ? user2.uid : user1.uid);
+    setState(() {});
+    
     isOnlineChannel = supabase.channel('is-online-channel');
     isOnlineChannel.onPostgresChanges(
       table: 'users',
@@ -52,8 +63,10 @@ class _ChatViewState extends State<ChatView> {
     isOnlineChannel.subscribe();
   }
 
-  void dispsoe() {
-    
+  @override
+  void dispose() {
+    supabase.removeChannel(isOnlineChannel);
+    super.dispose();
   }
 
   @override

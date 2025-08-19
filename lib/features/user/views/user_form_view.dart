@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+import 'package:teamup/features/user/bloc/user_bloc.dart';
+import 'package:teamup/features/user/bloc/user_events.dart';
 import 'package:teamup/features/user/models/models.dart';
 import 'package:teamup/features/user/user_repository.dart';
 import 'package:teamup/nav_screen.dart';
 import 'package:teamup/providers/global_provider.dart';
+import 'package:teamup/services/notifications_service.dart';
 import 'package:teamup/widgets/widgets.dart';
 
 class UserFormView extends StatefulWidget {
@@ -22,7 +25,8 @@ class _UserFormViewState extends State<UserFormView> {
   final ageController = TextEditingController();
   String gender = 'male';
 
-  final usersRepository = GetIt.I<UserRepository>();
+  final userRepository = GetIt.I<UserRepository>();
+  final userBloc = GetIt.I<UserBloc>();
 
   Future<void> submit() async {
     final user = User(
@@ -32,8 +36,10 @@ class _UserFormViewState extends State<UserFormView> {
       age: int.parse(ageController.text),
       gender: gender,
     );
-    await usersRepository.addUserdata(user);
-    
+    await userRepository.addUserdata(user);
+    userBloc.add(LoadUser(uid: widget.userdata.id));
+    NotificationsService.init(widget.userdata.id);
+    userRepository.setOnline(widget.userdata.id);
     if (mounted) {
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => 
         NavScreen()
