@@ -90,11 +90,15 @@ class TeamsRepository {
 
   }
 
-  Future<void> uploadAvatar(File file, int id) async {
+  Future<void> uploadIcon(int id, File file) async {
     await supabase.storage.from('main').upload(
       'team_icons/$id.png', 
       file, 
       fileOptions: FileOptions(upsert: true)
     );
+  }
+
+  void updateIconCache(int id, ImageProvider provider) async {
+    iconProviders[id] = provider;
   }
 }

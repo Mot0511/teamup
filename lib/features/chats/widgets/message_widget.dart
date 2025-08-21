@@ -99,7 +99,7 @@ class _MessageWidgetState extends State<MessageWidget> {
                   margin: EdgeInsets.all(5),
                   padding: EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: widget.message.user.uid == state.user.uid ? theme.primaryColor : Colors.cyan[800],
+                    color: widget.message.user.uid == state.user.uid ? theme.primaryColor : theme.colorScheme.secondary,
                     borderRadius: BorderRadius.circular(10)
                   ),
                   child: Row(

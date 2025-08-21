@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:teamup/features/home/repositories/search_repository.dart';
@@ -57,13 +58,20 @@ class _CreateTeamViewState extends State<CreateTeamView> {
   }
 
   void pickAvatarHandler() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? ximage = await picker.pickImage(source: ImageSource.gallery);
-    if (ximage != null) {
-      final File file = File(ximage.path);
-      choosenIcon = file;
+    final FilePickerResult? result = await FilePicker.platform.pickFiles(
+      dialogTitle: 'Выбор логотипа команды',
+      type: FileType.custom,
+      allowedExtensions: ['png', 'jpg'],
+    );
+
+    if (result != null) {
+      choosenIcon = File(result.files.single.path!);
       setState(() {});
+      if (widget.team != null) {
+        teamsRepository.updateIconCache(widget.team!.id, MemoryImage(await choosenIcon!.readAsBytes()));
+      }
     }
+
   }
 
   void createTeamHandler(context) {

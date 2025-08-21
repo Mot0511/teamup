@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:teamup/features/chats/chats_repository.dart';
 import 'package:teamup/features/chats/models/chat.dart';
@@ -21,12 +23,13 @@ class MessengerWidget extends StatefulWidget {
 }
 
 class _MessengerWidgetState extends State<MessengerWidget> {
-  final userBloc = GetIt.I<UserBloc>();
-  final messageController = TextEditingController();
-  final scrollController = ScrollController();
-
-  final chatsRepository = GetIt.I<ChatsRepository>();
   final supabase = GetIt.I<SupabaseClient>();
+  final userBloc = GetIt.I<UserBloc>();
+  final chatsRepository = GetIt.I<ChatsRepository>();
+
+  final messageController = TextEditingController();
+  final focusNode = FocusNode();
+  final scrollController = ScrollController();
 
   List<Message>? messages;
   late RealtimeChannel channel;
@@ -34,6 +37,8 @@ class _MessengerWidgetState extends State<MessengerWidget> {
   Message? editingMessage;
   Message? replyMessage;
   String tmpMessage = '';
+  File? attachment;
+
 
   @override
   void initState() {
@@ -102,7 +107,6 @@ class _MessengerWidgetState extends State<MessengerWidget> {
             ?.where((message) => message.id != payload.oldRecord['id'])
             .toList();
         setState(() {});
-        scrollToBottomAnimated();
         sortMessages();
       },
     );
@@ -118,13 +122,15 @@ class _MessengerWidgetState extends State<MessengerWidget> {
       user: (userBloc.state as UserStateLoaded).user,
       text: messageController.text,
       repliedMesssageID: replyMessage?.id,
-      time: DateTime.now(),
+      time: DateTime.now().toUtc(),
     );
+    chatsRepository.sendMessage(message);
+    message.time = message.time.toLocal();
     messages?.add(message);
     setState(() {});
-    chatsRepository.sendMessage(message);
-
+    if (attachment != null) chatsRepository.uploadAttachment(attachment!);
     messageController.text = '';
+    focusNode.requestFocus();
     replyMessage = null;
     scrollToBottomAnimated();
     sortMessages();
@@ -172,9 +178,18 @@ class _MessengerWidgetState extends State<MessengerWidget> {
   void onDeleteMessage(int id) {
     messages = messages?.where((message) => message.id != id).toList();
     setState(() {});
-    scrollToBottomAnimated();
     sortMessages();
     chatsRepository.deleteMessage(id);
+  }
+
+  void onAttachImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? ximage = await picker.pickImage(source: ImageSource.gallery);
+    if (ximage != null) {
+      final File file = File(ximage.path);
+      attachment = file;
+      setState(() {});
+    }
   }
 
   void scrollToBottom() {
@@ -198,24 +213,25 @@ class _MessengerWidgetState extends State<MessengerWidget> {
   }
 
   void sortMessages() {
-    // if (messages != null) {
-    //   for (int i = 0; i < messages!.length - 1; i++) {
-    //     for (int j = 0; j < messages!.length - i - 1; j++) {
-    //       if (messages![j].time.millisecondsSinceEpoch > messages![j + 1].time.millisecondsSinceEpoch) {
-    //         Message tmp = messages![j];
-    //         messages![j] = messages![j + 1];
-    //         messages![j + 1] = tmp;
-    //       }
-    //     }
-    //   }
-    //   setState(() {});
-    // }
+    if (messages != null) {
+      for (int i = 0; i < messages!.length - 1; i++) {
+        for (int j = 0; j < messages!.length - i - 1; j++) {
+          if (messages![j].time.millisecondsSinceEpoch > messages![j + 1].time.millisecondsSinceEpoch) {
+            Message tmp = messages![j];
+            messages![j] = messages![j + 1];
+            messages![j + 1] = tmp;
+          }
+        }
+      }
+      setState(() {});
+    }
   }
 
   @override
   void dispose() {
-    super.dispose();
+    focusNode.dispose();
     supabase.removeChannel(channel);
+    super.dispose();
   }
 
   @override
@@ -289,7 +305,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                 )
               ),
               Padding(
-                padding: const EdgeInsets.all(10.0),
+                padding: const EdgeInsets.all(0),
                 child: Column(
                   children: [
                     if (editingMessage != null)
@@ -323,8 +339,8 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                             icon: Icon(Icons.remove, size: 35),
                           ),
                         ],
-                      ),
-                      if (replyMessage != null)
+                      )
+                      else if (replyMessage != null)
                       Row(
                         children: [
                           Expanded(
@@ -355,38 +371,69 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                             icon: Icon(Icons.remove, size: 35),
                           ),
                         ],
+                      )
+                      else if (attachment != null)
+                      Container(
+                        color: theme.canvasColor,
+                        child: Row(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                image: DecorationImage(image: FileImage(attachment!))
+                              ),
+                            )
+                          ],
+                        ),
                       ),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: SizedBox(
-                            child: TextFormField(
-                              keyboardType: TextInputType.multiline,
-                              controller: messageController,
-                              maxLines: null,
-                              decoration: InputDecoration(
-                                hint: Text('Сообщение...'),
-                                hintStyle: theme.textTheme.labelLarge,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(28),
+                    Container(
+                      color: theme.canvasColor,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 10),
+                        child: Row(
+                          children: [
+                            // IconButton(
+                            //   color: theme.colorScheme.secondary,
+                            //   onPressed: onAttachImage,
+                            //   icon: Icon(Icons.attachment_rounded, size: 28),
+                            // ),
+                            Expanded(
+                              child: SizedBox(
+                                height: 50,
+                                child: TextFormField(
+                                  keyboardType: TextInputType.multiline,
+                                  controller: messageController,
+                                  focusNode: focusNode,
+                                  onFieldSubmitted: (_) {
+                                    if (editingMessage != null) onEditMessage();
+                                    else onSendMessage();
+                                  },
+                                  textInputAction: TextInputAction.search,
+                                  minLines: 1,
+                                  maxLines: 5,
+                                  decoration: InputDecoration(
+                                    hint: Text('Сообщение...'),
+                                    border: InputBorder.none
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
+                            SizedBox(width: 10),
+                            if (editingMessage != null)
+                              IconButton(
+                                color: theme.colorScheme.secondary,
+                                onPressed: onEditMessage,
+                                icon: Icon(Icons.check, size: 28),
+                              )
+                            else
+                              IconButton(
+                                color: theme.colorScheme.secondary,
+                                onPressed: onSendMessage,
+                                icon: Icon(Icons.send, size: 28),
+                              ),
+                          ],
                         ),
-                        SizedBox(width: 10),
-                        if (editingMessage != null)
-                          IconButton(
-                            onPressed: onEditMessage,
-                            icon: Icon(Icons.check, size: 35),
-                          )
-                        else
-                          IconButton(
-                            onPressed: onSendMessage,
-                            icon: Icon(Icons.send, size: 35),
-                          ),
-                      ],
-                    ),
+                      )
+                    )
                   ],
                 ),
               ),

@@ -28,7 +28,7 @@ class SigninView extends StatelessWidget {
                 children: [
                   Text('Teamup', style: theme.textTheme.headlineLarge),
                   SizedBox(height: 20),
-                  Text('Платформа для поиска \nтиммейтов в команду', textAlign: TextAlign.center, style: theme.textTheme.titleMedium),
+                  Text('Платформа для поиска\nтиммейтов в команду', textAlign: TextAlign.center, style: theme.textTheme.titleMedium),
                 ],
               )
             )
@@ -37,14 +37,14 @@ class SigninView extends StatelessWidget {
             flex: 2,
             child: Column(
               children: [
-                // ElevatedButton(
-                //   onPressed: () => signinViaProviderHandler(OAuthProvider.yandex, context),
-                //   style: ButtonStyle(backgroundColor: MaterialStateProperty.all<Color>(const Color.fromARGB(255, 187, 53, 0))),
-                //   child: Text('Войти через Яндекс', style: theme.textTheme.labelMedium)
-                // ),
+                ElevatedButton(
+                  onPressed: () async => await usersRepository.discordSignIn(),
+                  style: ButtonStyle(backgroundColor: MaterialStateProperty.all<Color>(const Color(0xff5865F2))),
+                  child: Text('Войти через Discord', style: theme.textTheme.labelMedium)
+                ),
                 SizedBox(height: 5),
                 ElevatedButton(
-                  onPressed: () async => await usersRepository.googleSignIn(context),
+                  onPressed: () async => await usersRepository.googleSignIn(),
                   style: ButtonStyle(backgroundColor: MaterialStateProperty.all<Color>(const Color.fromARGB(255, 0, 0, 0))),
                   child: Text('Войти через Google', style: theme.textTheme.labelMedium)
                 ),

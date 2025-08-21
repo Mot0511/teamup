@@ -20,8 +20,8 @@ import 'package:teamup/features/user/user_repository.dart';
 import 'package:teamup/firebase_options.dart';
 import 'package:teamup/providers/global_provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:teamup/services/notifications_service.dart';
 import 'package:window_size/window_size.dart';
-import 'package:zego_express_engine/zego_express_engine.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,6 +49,7 @@ void main() async {
   GetIt.I.registerSingleton(ChatsBloc(chatsRepository: GetIt.I<ChatsRepository>()));
   GetIt.I.registerSingleton(TeamsBloc(teamsRepository: GetIt.I<TeamsRepository>()));
   GetIt.I.registerSingleton(SearchBloc(searchRepository: GetIt.I<SearchRepository>()));
+  GetIt.I.registerSingleton(NotificationsService());
 
   runApp(
     MultiProvider(

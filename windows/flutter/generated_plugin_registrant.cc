@@ -17,7 +17,6 @@
 #include <window_size/window_size_plugin.h>
 #include <window_to_front/window_to_front_plugin.h>
 #include <windows_notification/windows_notification_plugin_c_api.h>
-#include <zego_express_engine/zego_express_engine_plugin.h>
 
 void RegisterPlugins(flutter::PluginRegistry* registry) {
   AppLinksPluginCApiRegisterWithRegistrar(
@@ -42,6 +41,4 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("WindowToFrontPlugin"));
   WindowsNotificationPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("WindowsNotificationPluginCApi"));
-  ZegoExpressEnginePluginRegisterWithRegistrar(
-      registry->GetRegistrarForPlugin("ZegoExpressEnginePlugin"));
 }

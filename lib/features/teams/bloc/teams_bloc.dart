@@ -24,7 +24,7 @@ class TeamsBloc extends Bloc<TeamsEvent, TeamsState> {
         emit(TeamsStateLoading());
         await teamsRepository.addTeam(event.team);
         if (event.choosenIcon != null){
-          await teamsRepository.uploadAvatar(event.choosenIcon as File, event.team.id);
+          await teamsRepository.uploadIcon(event.team.id, event.choosenIcon as File);
         }
         teams.add(event.team);
         
@@ -44,7 +44,7 @@ class TeamsBloc extends Bloc<TeamsEvent, TeamsState> {
         }
         await teamsRepository.editTeam(event.team, event.addedMembers, event.removedMembers);
         if (event.choosenIcon != null){
-          await teamsRepository.uploadAvatar(event.choosenIcon as File, event.team.id);
+          await teamsRepository.uploadIcon(event.team.id, event.choosenIcon as File);
         }
         emit(TeamsStateLoaded(teams: teams));
       }

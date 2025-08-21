@@ -17,15 +17,17 @@ enum OS {android, windows, web}
 
 class NotificationsService {
   NotificationsService();
+
+  bool isOnline = false;
   
-  static late final String userID;
+  late final String userID;
 
-  static final supabase = GetIt.I<SupabaseClient>();
-  static final userRepository = GetIt.I<UserRepository>();
-  static final chatsRepository = GetIt.I<ChatsRepository>();
-  static final teamsRepository = GetIt.I<TeamsRepository>();
+  final supabase = GetIt.I<SupabaseClient>();
+  final userRepository = GetIt.I<UserRepository>();
+  final chatsRepository = GetIt.I<ChatsRepository>();
+  final teamsRepository = GetIt.I<TeamsRepository>();
 
-  static void init(String uid) async {
+  void init(String uid) async {
     if (Platform.isAndroid) {
       await FirebaseMessaging.instance.requestPermission();
       await FirebaseMessaging.instance.getAPNSToken();
@@ -33,7 +35,7 @@ class NotificationsService {
       if (fcmToken != null) {
           await supabase.from('fcm_tokens').insert([
           {
-            'userID': uid,
+            'user_id': uid,
             'fcm_token': fcmToken
           }
           ]);
@@ -41,13 +43,13 @@ class NotificationsService {
     }
   }
 
-  static void setListeners(GlobalKey<NavigatorState> navigatorKey) async {
+  void setListeners(GlobalKey<NavigatorState> navigatorKey) async {
     final userID = supabase.auth.currentUser!.id;
     if (Platform.isAndroid) {
       FirebaseMessaging.instance.onTokenRefresh.listen((fcmToken) async {
         await supabase.from('fcm_tokens').upsert(
           {
-            'userID': userID,
+            'user_id': userID,
             'fcm_token': fcmToken
           }
         );
@@ -84,10 +86,9 @@ class NotificationsService {
         ),
         callback: (payload) async {
           final models.User sender = await userRepository.getUserdata(payload.newRecord['sender']);
-          final storage = supabase.storage.from('main');
-          String? imageURL;
-          if (await storage.exists('avatars/${sender.uid}.png')) imageURL = supabase.storage.from('main').getPublicUrl('avatars/${sender.uid}.png');
-          showNotification(payload.newRecord['id'].toString(), sender.username, payload.newRecord['text'], imageURL);
+          if (sender.uid != userID && !isOnline) {
+            showNotification(payload.newRecord['id'].toString(), sender.username, payload.newRecord['text']);
+          }
         }
       );
 
@@ -95,13 +96,12 @@ class NotificationsService {
     }
   }
 
-  static void showNotification(String id, String title, String body, String? imageURL) async {
+  void showNotification(String id, String title, String body) async {
     final winNotifyPlugin = WindowsNotification(applicationId: 'Teamup');
     NotificationMessage message = NotificationMessage.fromPluginTemplate(
       id,
       title,
       body,
-      image: imageURL
     );
     winNotifyPlugin.showNotificationPluginTemplate(message);
   }

@@ -13,7 +13,6 @@ import 'package:teamup/features/user/bloc/user_bloc.dart';
 import 'package:teamup/features/user/bloc/user_states.dart';
 import 'package:teamup/features/user/models/models.dart';
 import 'package:teamup/features/user/widgets/avatar_widget.dart';
-import 'package:zego_express_engine/zego_express_engine.dart';
 
 class TeamView extends StatefulWidget {
   const TeamView({super.key, required this.team});
@@ -89,7 +88,10 @@ class _TeamViewState extends State<TeamView> {
             appBar: AppBar(
               titleSpacing: 0.0,
               title: ListTile(
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CreateTeamView(team: widget.team))),
+                onTap: () async {
+                  await Navigator.push(context, MaterialPageRoute(builder: (_) => CreateTeamView(team: widget.team)));
+                  setState(() {});
+                },
                 leading: TeamIconWidget(id: widget.team.id, size: 50),
                 title: Text(
                   widget.team.name, 

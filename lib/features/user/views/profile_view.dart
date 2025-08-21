@@ -232,21 +232,26 @@ class _ProfileViewState extends State<ProfileView> {
                                           children: [
                                             Icon(Icons.group_add, color: Colors.white, size: 25),
                                             SizedBox(width: 5),
-                                            Text('Добавить в друзья', style: theme.textTheme.labelMedium)
+                                            Expanded(
+                                              child: Text('Добавить в друзья', style: theme.textTheme.labelMedium),
+                                            )
                                           ],
                                         )
                                       )
                                     : friendState == FriendState.iRequested
                                       ? ElevatedButton(
-                                        onPressed: () => allowFriendRequestHandler(user.uid),
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.group_add, color: Colors.white, size: 25),
-                                            SizedBox(width: 5),
-                                            Text('Принять заявку в друзья', style: theme.textTheme.labelMedium)
-                                          ],
+                                          onPressed: () => allowFriendRequestHandler(user.uid),
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.group_add, color: Colors.white, size: 25),
+                                              SizedBox(width: 5),
+                                              Text(
+                                                'Добавить в ответ', 
+                                                style: theme.textTheme.labelMedium,
+                                              )
+                                            ],
+                                          )
                                         )
-                                      )
                                       : friendState == FriendState.requestedToMe
                                         ? OutlinedButton(
                                           onPressed: () => removeFriendHandler(user.uid),

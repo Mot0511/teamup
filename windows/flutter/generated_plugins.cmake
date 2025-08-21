@@ -14,7 +14,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
   window_size
   window_to_front
   windows_notification
-  zego_express_engine
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

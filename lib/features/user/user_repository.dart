@@ -1,6 +1,4 @@
 import 'dart:io';
-
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -14,6 +12,8 @@ import 'package:teamup/features/user/enums.dart';
 import 'package:teamup/features/user/models/friendship.dart';
 import 'package:teamup/features/user/models/models.dart';
 import 'package:teamup/nav_screen.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class AuthResult {
   final sb.User userdata;
@@ -28,13 +28,9 @@ class UserRepository {
 
   final Map<String, ImageProvider> avatarProviders = {};
 
-  Future<void> updateUser(User user) async {
-    await supabase.from('users').update(
-      user.toJSON()
-    ).eq('uid', user.uid);
-  }
+ 
 
-  Future<void> googleSignIn(context) async {
+  Future<void> googleSignIn() async {
       const androidClientId = '677191252450-plq6hd0tkmh0befgpm2lrh06hpf7mj37.apps.googleusercontent.com';
       const desktopClientId = '677191252450-ibg34ij1u3kcjo5pid4ptjtf8dadp10f.apps.googleusercontent.com';
       const webClientId = '677191252450-s6a7kuf9dek6arhufeot9i968a8bhloh.apps.googleusercontent.com';
@@ -77,14 +73,27 @@ class UserRepository {
         await supabase.auth.getSessionFromUrl(Uri.parse(result));
       }
   }
-  
+
+  Future<void> discordSignIn() async {
+    final loginUrl = (await supabase.auth.getOAuthSignInUrl(
+      provider: sb.OAuthProvider.discord,
+      redirectTo: "https://flvcuqostwctdicmncrb.supabase.co/auth/v1/callback"
+    )).url;
+
+    final result = await FlutterWebAuth2.authenticate(
+      url: loginUrl,
+      callbackUrlScheme: "http://localhost:3000/auth/v1/callback",
+      options: FlutterWebAuth2Options(useWebview: false)
+    );
+    await supabase.auth.getSessionFromUrl(Uri.parse(result));
+  }
 
   Future<void> signout() async {
     try {
       await GoogleSignIn().disconnect();
     } on MissingPluginException catch (_) {}
     final uid = supabase.auth.currentUser!.id;
-    await supabase.from('fcm_tokens').delete().eq('userID', uid);
+    await supabase.from('fcm_tokens').delete().eq('user_id', uid);
     await supabase.auth.signOut();
     
   }
@@ -96,6 +105,12 @@ class UserRepository {
   Future<User> getUserdata(String uid) async {
     final userdata = await supabase.from('users').select('*, favouriteGame(*)').eq('uid', uid).single();
     return User.fromJSON(userdata);
+  }
+
+  Future<void> updateUser(User user) async {
+    await supabase.from('users').update(
+      user.toJSON()
+    ).eq('uid', user.uid);
   }
 
   Future<ImageProvider> getAvatar(String uid) async {
@@ -122,6 +137,10 @@ class UserRepository {
       file, 
       fileOptions: sb.FileOptions(upsert: true)
     );
+  }
+
+  void updateAvatarCache(String uid, ImageProvider avatar) {
+    avatarProviders[uid] = avatar;
   }
 
   Future<void> addFriend(User user, User friend) async {

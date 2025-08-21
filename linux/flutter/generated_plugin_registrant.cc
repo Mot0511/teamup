@@ -14,7 +14,6 @@
 #include <url_launcher_linux/url_launcher_plugin.h>
 #include <window_size/window_size_plugin.h>
 #include <window_to_front/window_to_front_plugin.h>
-#include <zego_express_engine/zego_express_engine_plugin.h>
 
 void fl_register_plugins(FlPluginRegistry* registry) {
   g_autoptr(FlPluginRegistrar) audioplayers_linux_registrar =
@@ -41,7 +40,4 @@ void fl_register_plugins(FlPluginRegistry* registry) {
   g_autoptr(FlPluginRegistrar) window_to_front_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "WindowToFrontPlugin");
   window_to_front_plugin_register_with_registrar(window_to_front_registrar);
-  g_autoptr(FlPluginRegistrar) zego_express_engine_registrar =
-      fl_plugin_registry_get_registrar_for_plugin(registry, "ZegoExpressEnginePlugin");
-  zego_express_engine_plugin_register_with_registrar(zego_express_engine_registrar);
 }

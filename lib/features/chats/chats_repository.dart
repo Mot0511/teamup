@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:teamup/features/chats/models/chat.dart';
@@ -6,6 +9,7 @@ import 'package:teamup/features/user/models/user.dart' as models;
 
 class ChatsRepository {
   final SupabaseClient supabase = GetIt.I<SupabaseClient>();
+  final Map<int, ImageProvider> attachmentProviders = {};
 
   Future<List<Chat>> getChats(String uid) async {
     final data = await supabase
@@ -70,5 +74,28 @@ class ChatsRepository {
 
   Future<void> deleteMessage(int id) async {
     await supabase.from('messages').delete().eq('id', id);
+  }
+
+  Future<void> uploadAttachment(File attachment) async {
+    final int id = DateTime.now().millisecondsSinceEpoch;
+    await supabase.storage.from('main').upload(
+      'attachments/$id.png', 
+      attachment, 
+      fileOptions: FileOptions(upsert: true)
+    );
+  }
+
+  Future<ImageProvider?> getAttachmentURL(int id) async {
+    final ImageProvider? attachmentsProvider = attachmentProviders[id];
+    if (attachmentsProvider != null) {
+      return attachmentsProvider;
+    }
+    final storage = supabase.storage.from('main');
+    if (await storage.exists('attachments/$id.png')){
+      final imageUrl = supabase.storage.from('main').getPublicUrl('attachments/$id.png');
+      final provider = NetworkImage(imageUrl);
+      attachmentProviders[id] = provider;
+      return provider;
+    }
   }
 }

@@ -55,8 +55,10 @@ class _ChatViewState extends State<ChatView> {
         value: user1.uid == user.uid ? user2.uid : user1.uid
       ),
       callback: (payload) {
-        isOnline = payload.newRecord['isOnline'];
-        setState(() {});
+        if (payload.newRecord['uid'] != user.uid) {
+          isOnline = payload.newRecord['isOnline'];
+          setState(() {});
+        }
       }
     );
 

@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
 
   const fcmTokens = []
   for (const user of users.data) {
-    const fcmToken = await supabase.from('fcm_tokens').select('fcm_token').eq('userID', user.member).single()
+    const fcmToken = await supabase.from('fcm_tokens').select('fcm_token').eq('user_id', user.member).single()
     fcmTokens.push(fcmToken.data.fcm_token)
   }
 

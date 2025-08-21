@@ -39,6 +39,7 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
   final chatsRepository = GetIt.I<ChatsRepository>();
   final teamsRepository = GetIt.I<TeamsRepository>();
   final userRepository = GetIt.I<UserRepository>();
+  final notificationsService = GetIt.I<NotificationsService>();
 
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -48,25 +49,26 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
       final userdata = supabase.auth.currentUser;
       if (userdata?.id != null) {
         if (data.event == AuthChangeEvent.signedIn) {
-          final users = await supabase.from('users').select().eq('uid', userdata!.id);
-          if (users.isEmpty) {
-            navigatorKey.currentState?.pushReplacement(
-              MaterialPageRoute(builder: (_) => UserFormView(userdata: userdata))
-            );
-            return;
-          }
-          navigatorKey.currentState?.pushReplacement(
-            MaterialPageRoute(builder: (_) => NavScreen())
-          );
-          NotificationsService.init(userdata.id);
+          notificationsService.init(userdata!.id);
         }
+        final users = await supabase.from('users').select().eq('uid', userdata!.id);
+        if (users.isEmpty) {
+          navigatorKey.currentState?.pushReplacement(
+            MaterialPageRoute(builder: (_) => UserFormView(userdata: userdata))
+          );
+          return;
+        }
+        navigatorKey.currentState?.pushReplacement(
+          MaterialPageRoute(builder: (_) => NavScreen())
+        );
+        
         
         userBloc.add(LoadUser(uid: userdata!.id));
         userRepository.setOnline(userdata.id);
+        notificationsService.setListeners(navigatorKey);
       }
     });
 
-    NotificationsService.setListeners(navigatorKey);
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -77,12 +79,14 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
     final uid = supabase.auth.currentUser?.id;
     if (state == AppLifecycleState.resumed && uid != null) {
       userRepository.setOnline(uid);
+      notificationsService.isOnline = true;
     } else if (
       (state == AppLifecycleState.paused || 
       state == AppLifecycleState.inactive || 
       state == AppLifecycleState.detached) && uid != null
     ) {
       userRepository.setOffline(uid);
+      notificationsService.isOnline = false;
     }
   }
 

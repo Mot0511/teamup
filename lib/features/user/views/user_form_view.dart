@@ -27,6 +27,7 @@ class _UserFormViewState extends State<UserFormView> {
 
   final userRepository = GetIt.I<UserRepository>();
   final userBloc = GetIt.I<UserBloc>();
+  final notificationsService = GetIt.I<NotificationsService>();
 
   Future<void> submit() async {
     final user = User(
@@ -38,7 +39,7 @@ class _UserFormViewState extends State<UserFormView> {
     );
     await userRepository.addUserdata(user);
     userBloc.add(LoadUser(uid: widget.userdata.id));
-    NotificationsService.init(widget.userdata.id);
+    notificationsService.init(widget.userdata.id);
     userRepository.setOnline(widget.userdata.id);
     if (mounted) {
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => 
@@ -64,25 +65,28 @@ class _UserFormViewState extends State<UserFormView> {
             ),
           ),
           Expanded(
-            flex: 3,
+            flex: 4,
             child: Padding(
               padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: ListView(
                 children: [
-                  Field(title: 'Придумай никнейм', controller: usernameController),
-                  Field(title: 'Укажи свой возраст', controller: ageController, type: TextInputType.number),
-                  Text('Твой пол:', style: theme.textTheme.labelLarge),
-                  DropdownButton(
-                    value: gender,
-                    items: [
-                      DropdownMenuItem(child: Text('Мужской'), value: 'male'),
-                      DropdownMenuItem(child: Text('Женский'), value: 'female')
-                    ], 
-                    onChanged: (value) => setState(() => gender = (value as String))
-                  ),
-                  
-                ],
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Field(title: 'Придумай никнейм', controller: usernameController),
+                      Field(title: 'Укажи свой возраст', controller: ageController, type: TextInputType.number),
+                      Text('Твой пол:', style: theme.textTheme.labelLarge),
+                      DropdownButton(
+                        value: gender,
+                        items: [
+                          DropdownMenuItem(child: Text('Мужской'), value: 'male'),
+                          DropdownMenuItem(child: Text('Женский'), value: 'female')
+                        ], 
+                        onChanged: (value) => setState(() => gender = (value as String))
+                      ),
+                    ]
+                  )
+                ]
               ),
             )
           ),

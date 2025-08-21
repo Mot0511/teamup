@@ -1,10 +1,12 @@
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:teamup/features/home/repositories/search_repository.dart';
 import 'package:teamup/features/user/bloc/user_bloc.dart';
 import 'package:teamup/features/user/bloc/user_events.dart';
 import 'package:teamup/features/user/models/models.dart';
+import 'package:teamup/features/user/user_repository.dart';
 import 'package:teamup/features/user/widgets/avatar_widget.dart';
 import 'package:teamup/models/game.dart';
 import 'package:image_picker/image_picker.dart';
@@ -23,16 +25,16 @@ class _EditProfileViewState extends State<EditProfileView> {
   final usernameController = TextEditingController();
   final descriptionController = TextEditingController();
   final ageController = TextEditingController();
+
+  final searchRepository = GetIt.I<SearchRepository>();
+  final userRepository = GetIt.I<UserRepository>();
+
+  final userBloc = GetIt.I<UserBloc>();
   late String gender;
   int choosenGame = 0;
   File? choosenAvatar;
-  
 
-  final searchRepository = GetIt.I<SearchRepository>();
   List<Game>? games;
-
-  final userBloc = GetIt.I<UserBloc>();
-
   void getGames() async {
     games = await searchRepository.getGames();
     setState(() {});
@@ -52,12 +54,16 @@ class _EditProfileViewState extends State<EditProfileView> {
   }
 
   void pickAvatarHandler() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? ximage = await picker.pickImage(source: ImageSource.gallery);
-    if (ximage != null) {
-      final File file = File(ximage.path);
-      choosenAvatar = file;
+    final FilePickerResult? result = await FilePicker.platform.pickFiles(
+      dialogTitle: 'Выбор аватарки',
+      type: FileType.custom,
+      allowedExtensions: ['png', 'jpg'],
+    );
+
+    if (result != null) {
+      choosenAvatar = File(result.files.single.path!);
       setState(() {});
+      userRepository.updateAvatarCache(widget.user.uid, MemoryImage(await choosenAvatar!.readAsBytes()));
     }
   }
 
@@ -94,17 +100,6 @@ class _EditProfileViewState extends State<EditProfileView> {
                       foregroundColor: Colors.white
                     ),
                   ),
-                  // Row(
-                  //   mainAxisAlignment: MainAxisAlignment.center,
-                  //   children: [
-                      
-                  //     SizedBox(width: 5),
-                  //     OutlinedButton(
-                  //       onPressed: () => setState(() => choosenAvatar = null),
-                  //       child: Icon(Icons.delete, color: Colors.white)
-                  //     ) 
-                  //   ],
-                  // )
                 ],
               )
             ),

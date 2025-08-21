@@ -7,7 +7,7 @@ class Message {
   final User user;
   String text;
   final int? repliedMesssageID;
-  final DateTime time;
+  DateTime time;
 
   Message({
     required this.id, 
@@ -25,7 +25,7 @@ class Message {
       user: User.fromJSON(data['sender']),
       text: data['text'],
       repliedMesssageID: data['repliedMessage'],
-      time: DateTime.parse(data['created_at']),
+      time: DateTime.parse(data['created_at']).toLocal(),
     );
   }
 
@@ -36,7 +36,6 @@ class Message {
       'sender': user.uid,
       'text': text,
       'repliedMessage': repliedMesssageID,
-      'created_at': time.toString()
     };
   }
 }

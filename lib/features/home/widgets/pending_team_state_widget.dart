@@ -16,36 +16,33 @@ class PendingTeamStateWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Expanded(
-      flex: 4,
-      child: Padding(
-        padding: EdgeInsetsGeometry.symmetric(horizontal: 10),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Идет поиск...', 
-                  style: theme.textTheme.titleLarge
-                ),
-                Text(
-                  '${pendingUsers.length}/$currentTeamSize', 
-                  style: theme.textTheme.titleLarge
-                ),
-              ],
-            ),
-            SizedBox(height: 20),
-            Expanded(
-              child: ListView(
-                children: pendingUsers.map((User user) => 
-                  UserWidget(user: user)
-                ).toList()
-              )
+    return Padding(
+      padding: EdgeInsetsGeometry.symmetric(horizontal: 10),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Идет поиск...', 
+                style: theme.textTheme.titleLarge
+              ),
+              Text(
+                '${pendingUsers.length}/$currentTeamSize', 
+                style: theme.textTheme.titleLarge
+              ),
+            ],
+          ),
+          SizedBox(height: 20),
+          Expanded(
+            child: ListView(
+              children: pendingUsers.map((User user) => 
+                UserWidget(user: user)
+              ).toList()
             )
-          ],
-        ),
-      )
+          )
+        ],
+      ),
     );
   }
 }

@@ -29,10 +29,7 @@ class User {
       email: data['email'],
       gender: data['gender'],
       age: data['age'],
-      favouriteGame: data['favouriteGame'] != null && data['favouriteGame'] !is int ? Game(
-        id: data['favouriteGame']['id'],
-        name: data['favouriteGame']['name'],
-      ) : null,
+      favouriteGame: data['favouriteGame'] != null && data['favouriteGame'].runtimeType != int ? Game.fromJSON(data['favouriteGame']) : null,
     );
   }
 

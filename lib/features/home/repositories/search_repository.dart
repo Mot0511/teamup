@@ -70,7 +70,6 @@ class SearchRepository {
     // If there are suitable pending teams, I add myself to the first one
     if (pendingTeams.isNotEmpty) {
       final pendingTeam = pendingTeams[0];
-      currentPendingTeamID = pendingTeam['id'];
       // If I am the last necessery member, I create a team
       if (pendingTeam['size'] - pendingTeam['users_count'] == 1) {
         final teamName = TeamNameGenerator.createTeamName();
@@ -82,11 +81,11 @@ class SearchRepository {
           }
         ]);
         // delete pending team
-        final data = await supabase.from('pending_users').select('user(*, favouriteGame(*))').eq('pending_team', pendingTeam['id']);
+        final data = await supabase.from('pending_users').select('pending_user(*, favouriteGame(*))').eq('pending_team', pendingTeam['id']);
         // and add my teammates
         for (Map user in data) {
           await supabase.from('members').insert({
-            'member': user['user']['uid'],
+            'member': user['pending_user']['uid'],
             'chat': pendingTeam['id']
           });
         }
@@ -95,16 +94,17 @@ class SearchRepository {
           'member': user.uid,
           'chat': pendingTeam['id']
         });
-        final members = data.map((data) => User.fromJSON(data['user'])).toList();
+        final members = data.map((data) => User.fromJSON(data['pending_user'])).toList();
         members.add(user);
         await supabase.from('pending_teams').delete().eq('id', pendingTeam['id']);
+        await supabase.from('pending_users').delete().eq('pending_team', pendingTeam['id']);
         onTeamFormed!(Team(id: pendingTeam['id'], users: members, name: teamName));
         return;
       }
 
       // If I am not the last member, I just add myself
       await supabase.from('pending_users').insert([{
-        'user': user.uid,
+        'pending_user': user.uid,
         'pending_team': pendingTeam['id']
       }]);
 
@@ -117,9 +117,8 @@ class SearchRepository {
 
       // Subscribing on creating new team
       listenTeams(pendingTeam['id']);
-
-      final pending_users = await supabase.from('pending_users').select('user(*, favouriteGame(*))').eq('pending_team', pendingTeam['id']);
-      onTeamFound!(pending_users.map((user) => User.fromJSON(user['user'])).toList());
+      final pending_users = await supabase.from('pending_users').select('pending_user(*, favouriteGame(*))').eq('pending_team', pendingTeam['id']);
+      onTeamFound!(pending_users.map((user) => User.fromJSON(user['pending_user'])).toList());
       return;
     }
 
@@ -137,7 +136,7 @@ class SearchRepository {
 
     // and add myself there
     await supabase.from('pending_users').insert([{
-      'user': user.uid,
+      'pending_user': user.uid,
       'pending_team': teamID
     }]);
 
@@ -158,9 +157,9 @@ class SearchRepository {
       event: sb.PostgresChangeEvent.delete, 
       callback: (payload) async {
         final Team team = await teamsRepository.getTeam(payload.oldRecord['id']);
-        onTeamFormed!(team);
         supabase.removeChannel(channel!);
         currentPendingTeamID = null;
+        onTeamFormed!(team);
       }
     );
 
@@ -168,12 +167,13 @@ class SearchRepository {
       table: 'pending_users',
       filter: sb.PostgresChangeFilter(
         type: sb.PostgresChangeFilterType.eq,
-        column: 'team',
+        column: 'pending_team',
         value: teamID
       ),
-      event: sb.PostgresChangeEvent.insert, 
+      event: sb.PostgresChangeEvent.insert,
       callback: (payload) async {
-        final Map userdata = (await supabase.from('users').select('*, favouriteGame(*)').eq('uid', payload.newRecord['user']))[0];
+        if (currentPendingTeamID != payload.newRecord['pending_team']) return;
+        final Map userdata = (await supabase.from('users').select('*, favouriteGame(*)').eq('uid', payload.newRecord['pending_user']))[0];
         onNewPendingUser!(User.fromJSON(userdata));
       }
     );
@@ -182,13 +182,13 @@ class SearchRepository {
       table: 'pending_users',
       filter: sb.PostgresChangeFilter(
         type: sb.PostgresChangeFilterType.eq,
-        column: 'team',
+        column: 'pending_team',
         value: teamID
       ),
       event: sb.PostgresChangeEvent.delete,
       callback: (payload) async {
-        final users = await supabase.from('pending_users').select('user(*, favouriteGame(*))').eq('pending_team', teamID);
-        onTeamFound!(users.map((user) => User.fromJSON(user['user'])).toList());
+        final users = await supabase.from('pending_users').select('pending_user(*, favouriteGame(*))').eq('pending_team', teamID);
+        onTeamFound!(users.map((user) => User.fromJSON(user['pending_user'])).toList());
       }
     );
 
@@ -203,7 +203,7 @@ class SearchRepository {
         .select()
         .eq('id', currentPendingTeamID!))[0];
       
-      await supabase.from('pending_users').delete().eq('user', user.uid);
+      await supabase.from('pending_users').delete().eq('pending_user', user.uid);
       if (pendingTeam['users_count'] == 1) {
         await supabase.from('pending_teams').delete().eq('id', pendingTeam['id']);
       } else {
@@ -214,9 +214,8 @@ class SearchRepository {
             }
           )
           .eq('id', pendingTeam['id']);
-
       }
-
+      currentPendingTeamID = null;
     }
   }
 }
