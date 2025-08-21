@@ -14,7 +14,7 @@ import 'package:teamup/features/home/home_provider.dart';
 import 'package:teamup/features/home/repositories/search_repository.dart';
 import 'package:teamup/features/teams/bloc/teams_bloc.dart';
 import 'package:teamup/features/teams/teams_repository.dart';
-import 'package:teamup/features/teams/signaling_service.dart';
+import 'package:teamup/features/teams/signaling_service2.dart';
 import 'package:teamup/features/user/bloc/user_bloc.dart';
 import 'package:teamup/features/user/user_repository.dart';
 import 'package:teamup/firebase_options.dart';

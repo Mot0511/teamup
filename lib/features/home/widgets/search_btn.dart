@@ -7,7 +7,6 @@ import 'package:teamup/features/home/bloc/search_bloc.dart';
 import 'package:teamup/features/home/bloc/search_events.dart';
 import 'package:teamup/features/home/bloc/search_states.dart';
 import 'package:teamup/features/home/models/search_params.dart';
-import 'package:teamup/features/teams/views/team_view3.dart';
 import 'package:teamup/features/user/bloc/user_states.dart';
 
 class SearchBtn extends StatefulWidget {

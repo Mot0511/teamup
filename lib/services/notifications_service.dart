@@ -7,7 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:teamup/features/chats/chats_repository.dart';
 import 'package:teamup/features/chats/views/chat_view.dart';
 import 'package:teamup/features/teams/teams_repository.dart';
-import 'package:teamup/features/teams/views/team_view.dart';
+import 'package:teamup/features/teams/views/team2_view.dart';
 import 'package:teamup/features/user/user_repository.dart';
 import 'package:teamup/features/user/models/user.dart' as models;
 import 'package:windows_notification/notification_message.dart';

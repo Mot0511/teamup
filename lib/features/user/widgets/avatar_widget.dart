@@ -15,16 +15,16 @@ class AvatarWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return image != null
       ? Container(
-            width: size,
-            height: size,
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: (image as ImageProvider),
-                fit: BoxFit.cover,
-              ),
-              borderRadius: BorderRadius.circular(size / 2)
-            )
-          )
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: (image as ImageProvider),
+            fit: BoxFit.cover,
+          ),
+          borderRadius: BorderRadius.circular(size / 2),
+        )
+      )
       : FutureBuilder(
         future: userRepository.getAvatar(uid),
         builder: (context, AsyncSnapshot snap) {

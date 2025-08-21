@@ -9,7 +9,7 @@ import 'package:teamup/features/chats/chats_repository.dart';
 import 'package:teamup/features/chats/views/chat_view.dart';
 import 'package:teamup/features/home/views/views.dart';
 import 'package:teamup/features/teams/teams_repository.dart';
-import 'package:teamup/features/teams/views/team_view.dart';
+import 'package:teamup/features/teams/views/team2_view.dart';
 import 'package:teamup/features/user/bloc/user_bloc.dart';
 import 'package:teamup/features/user/bloc/user_events.dart';
 import 'package:teamup/features/user/bloc/user_states.dart';

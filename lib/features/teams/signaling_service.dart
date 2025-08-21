@@ -1,219 +1,84 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart';
+import 'dart:convert';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:just_audio/just_audio.dart';
-import 'package:socket_io_client/socket_io_client.dart';
-import 'package:teamup/features/teams/models/team.dart';
-import 'package:teamup/features/user/models/models.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 class SignalingService {
-  Socket? socket;
+  final String wsUrl, roomId, selfId;
+  final void Function(List<String>) onPeersChanged;
+  late WebSocketChannel _ws;
+  MediaStream? _local;
+  final Map<String, RTCPeerConnection> _pcs = {};
 
-  final Map<String, RTCPeerConnection> peerConnections = {};
+  List<String> get peers => _pcs.keys.toList();
 
-  Function? onLocalStream;
-  Function? onRemoteStreams;
-  Function? onNewConnection;
+  SignalingService({required this.wsUrl, required this.roomId, required this.selfId, required this.onPeersChanged});
 
-  List<RTCIceCandidate> iceCandidates = [];
-
-  String? userID;
-  int? teamID;
-
-  final player = AudioPlayer();
-
-  final config = {
-      'sdpSemantics': 'unified-plan',
-      "iceServers": [
-        {
-          "urls": "stun:stun.relay.metered.ca:80",
-        },
-        {
-          "urls": "turn:global.relay.metered.ca:80",
-          "username": "5db6bd697c3849fa85812cb3",
-          "credential": "UiNaqoi4aJNKIkTx",
-        },
-        {
-          "urls": "turn:global.relay.metered.ca:80?transport=tcp",
-          "username": "5db6bd697c3849fa85812cb3",
-          "credential": "UiNaqoi4aJNKIkTx",
-        },
-        {
-          "urls": "turn:global.relay.metered.ca:443",
-          "username": "5db6bd697c3849fa85812cb3",
-          "credential": "UiNaqoi4aJNKIkTx",
-        },
-        {
-          "urls": "turns:global.relay.metered.ca:443?transport=tcp",
-          "username": "5db6bd697c3849fa85812cb3",
-          "credential": "UiNaqoi4aJNKIkTx",
-        },
-      ],
-    };
-
-  SignalingService({required String websocketUrl, required String uid}) {
-    userID = uid;
-    socket = io(websocketUrl, {
-      'transports': ['websocket'],
-      'query': {'callerID': uid}
-    });
-
-    socket!.onConnect((data) {
-      print('Socket connected!');
-    });
-
-    socket!.onConnect((error) {
-      print('Connect Error: $error');
-    });
-
-    socket!.connect();
+  Future<void> init() async {
+    _local = await navigator.mediaDevices.getUserMedia({"audio": true, "video": false});
+    _ws = WebSocketChannel.connect(Uri.parse(wsUrl));
+    _ws.stream.listen(_onMessage);
+    _send({"type": "join", "roomId": roomId, "peerId": selfId});
   }
 
-  void sendIceCandidates(String from, String to) {
-    for (RTCIceCandidate candidate in iceCandidates) {
-      socket!.emit("IceCandidate", {
-        "from": from,
-        "to": to,
-        "room": teamID,
-        "iceCandidate": {
-          "id": candidate.sdpMid,
-          "label": candidate.sdpMLineIndex,
-          "candidate": candidate.candidate
-        }
-      });
+  void dispose() => leave();
+
+  Future<void> leave() async {
+    _send({"type": "leave"});
+    for (final pc in _pcs.values) { await pc.close(); }
+    _pcs.clear();
+    await _local?.dispose();
+    _local = null;
+    onPeersChanged(peers);
+    await _ws.sink.close();
+  }
+
+  void _send(Map<String,dynamic> m) => _ws.sink.add(jsonEncode(m));
+
+  Future<void> _createPc(String peerId, {bool offer = false}) async {
+    final pc = await createPeerConnection({"iceServers": [{"urls": "stun:stun.l.google.com:19302"}]});
+    _pcs[peerId] = pc;
+    _local?.getTracks().forEach((t) async => await pc.addTrack(t, _local!));
+    pc.onIceCandidate = (c) { if (c != null) _send({"type":"candidate","to":peerId,"candidate":c.toMap()}); };
+    pc.onTrack = (e) { /* audio auto plays */ };
+    if (offer) {
+      final offerSdp = await pc.createOffer();
+      await pc.setLocalDescription(offerSdp);
+      _send({"type":"offer","to":peerId,"sdp":offerSdp.sdp});
     }
   }
 
-  Future<RTCPeerConnection> getPeerConnection() async {
-    final RTCPeerConnection pc = await createPeerConnection(config);
-    final localStream = await navigator.mediaDevices.getUserMedia({
-      'audio': true,
-      'video': true
-    });
-
-    localStream.getTracks().forEach((track) {
-      pc.addTrack(track, localStream);
-    });
-
-    setPCListenings(pc);
-
-    return pc;
-  }
-
-  void setupPeerConnection(int teamID) async {
-    this.teamID = teamID;
-    listenSocket();
-    socket!.emit('join', {
-      'room': teamID,
-      'user': userID,
-    });
-
-    final RTCPeerConnection pc = await createPeerConnection(config);
-    RTCSessionDescription offer = await pc.createOffer();
-    socket!.emit('offer', {
-      "room": teamID,
-      "callerID": userID,
-      "sdpOffer": offer.toMap(),
-    });
-
-  }
-
-  void setPCListenings(RTCPeerConnection pc) {
-    pc.onTrack = (event) async {
-      onRemoteStreams!(event.streams);
-    };
-
-    pc.onIceCandidate = (RTCIceCandidate iceCandidate) => iceCandidates.add(iceCandidate);
-  
-    pc.onConnectionState = (state) async {
-      if (state == RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
-        await player.setAsset('assets/audio/connected.mp3');
-        player.play();
-      }
-    };
-  }
-
-  void listenSocket() {
-    socket!.on("answer", (data) async {
-      final from = data['from'];
-      if (from != userID) {
-        
-        final RTCPeerConnection pc = await getPeerConnection();
-        final offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        await pc.setRemoteDescription(
-          RTCSessionDescription(
-            data["sdpAnswer"]["sdp"],
-            data["sdpAnswer"]["type"],
-          ),
-        );
-
-        peerConnections[from] = pc;
-        sendIceCandidates(userID!, from);
-        onNewConnection!(from);
-      }
-    });
-
-    socket!.on("IceCandidate", (data) {
-      final from = data['from'];
-      final to = data['to'];
-      if (from == userID) return;
-      if (to != userID) return;
-      final String candidate = data["iceCandidate"]["candidate"];
-      final String sdpMid = data["iceCandidate"]["id"];
-      final int sdpMLineIndex = data["iceCandidate"]["label"];
-      
-      // add iceCandidate
-      peerConnections[from]?.addCandidate(RTCIceCandidate(
-          candidate,
-          sdpMid,
-          sdpMLineIndex,
-        ));
-      }
-    );
-
-    socket!.on('offer', (data) async {
-      if (data['callerID'] == userID) return;
-      final offer = data['sdpOffer'];
-      final callerID = data['callerID'];
-
-      final RTCPeerConnection pc = await getPeerConnection();
-
-      await pc.setRemoteDescription(
-        RTCSessionDescription(offer["sdp"], offer["type"]),
-      );
-
-      // create SDP answer
-      RTCSessionDescription answer = await pc.createAnswer();
-
-      // set SDP answer as localDescription for peerConnection
-      pc.setLocalDescription(answer);
-
-      peerConnections[callerID] = pc;
-      
-      socket!.emit("answer", {
-        "room": teamID,
-        "from": userID,
-        "sdpAnswer": answer.toMap(),
-      });
-      
-      sendIceCandidates(userID!, callerID);
-    });
-
-    socket!.on('leave', (data) {
-      peerConnections.remove(data['user']);
-    });
-  }
-
-  void dispose() {
-      for (RTCPeerConnection pc in peerConnections.values) {
-        pc.dispose();
-      }
-      peerConnections.clear();
-      socket!.emit('leave', {
-        'user': userID,
-        'room': teamID
-      });
+  void _onMessage(dynamic data) async {
+    final msg = jsonDecode(data);
+    switch (msg["type"]) {
+      case "peers":
+        for (final p in msg["peers"]) { await _createPc(p, offer: true); }
+        break;
+      case "peer-joined":
+        await _createPc(msg["peerId"]);
+        break;
+      case "offer":
+        final pc = await createPeerConnection({"iceServers":[{"urls":"stun:stun.l.google.com:19302"}]});
+        _pcs[msg["from"]] = pc;
+        _local?.getTracks().forEach((t) async => await pc.addTrack(t, _local!));
+        pc.onIceCandidate = (c){ if(c!=null) _send({"type":"candidate","to":msg["from"],"candidate":c.toMap()}); };
+        await pc.setRemoteDescription(RTCSessionDescription(msg["sdp"], "offer"));
+        final ans = await pc.createAnswer();
+        await pc.setLocalDescription(ans);
+        _send({"type":"answer","to":msg["from"],"sdp":ans.sdp});
+        break;
+      case "answer":
+        await _pcs[msg["from"]]?.setRemoteDescription(RTCSessionDescription(msg["sdp"], "answer"));
+        break;
+      case "candidate":
+        final cand = RTCIceCandidate(msg["candidate"]["candidate"], msg["candidate"]["sdpMid"], msg["candidate"]["sdpMLineIndex"]);
+        await _pcs[msg["from"]]?.addCandidate(cand);
+        break;
+      case "peer-left":
+        await _pcs[msg["peerId"]]?.close();
+        _pcs.remove(msg["peerId"]);
+        onPeersChanged(peers);
+        break;
     }
+    onPeersChanged(peers);
+  }
 }
