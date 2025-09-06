@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -13,6 +14,7 @@ import 'package:teamup/features/chats/models/chat.dart';
 import 'package:teamup/features/chats/widgets/chat_widget.dart';
 import 'package:teamup/features/user/bloc/user_bloc.dart';
 import 'package:teamup/features/user/bloc/user_states.dart';
+import 'package:teamup/features/analytics/repositories/analytics_repository.dart';
 import 'package:teamup/widgets/shimmer_widget.dart';
 
 class ChatsView extends StatefulWidget {
@@ -24,6 +26,7 @@ class ChatsView extends StatefulWidget {
 
 class _ChatsViewState extends State<ChatsView> {
   final chatsRepository = GetIt.I<ChatsRepository>();
+  
 
   final userBloc = GetIt.I<UserBloc>();
   final chatsBloc = GetIt.I<ChatsBloc>();
@@ -31,7 +34,7 @@ class _ChatsViewState extends State<ChatsView> {
   @override
   void initState() {
     super.initState();
-
+    
     loadChats();
     userBloc.stream.listen((state) async {
       loadChats();
@@ -48,7 +51,13 @@ class _ChatsViewState extends State<ChatsView> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text('Личные чаты')),
+      appBar: AppBar(
+        title: Text('Личные чаты'),
+        actions: [
+          if (!Platform.isAndroid)
+          IconButton(onPressed: loadChats, icon: Icon(Icons.refresh))
+        ],
+       ),
       body: BlocBuilder<UserBloc, UserState>(
         bloc: userBloc,
         builder: (context, userState) {

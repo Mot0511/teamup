@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 final textBase = TextStyle(color: Colors.white);
 
 final textTheme = TextTheme(
+  displayMedium: textBase.copyWith(fontSize: 35),
   titleLarge: textBase.copyWith(fontSize: 24),
   titleMedium: textBase.copyWith(fontSize: 18),
   labelLarge: textBase.copyWith(fontSize: 20),

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:equatable/equatable.dart';
+import 'package:flutter/widgets.dart';
 import 'package:teamup/features/user/models/friendship.dart';
 import 'package:teamup/features/user/models/models.dart';
 

@@ -7,4 +7,14 @@ class SearchParams {
   final int teamSize;
 
   SearchParams({required this.gameID, required this.age, required this.gender, required this.teamSize});
+
+  Map toJSON() {
+    return {
+      'game': gameID,
+      'min_age': age - 1,
+      'max_age': age + 1,
+      'gender': gender,
+      'team_size': teamSize
+    };
+  }
 }

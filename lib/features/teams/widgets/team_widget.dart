@@ -54,7 +54,7 @@ class _TeamWidgetState extends State<TeamWidget> {
     final theme = Theme.of(context);
     return Dismissible(
       key: Key(widget.team.id.toString()), 
-      background: Container(color: Colors.red),
+      background: Container(color: theme.colorScheme.error),
       onDismissed: (direction) => removeTeam(),
       child: GestureDetector(
         onTapDown: (details) => setState(() => tapPosition = details.globalPosition),

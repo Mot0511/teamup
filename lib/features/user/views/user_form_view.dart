@@ -1,4 +1,7 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
@@ -8,6 +11,7 @@ import 'package:teamup/features/user/models/models.dart';
 import 'package:teamup/features/user/user_repository.dart';
 import 'package:teamup/nav_screen.dart';
 import 'package:teamup/providers/global_provider.dart';
+import 'package:teamup/features/analytics/repositories/analytics_repository.dart';
 import 'package:teamup/services/notifications_service.dart';
 import 'package:teamup/widgets/widgets.dart';
 
@@ -28,13 +32,39 @@ class _UserFormViewState extends State<UserFormView> {
   final userRepository = GetIt.I<UserRepository>();
   final userBloc = GetIt.I<UserBloc>();
   final notificationsService = GetIt.I<NotificationsService>();
+  final analyticsRepository = GetIt.I<AnalyticsRepository>();
+
+  String? usernameError;
+  String? ageError;
 
   Future<void> submit() async {
+    final username = usernameController.text.trim();
+    final age = ageController.text.trim();
+    if (username == '') {
+      usernameError = 'Придумай имя пользователя';
+      setState(() {});
+      return;
+    }
+    if (await userRepository.isUsernameExists(username)) {
+      usernameError = 'Пользователь с таким именем уже существует';
+      setState(() {});
+      return;
+    }
+    if (age == '') {
+      ageError = 'Укажи свой возраст';
+      setState(() {});
+      return;
+    }
+    if (double.tryParse(age) == null) {
+      ageError = 'Возраст должен быть числом';
+      setState(() {});
+      return;
+    }
     final user = User(
       uid: widget.userdata.id,
       email: widget.userdata.email ?? '',
-      username: usernameController.text,
-      age: int.parse(ageController.text),
+      username: username,
+      age: int.parse(age),
       gender: gender,
     );
     await userRepository.addUserdata(user);
@@ -42,6 +72,7 @@ class _UserFormViewState extends State<UserFormView> {
     notificationsService.init(widget.userdata.id);
     userRepository.setOnline(widget.userdata.id);
     if (mounted) {
+      await analyticsRepository.logSignup(user, context);
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => 
         NavScreen()
       ));
@@ -73,8 +104,8 @@ class _UserFormViewState extends State<UserFormView> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Field(title: 'Придумай никнейм', controller: usernameController),
-                      Field(title: 'Укажи свой возраст', controller: ageController, type: TextInputType.number),
+                      Field(title: 'Придумай имя пользователя', controller: usernameController, error: usernameError),
+                      Field(title: 'Укажи свой возраст', controller: ageController, type: TextInputType.number, error: ageError),
                       Text('Твой пол:', style: theme.textTheme.labelLarge),
                       DropdownButton(
                         value: gender,

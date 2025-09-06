@@ -4,6 +4,7 @@ import 'package:get_it/get_it.dart';
 import 'package:teamup/features/chats/models/message.dart';
 import 'package:teamup/features/user/bloc/user_bloc.dart';
 import 'package:teamup/features/user/bloc/user_states.dart';
+import 'package:teamup/features/user/widgets/avatar_widget.dart';
 
 class MessageWidget extends StatefulWidget {
   MessageWidget({
@@ -62,7 +63,7 @@ class _MessageWidgetState extends State<MessageWidget> {
         widget.onEditMessage!(widget.message);
         break;
       case 'delete':
-        widget.onDeleteMessage!(widget.message.id);
+        widget.onDeleteMessage!(widget.message);
         break;
     }
 
@@ -91,54 +92,69 @@ class _MessageWidgetState extends State<MessageWidget> {
               }
               setState(() => offsetX = 0.0);
             },
-            child: SizedBox(
-              width: 300,
-              child: Transform.translate(
-                offset: Offset(offsetX, 0),
-                child: Container(
-                  margin: EdgeInsets.all(5),
+            child: Transform.translate(
+              offset: Offset(offsetX, 0),
+              child: Ink(
+                color: widget.message.user.uid == state.user.uid ? const Color.fromARGB(255, 41, 41, 41) : null,
+                child: InkWell(
+                onTap: () {},
+                child: Padding(
                   padding: EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: widget.message.user.uid == state.user.uid ? theme.primaryColor : theme.colorScheme.secondary,
-                    borderRadius: BorderRadius.circular(10)
-                  ),
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          AvatarWidget(uid: widget.message.user.uid, size: 50),
+                        ]
+                      ),
+                      SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(widget.message.user.username, style: theme.textTheme.bodyMedium),
                                 SizedBox(width: 10),
                                 if (widget.message.repliedMesssageID != null)
-                                Expanded(
-                                  child: Align(
-                                    alignment: Alignment.centerRight,
-                                    child: Text(
-                                      widget.messages.where((message) => message.id == widget.message.repliedMesssageID).toList()[0].text, 
-                                      style: theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
-                                      overflow: TextOverflow.ellipsis,
-                                    )
-                                  )
+                                Text(
+                                  widget.messages.where((message) => message.id == widget.message.repliedMesssageID).toList()[0].text, 
+                                  style: theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ],
                             ),
+                            if (widget.message.attachment != null)
+                            Container(
+                              height: 200,
+                              margin: EdgeInsets.symmetric(vertical: 10),
+                              decoration: BoxDecoration(
+                                image: DecorationImage(
+                                  image: widget.message.attachment!,
+                                  fit: BoxFit.contain,
+                                  alignment: Alignment.centerLeft
+                                ),
+                              ),
+                            ),
+                            if (widget.message.text != '')
                             Text(widget.message.text, style: theme.textTheme.titleMedium),
                           ],
                         ),
                       ),
-                      SizedBox(width: 5),
-                      Text(
-                        '${widget.message.time.hour}:${(widget.message.time.minute.toString().padLeft(2, '0'))}', 
-                        style: TextStyle(fontSize: 14, color: Colors.grey)
-                      ),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text(
+                            '${widget.message.time.hour}:${(widget.message.time.minute.toString().padLeft(2, '0'))}', 
+                            style: TextStyle(fontSize: 14, color: Colors.grey)
+                          ),
+                        ],
+                      )
                     ],
-                  )
-                ),
+                  ),
+                )
+              ),
               )
             )
           );

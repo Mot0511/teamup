@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -82,8 +83,8 @@ class UserRepository {
 
     final result = await FlutterWebAuth2.authenticate(
       url: loginUrl,
-      callbackUrlScheme: "http://localhost:3000/auth/v1/callback",
-      options: FlutterWebAuth2Options(useWebview: false)
+      callbackUrlScheme: "https://flvcuqostwctdicmncrb.supabase.co/auth/v1/callback",
+      options: FlutterWebAuth2Options(useWebview: true)
     );
     await supabase.auth.getSessionFromUrl(Uri.parse(result));
   }
@@ -95,7 +96,6 @@ class UserRepository {
     final uid = supabase.auth.currentUser!.id;
     await supabase.from('fcm_tokens').delete().eq('user_id', uid);
     await supabase.auth.signOut();
-    
   }
 
   Future<void> addUserdata(User userdata) async {
@@ -107,11 +107,24 @@ class UserRepository {
     return User.fromJSON(userdata);
   }
 
+  Future<bool> isUsernameExists(String username) async {
+    final String? uid = supabase.auth.currentUser?.id;
+    final users = await supabase.from('users').select('uid, username').eq('username', username);
+    if (users.isNotEmpty) {
+      if (uid != null && users[0]['uid'] == uid) {
+        return false;
+      }
+      return true;
+    }
+    return false;
+  }
+
   Future<void> updateUser(User user) async {
     await supabase.from('users').update(
       user.toJSON()
     ).eq('uid', user.uid);
   }
+  
 
   Future<ImageProvider> getAvatar(String uid) async {
     final ImageProvider? avatarProvider = avatarProviders[uid];
@@ -125,7 +138,7 @@ class UserRepository {
       avatarProviders[uid] = provider;
       return provider;
     }
-    final provider = AssetImage('assets/default_avatar.png');
+    final provider = AssetImage('assets/images/default_avatar.png');
     avatarProviders[uid] = provider;
     return provider;
 

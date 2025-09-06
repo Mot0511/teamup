@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "677191252450-plq6hd0tkmh0befgpm2lrh06hpf7mj37.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "ru.ballisty.teamup",
+            "certificate_hash": "fd51bef8287c024b01e434b912978ce4f0c41c80"
+          }
+        },
+        {
           "client_id": "677191252450-s6a7kuf9dek6arhufeot9i968a8bhloh.apps.googleusercontent.com",
           "client_type": 3
         }

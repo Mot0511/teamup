@@ -1,15 +1,19 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get_it/get_it.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:teamup/features/chats/chats_repository.dart';
 import 'package:teamup/features/chats/views/chat_view.dart';
 import 'package:teamup/features/home/views/views.dart';
 import 'package:teamup/features/teams/teams_repository.dart';
 import 'package:teamup/features/teams/views/team2_view.dart';
+import 'package:teamup/features/teams/voice_provider.dart';
 import 'package:teamup/features/user/bloc/user_bloc.dart';
 import 'package:teamup/features/user/bloc/user_events.dart';
 import 'package:teamup/features/user/bloc/user_states.dart';
@@ -17,6 +21,7 @@ import 'package:teamup/features/user/user_repository.dart';
 import 'package:teamup/features/user/views/signin_view.dart';
 import 'package:teamup/loading.dart';
 import 'package:teamup/nav_screen.dart';
+import 'package:teamup/features/analytics/repositories/analytics_repository.dart';
 import 'package:teamup/services/notifications_service.dart';
 import 'package:teamup/theme.dart';
 import 'package:teamup/features/user/views/user_form_view.dart';
@@ -63,7 +68,7 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
         );
         
         
-        userBloc.add(LoadUser(uid: userdata!.id));
+        userBloc.add(LoadUser(uid: userdata.id));
         userRepository.setOnline(userdata.id);
         notificationsService.setListeners(navigatorKey);
       }

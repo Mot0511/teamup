@@ -65,7 +65,7 @@ class _InfoWidgetState extends State<InfoWidget> {
             curve: Curves.easeInOutCubic,
           ),
         );
-        if (state is SearchStateInitial) {
+        if (state is SearchStateReady) {
           return FadeTransition(
             opacity: opacity,
             child: FiltersWidget(

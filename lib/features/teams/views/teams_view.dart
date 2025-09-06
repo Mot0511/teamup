@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -47,7 +48,13 @@ class _TeamsViewState extends State<TeamsView> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text('Команды')),
+      appBar: AppBar(
+        title: Text('Команды'),
+        actions: [
+          if (!Platform.isAndroid)
+          IconButton(onPressed: loadTeams, icon: Icon(Icons.refresh))
+        ],
+      ),
       body: Column(
         children: [
           Expanded(

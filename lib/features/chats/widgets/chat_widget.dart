@@ -53,7 +53,7 @@ class _ChatWidgetState extends State<ChatWidget> {
     return Dismissible(
       key: Key(widget.chat.id.toString()),
       direction: DismissDirection.endToStart,
-      background: Container(color: Colors.red),
+      background: Container(color: theme.colorScheme.error),
       onDismissed: (direction) => removeChat(),
       child: BlocBuilder<UserBloc, UserState>(
         bloc: userBloc,

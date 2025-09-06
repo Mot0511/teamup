@@ -19,20 +19,28 @@ class ChatsBloc extends Bloc<ChatsEvent, ChatsState> {
 
     on<AddChat>((event, emit) async {
       if (state is ChatsStateLoaded) {
-        final List<Chat> chats = (state as ChatsStateLoaded).chats;
-        emit(ChatsStateLoading());
-        chats.add(event.chat);
-        emit(ChatsStateLoaded(chats: chats));
+        try {
+          final List<Chat> chats = (state as ChatsStateLoaded).chats;
+          emit(ChatsStateLoading());
+          chats.add(event.chat);
+          emit(ChatsStateLoaded(chats: chats));
+        } on Exception catch (e) {
+          emit(ChatsStateError(e: e));
+        }
       }
     });
 
     on<RemoveChat>((event, emit) async {
       if (state is ChatsStateLoaded) {
-        final List<Chat> chats = (state as ChatsStateLoaded).chats;
-        emit(ChatsStateLoading());
-        await chatsRepository.removeChat(event.chat);
-        chats.remove(event.chat);
-        emit(ChatsStateLoaded(chats: chats));
+        try {
+          final List<Chat> chats = (state as ChatsStateLoaded).chats;
+          await chatsRepository.removeChat(event.chat);
+          emit(ChatsStateInitial());
+          chats.remove(event.chat);
+          emit(ChatsStateLoaded(chats: chats));
+        } on Exception catch (e) {
+          emit(ChatsStateError(e: e));
+        }
       }
     });
 

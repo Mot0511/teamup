@@ -29,6 +29,9 @@ class _EditProfileViewState extends State<EditProfileView> {
   final searchRepository = GetIt.I<SearchRepository>();
   final userRepository = GetIt.I<UserRepository>();
 
+  String? usernameError;
+  String? ageError;
+
   final userBloc = GetIt.I<UserBloc>();
   late String gender;
   int choosenGame = 0;
@@ -67,10 +70,33 @@ class _EditProfileViewState extends State<EditProfileView> {
     }
   }
 
-  void saveChangesHandler(context) {
-    widget.user.username = usernameController.text;
-    widget.user.description = descriptionController.text != '' ? descriptionController.text : null;
-    widget.user.age = int.parse(ageController.text);
+  void saveChangesHandler(context) async {
+    final username = usernameController.text.trim();
+    final age = ageController.text.trim();
+    final description = descriptionController.text.trim();
+    if (username == '') {
+      usernameError = 'Придумай юзернейм';
+      setState(() {});
+      return;
+    }
+    if (await userRepository.isUsernameExists(username)) {
+      usernameError = 'Пользователь с таким именем уже существует';
+      setState(() {});
+      return;
+    }
+    if (age == '') {
+      ageError = 'Укажи свой возраст';
+      setState(() {});
+      return;
+    }
+    if (double.tryParse(age) == null) {
+      ageError = 'Возраст должен быть числом';
+      setState(() {});
+      return;
+    }
+    widget.user.username = username;
+    widget.user.description = description != '' ? description : null;
+    widget.user.age = int.parse(age);
     widget.user.gender = gender;
     widget.user.favouriteGame = choosenGame != 0 ? games?.where((game) => game.id == choosenGame).toList()[0] : null;
     userBloc.add(UpdateUser(user: widget.user, choosenAvatar: choosenAvatar));
@@ -104,9 +130,9 @@ class _EditProfileViewState extends State<EditProfileView> {
               )
             ),
             SizedBox(height: 20),
-            Field(title: 'Имя пользователя', controller: usernameController),
+            Field(title: 'Имя пользователя', controller: usernameController, error: usernameError),
             Field(title: 'Описание профиля', controller: descriptionController, maxLines: 5),
-            Field(title: 'Возраст', controller: ageController),
+            Field(title: 'Возраст', controller: ageController, error: ageError),
             Text('Пол:', style: theme.textTheme.labelLarge),
             DropdownButton(
               isExpanded: true,

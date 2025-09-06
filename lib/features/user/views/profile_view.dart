@@ -156,9 +156,10 @@ class _ProfileViewState extends State<ProfileView> {
                     ),
                   ],
                 );
-              } else {
-                return SizedBox.shrink();
+              } else if (state is UserStateError) {
+                return Center(child: Text('Ошибка при загрузке данных пользователя'));
               }
+              return SizedBox.shrink();
             }
           )
         ],
@@ -232,9 +233,7 @@ class _ProfileViewState extends State<ProfileView> {
                                           children: [
                                             Icon(Icons.group_add, color: Colors.white, size: 25),
                                             SizedBox(width: 5),
-                                            Expanded(
-                                              child: Text('Добавить в друзья', style: theme.textTheme.labelMedium),
-                                            )
+                                            Text('Добавить в друзья', style: theme.textTheme.labelMedium),
                                           ],
                                         )
                                       )

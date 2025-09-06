@@ -1,4 +1,5 @@
-import 'package:teamup/features/chats/enums.dart';
+import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:teamup/features/user/models/models.dart';
 
 class Message {
@@ -7,6 +8,7 @@ class Message {
   final User user;
   String text;
   final int? repliedMesssageID;
+  final ImageProvider? attachment;
   DateTime time;
 
   Message({
@@ -15,6 +17,7 @@ class Message {
     required this.user, 
     required this.text, 
     this.repliedMesssageID,
+    this.attachment,
     required this.time
   });
 
@@ -25,6 +28,7 @@ class Message {
       user: User.fromJSON(data['sender']),
       text: data['text'],
       repliedMesssageID: data['repliedMessage'],
+      attachment: data['attachment'],
       time: DateTime.parse(data['created_at']).toLocal(),
     );
   }
@@ -36,6 +40,7 @@ class Message {
       'sender': user.uid,
       'text': text,
       'repliedMessage': repliedMesssageID,
+      'attachment': attachment != null ? id : null
     };
   }
 }

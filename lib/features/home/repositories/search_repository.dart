@@ -6,10 +6,12 @@ import 'package:teamup/features/teams/models/team.dart';
 import 'package:teamup/features/teams/teams_repository.dart';
 import 'package:teamup/features/user/models/models.dart';
 import 'package:teamup/models/game.dart';
+import 'package:teamup/features/analytics/repositories/analytics_repository.dart';
 
 class SearchRepository {
   final supabase = GetIt.I<sb.SupabaseClient>();
   final teamsRepository = GetIt.I<TeamsRepository>();
+  final analyticsRepository = GetIt.I<AnalyticsRepository>();
 
   sb.RealtimeChannel? channel;
   int? currentPendingTeamID;
@@ -39,10 +41,32 @@ class SearchRepository {
     return games;
   }
 
+  Future<int?> getPendingTeamID(String uid) async {
+    final pendingUsers = await supabase.from('pending_users').select().eq('pending_user', uid);
+    if (pendingUsers.isNotEmpty) return pendingUsers[0]['pending_team'];
+    return null;
+  }
+
+  Future<SearchParams> restoreSearching(int pendingTeamID) async {
+    final pendingTeam = await supabase.from('pending_teams').select().eq('id', pendingTeamID).single();
+    currentPendingTeamID = pendingTeamID;
+    channel = supabase.channel('searching:$pendingTeamID');
+    listenTeams(pendingTeamID);
+    final pendingUsers = await supabase.from('pending_users').select('pending_user(*)').eq('pending_team', pendingTeamID);
+    onTeamFound!(pendingUsers.map((user) => User.fromJSON(user['pending_user'])).toList());
+    return SearchParams(
+      gameID: pendingTeam['game'],
+      age: pendingTeam['max_age'] - 1,
+      gender: pendingTeam['gender'],
+      teamSize: pendingTeam['size']
+    );
+  }
+
   Future<void> startSearching(
     User user, 
     SearchParams params,
   ) async {
+    analyticsRepository.logEvent('start_searching', properties: params.toJSON());
     // Getting existing suitable pending teams
     late final List pendingTeams;
     if (params.gender == 'null') {
@@ -80,7 +104,6 @@ class SearchRepository {
             'is_team': true
           }
         ]);
-        // delete pending team
         final data = await supabase.from('pending_users').select('pending_user(*, favouriteGame(*))').eq('pending_team', pendingTeam['id']);
         // and add my teammates
         for (Map user in data) {
@@ -96,6 +119,7 @@ class SearchRepository {
         });
         final members = data.map((data) => User.fromJSON(data['pending_user'])).toList();
         members.add(user);
+        // delete pending team
         await supabase.from('pending_teams').delete().eq('id', pendingTeam['id']);
         await supabase.from('pending_users').delete().eq('pending_team', pendingTeam['id']);
         onTeamFormed!(Team(id: pendingTeam['id'], users: members, name: teamName));
@@ -130,8 +154,8 @@ class SearchRepository {
       'users_count': 1,
       'gender': params.gender,
       'game': params.gameID,
-      'min_age': params.age - 2,
-      'max_age': params.age + 2
+      'min_age': params.age - 1,
+      'max_age': params.age + 1
     }]);
 
     // and add myself there

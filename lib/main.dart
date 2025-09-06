@@ -1,10 +1,12 @@
 import 'dart:io';
 
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:teamup/app.dart';
 import 'package:teamup/features/chats/bloc/chats_bloc.dart';
@@ -15,11 +17,14 @@ import 'package:teamup/features/home/repositories/search_repository.dart';
 import 'package:teamup/features/teams/bloc/teams_bloc.dart';
 import 'package:teamup/features/teams/teams_repository.dart';
 import 'package:teamup/features/teams/signaling_service2.dart';
+import 'package:teamup/features/teams/voice_provider.dart';
+import 'package:teamup/features/teams/voice_service.dart';
 import 'package:teamup/features/user/bloc/user_bloc.dart';
 import 'package:teamup/features/user/user_repository.dart';
 import 'package:teamup/firebase_options.dart';
 import 'package:teamup/providers/global_provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:teamup/features/analytics/repositories/analytics_repository.dart';
 import 'package:teamup/services/notifications_service.dart';
 import 'package:window_size/window_size.dart';
 
@@ -43,6 +48,7 @@ void main() async {
 
   GetIt.I.registerSingleton(UserRepository());
   GetIt.I.registerSingleton(TeamsRepository());
+  GetIt.I.registerSingleton(AnalyticsRepository());
   GetIt.I.registerSingleton(SearchRepository());
   GetIt.I.registerSingleton(ChatsRepository());
   GetIt.I.registerSingleton(UserBloc(userRepository: GetIt.I<UserRepository>()));
@@ -50,12 +56,14 @@ void main() async {
   GetIt.I.registerSingleton(TeamsBloc(teamsRepository: GetIt.I<TeamsRepository>()));
   GetIt.I.registerSingleton(SearchBloc(searchRepository: GetIt.I<SearchRepository>()));
   GetIt.I.registerSingleton(NotificationsService());
+  GetIt.I.registerSingleton(await SharedPreferences.getInstance());
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider<GlobalProvider>(create: (context) => GlobalProvider()),
-        ChangeNotifierProvider<HomeProvider>(create: (context) => HomeProvider())
+        ChangeNotifierProvider<HomeProvider>(create: (context) => HomeProvider()),
+        ChangeNotifierProvider<VoiceProvider>(create: (context) => VoiceProvider())
       ],
       child: Teamup(),
     )

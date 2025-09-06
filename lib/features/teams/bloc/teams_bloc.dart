@@ -20,43 +20,54 @@ class TeamsBloc extends Bloc<TeamsEvent, TeamsState> {
 
     on<AddTeam>((event, emit) async {
       if (state is TeamsStateLoaded) {
-        final List<Team> teams = (state as TeamsStateLoaded).teams;
-        emit(TeamsStateLoading());
-        await teamsRepository.addTeam(event.team);
-        if (event.choosenIcon != null){
-          await teamsRepository.uploadIcon(event.team.id, event.choosenIcon as File);
+        try {
+          final List<Team> teams = (state as TeamsStateLoaded).teams;
+          if (event.choosenIcon != null) {
+            teamsRepository.uploadIcon(event.team.id, event.choosenIcon as File);
+          }
+          await teamsRepository.addTeam(event.team);
+          emit(TeamsStateInitial());
+          teams.add(event.team);
+          emit(TeamsStateLoaded(teams: teams));
+        } on Exception catch (e) {
+          emit(TeamsStateError(e: e));
         }
-        teams.add(event.team);
-        
-        emit(TeamsStateLoaded(teams: teams));
       }
     });
 
     on<EditTeam>((event, emit) async {
       if (state is TeamsStateLoaded) {
-        final List<Team> teams = (state as TeamsStateLoaded).teams;
-        emit(TeamsStateLoading());
-        for (var i = 0; i < teams.length; i++) {
-          if (teams[i].id == event.team.id) {
-            teams[i] = event.team;
-            break;
+        try {
+          final List<Team> teams = (state as TeamsStateLoaded).teams;
+          emit(TeamsStateLoading());
+          for (var i = 0; i < teams.length; i++) {
+            if (teams[i].id == event.team.id) {
+              teams[i] = event.team;
+              break;
+            }
           }
+          await teamsRepository.editTeam(event.team, event.addedMembers, event.removedMembers);
+          if (event.choosenIcon != null){
+            await teamsRepository.uploadIcon(event.team.id, event.choosenIcon as File);
+          }
+          emit(TeamsStateLoaded(teams: teams));
+        } on Exception catch (e) {
+          emit(TeamsStateError(e: e));
         }
-        await teamsRepository.editTeam(event.team, event.addedMembers, event.removedMembers);
-        if (event.choosenIcon != null){
-          await teamsRepository.uploadIcon(event.team.id, event.choosenIcon as File);
-        }
-        emit(TeamsStateLoaded(teams: teams));
       }
     });
 
     on<RemoveTeam>((event, emit) async {
       if (state is TeamsStateLoaded) {
-        final List<Team> chats = (state as TeamsStateLoaded).teams;
-        emit(TeamsStateLoading());
-        await teamsRepository.removeTeam(event.team, event.uid);
-        chats.remove(event.team);
-        emit(TeamsStateLoaded(teams: chats));
+        try {
+          final List<Team> chats = (state as TeamsStateLoaded).teams;
+          await teamsRepository.removeTeam(event.team, event.uid);
+          emit(TeamsStateInitial());
+          chats.remove(event.team);
+          emit(TeamsStateLoaded(teams: chats));
+        } on Exception catch (e) {
+          emit(TeamsStateError(e: e));
+        }
       }
     });
 

@@ -58,12 +58,21 @@ class ChatsRepository {
 
   Future<List<Message>> getMessages(int chatID) async {
     final data = await supabase.from('messages').select('*, sender(*, favouriteGame(*))').eq('chat', chatID);
-    final List<Message> messages = data.map((message) => Message.fromJSON(message)).toList();
+    final List<Message> messages = [];
+    for (Map message in data) {
+      if (message['attachment'] != null) {
+        message['attachment'] = await getAttachment(message['attachment']);
+      }
+      messages.add(Message.fromJSON(message));
+    }
     return messages;
   }
 
-  Future<void> sendMessage(Message message) async {
-    await supabase.from('messages').insert(message.toJSON()); 
+  Future<void> sendMessage(Message message, File? attachment) async {
+    if (attachment != null) {
+      await supabase.storage.from('main').upload('attachments/${message.id}.png', attachment);
+    }
+    await supabase.from('messages').insert(message.toJSON());
   }
 
   Future<void> editMessage(int id, String text) async {
@@ -72,30 +81,22 @@ class ChatsRepository {
     }).eq('id', id);
   }
 
-  Future<void> deleteMessage(int id) async {
-    await supabase.from('messages').delete().eq('id', id);
+  Future<void> deleteMessage(Message message) async {
+    await supabase.from('messages').delete().eq('id', message.id);
+    if (message.attachment != null) {
+      supabase.storage.from('main').remove(['attachments/${message.id}.png']);
+    }
   }
 
-  Future<void> uploadAttachment(File attachment) async {
-    final int id = DateTime.now().millisecondsSinceEpoch;
-    await supabase.storage.from('main').upload(
-      'attachments/$id.png', 
-      attachment, 
-      fileOptions: FileOptions(upsert: true)
-    );
-  }
-
-  Future<ImageProvider?> getAttachmentURL(int id) async {
+  Future<ImageProvider> getAttachment(int id) async {
     final ImageProvider? attachmentsProvider = attachmentProviders[id];
     if (attachmentsProvider != null) {
       return attachmentsProvider;
     }
     final storage = supabase.storage.from('main');
-    if (await storage.exists('attachments/$id.png')){
-      final imageUrl = supabase.storage.from('main').getPublicUrl('attachments/$id.png');
-      final provider = NetworkImage(imageUrl);
-      attachmentProviders[id] = provider;
-      return provider;
-    }
+    final imageUrl = storage.getPublicUrl('attachments/$id.png');
+    final provider = NetworkImage(imageUrl);
+    attachmentProviders[id] = provider;
+    return provider;
   }
 }

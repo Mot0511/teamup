@@ -6,6 +6,11 @@ import 'package:teamup/models/game.dart';
 
 abstract class SearchEvent extends Equatable {}
 
+class GetReady extends SearchEvent {
+  @override
+  List get props => [];
+}
+
 class StartSearching extends SearchEvent {
   final User user;
   final SearchParams params;
@@ -27,4 +32,13 @@ class StopSearching extends SearchEvent {
 
   @override
   List get props => [user, params]; 
+}
+
+class RestoreSearching extends SearchEvent {
+  final int pendingTeamID;
+
+  RestoreSearching({required this.pendingTeamID});
+
+  @override
+  List get props => [pendingTeamID]; 
 }

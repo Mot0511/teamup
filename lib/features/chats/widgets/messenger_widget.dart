@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
@@ -66,12 +67,15 @@ class _MessengerWidgetState extends State<MessengerWidget> {
       table: 'messages',
       filter: filter,
       event: PostgresChangeEvent.insert,
-      callback: (payload) {
+      callback: (payload) async {
         if (payload.newRecord['sender'] == supabase.auth.currentUser!.id) return;
         final sender = widget.chat.users
             .where((user) => user.uid == payload.newRecord['sender'])
             .toList()[0];
         payload.newRecord['sender'] = sender.toJSON();
+        if (payload.newRecord['attachment'] != null) {
+          payload.newRecord['attachment'] = await chatsRepository.getAttachment(payload.newRecord['attachment']);
+        }
         messages?.add(Message.fromJSON(payload.newRecord));
         setState(() {});
         scrollToBottomAnimated();
@@ -83,17 +87,19 @@ class _MessengerWidgetState extends State<MessengerWidget> {
       table: 'messages',
       filter: filter,
       event: PostgresChangeEvent.update,
-      callback: (payload) {
-        messages = messages?.map((message) {
-          if (message.id == payload.newRecord['id']) {
+      callback: (payload) async {
+        for (int i = 0; i < messages!.length; i++) {
+          if (messages![i].id == payload.newRecord['id']) {
             final sender = widget.chat.users
                 .where((user) => user.uid == payload.newRecord['sender'])
                 .toList()[0];
+            if (payload.newRecord['attachment'] != null) {
+              payload.newRecord['attachment'] = await chatsRepository.getAttachment(payload.newRecord['attachment']);
+            }
             payload.newRecord['sender'] = sender.toJSON();
-            return Message.fromJSON(payload.newRecord);
+            messages![i] = Message.fromJSON(payload.newRecord);
           }
-          return message;
-        }).toList();
+        }
         setState(() {});
       },
     );
@@ -113,37 +119,40 @@ class _MessengerWidgetState extends State<MessengerWidget> {
 
     channel.subscribe();
   }
+  
 
   void onSendMessage() {
-    if (messageController.text == '') return;
+    final text = messageController.text.trim();
+    if (text == '' && attachment == null) return;
     final message = Message(
       id: DateTime.now().millisecondsSinceEpoch,
       chatId: widget.chat.id,
       user: (userBloc.state as UserStateLoaded).user,
-      text: messageController.text,
+      text: text,
       repliedMesssageID: replyMessage?.id,
+      attachment: attachment != null ? FileImage(attachment!) : null,
       time: DateTime.now().toUtc(),
     );
-    chatsRepository.sendMessage(message);
+    chatsRepository.sendMessage(message, attachment);
     message.time = message.time.toLocal();
     messages?.add(message);
+    attachment = null;
     setState(() {});
-    if (attachment != null) chatsRepository.uploadAttachment(attachment!);
     messageController.text = '';
     focusNode.requestFocus();
-    replyMessage = null;
+    replyMessage = null;  
     scrollToBottomAnimated();
     sortMessages();
   }
 
   void onEditMessage() {
-    if (messageController.text == '') return;
+    final text = messageController.text.trim();
+    if (text == '') return;
     for (Message message in messages!) {
-      if (message.id == editingMessage!.id)
-        message.text = messageController.text;
+      if (message.id == editingMessage!.id) message.text = text;
       break;
     }
-    chatsRepository.editMessage(editingMessage!.id, messageController.text);
+    chatsRepository.editMessage(editingMessage!.id, text);
     editingMessage = null;
     messageController.text = tmpMessage;
     setState(() {});
@@ -151,7 +160,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
 
   void onSetEditing(Message message) {
     editingMessage = message;
-    tmpMessage = messageController.text;
+    tmpMessage = messageController.text.trim();
     messageController.text = message.text;
     setState(() {});
   }
@@ -164,7 +173,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
 
   void onSetReply(Message message) {
     replyMessage = message;
-    tmpMessage = messageController.text;
+    tmpMessage = messageController.text.trim();
     messageController.text = '';
     setState(() {});
   }
@@ -175,19 +184,22 @@ class _MessengerWidgetState extends State<MessengerWidget> {
     setState(() {});
   }
 
-  void onDeleteMessage(int id) {
-    messages = messages?.where((message) => message.id != id).toList();
+  void onDeleteMessage(Message message) {
+    messages = messages?.where((mess) => message.id != mess.id).toList();
     setState(() {});
     sortMessages();
-    chatsRepository.deleteMessage(id);
+    chatsRepository.deleteMessage(message);
   }
 
   void onAttachImage() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? ximage = await picker.pickImage(source: ImageSource.gallery);
-    if (ximage != null) {
-      final File file = File(ximage.path);
-      attachment = file;
+    final FilePickerResult? result = await FilePicker.platform.pickFiles(
+      dialogTitle: 'Выбор изображения',
+      type: FileType.custom,
+      allowedExtensions: ['png', 'jpg'],
+    );
+
+    if (result != null) {
+      attachment = File(result.files.single.path!);
       setState(() {});
     }
   }
@@ -201,15 +213,19 @@ class _MessengerWidgetState extends State<MessengerWidget> {
   }
 
   void scrollToBottomAnimated() {
-    if (messages!.isNotEmpty) {
-      Future.delayed(Duration(milliseconds: 20)).then((val) {
-        scrollController.animateTo(
-          scrollController.position.maxScrollExtent, 
-          duration: Duration(milliseconds: 250),
-          curve: Curves.ease,
-        );
-      });
+    if (scrollController.hasClients) {
+      if (messages!.isNotEmpty && scrollController.position.pixels == scrollController.position.maxScrollExtent) {
+        Future.delayed(Duration(milliseconds: 30)).then((val) {
+          scrollController.animateTo(
+            scrollController.position.maxScrollExtent,
+            duration: Duration(milliseconds: 250),
+            curve: Curves.ease,
+          );
+        });
+      }
     }
+
+    Future.delayed(Duration(milliseconds: 1)).then((val) => scrollToBottomAnimated());
   }
 
   void sortMessages() {
@@ -262,20 +278,12 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                                 style: TextStyle(fontSize: 18, color: Colors.grey),
                               ),
                             ),
-                            Row(
-                              mainAxisAlignment:
-                                  messages![i].user.uid == state.user.uid
-                                  ? MainAxisAlignment.end
-                                  : MainAxisAlignment.start,
-                              children: [
-                                MessageWidget(
-                                  message: messages![i],
-                                  onEditMessage: onSetEditing,
-                                  onDeleteMessage: onDeleteMessage,
-                                  messages: messages!,
-                                  onReplyMessage: onSetReply,
-                                ),
-                              ],
+                            MessageWidget(
+                              message: messages![i],
+                              onEditMessage: onSetEditing,
+                              onDeleteMessage: onDeleteMessage,
+                              messages: messages!,
+                              onReplyMessage: onSetReply,
                             ),
                           ],
                         );
@@ -292,14 +300,9 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                 : ListView.builder(
                     itemCount: 3 + Random().nextInt(4),
                     itemBuilder: (context, index) {
-                      return Row(
-                        mainAxisAlignment: Random().nextInt(2) == 1 ? MainAxisAlignment.start : MainAxisAlignment.end,
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.all(10),
-                            child: SihmmerWidget(width: 300, height: 80)
-                          )
-                        ]
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: 10),
+                        child: SihmmerWidget(height: 50, radius: 0),
                       );
                     },
                 )
@@ -356,7 +359,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                                   ),
                                   Expanded(
                                     child: Text(
-                                      replyMessage!.text,
+                                      replyMessage!.text != '' ? replyMessage!.text : 'отправленное изображение',
                                       style: theme.textTheme.labelMedium,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -374,13 +377,43 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                       )
                       else if (attachment != null)
                       Container(
+                        height: 150,
                         color: theme.canvasColor,
+                        padding: EdgeInsets.all(10),
                         child: Row(
                           children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                image: DecorationImage(image: FileImage(attachment!))
-                              ),
+                            Stack(
+                              children: [
+                                Container(
+                                  width: 200,
+                                  height: double.infinity,
+                                  decoration: BoxDecoration(
+                                    image: DecorationImage(
+                                      image: FileImage(attachment!),
+                                    ),
+                                    borderRadius: BorderRadius.circular(10)
+                                  ),
+                                  child: Align(
+                                    alignment: Alignment.topRight,
+                                    child: Container(
+                                      width: 30,
+                                      height: 30,
+                                      decoration: BoxDecoration(
+                                          color: theme.colorScheme.error,
+                                          borderRadius: BorderRadius.circular(20)
+                                        ),
+                                      child: Ink(
+                                        child: InkWell(
+                                          onTap: () => setState(() => attachment = null),
+                                          customBorder: CircleBorder(),
+                                          splashColor: theme.primaryColor,
+                                          child: Icon(Icons.close, size: 20),
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                ),
+                              ],
                             )
                           ],
                         ),
@@ -391,11 +424,11 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                         padding: EdgeInsets.symmetric(horizontal: 10),
                         child: Row(
                           children: [
-                            // IconButton(
-                            //   color: theme.colorScheme.secondary,
-                            //   onPressed: onAttachImage,
-                            //   icon: Icon(Icons.attachment_rounded, size: 28),
-                            // ),
+                            IconButton(
+                              color: theme.colorScheme.secondary,
+                              onPressed: onAttachImage,
+                              icon: Icon(Icons.attach_file, size: 28),
+                            ),
                             Expanded(
                               child: SizedBox(
                                 height: 50,
@@ -439,7 +472,9 @@ class _MessengerWidgetState extends State<MessengerWidget> {
               ),
             ],
           );
-        } 
+        } else if (state is UserStateError) {
+          return Center(child: Text('Произошла ошибка при загрузке данных пользователя', style: theme.textTheme.titleMedium));
+        }
         return SizedBox.shrink();
       },
     );

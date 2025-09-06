@@ -84,13 +84,14 @@ class TeamsRepository {
       iconProviders[id] = provider;
       return provider;
     }
-    final provider = AssetImage('assets/default_team_icon.png');
+    final provider = AssetImage('assets/images/default_team_icon.png');
     iconProviders[id] = provider;
     return provider;
 
   }
 
   Future<void> uploadIcon(int id, File file) async {
+    iconProviders[id] = FileImage(file);
     await supabase.storage.from('main').upload(
       'team_icons/$id.png', 
       file, 

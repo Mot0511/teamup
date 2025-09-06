@@ -13,10 +13,12 @@ class SearchBtn extends StatefulWidget {
   SearchBtn({
     super.key,
     required this.onStartSearching,
-    required this.onStopSearching
+    required this.onStopSearching,
+    required this.state
   });
   final Function onStartSearching;
   final Function onStopSearching;
+  final SearchState state;
 
   @override
   State<SearchBtn> createState() => _SearchBtnState();
@@ -37,9 +39,14 @@ class _SearchBtnState extends State<SearchBtn>
       vsync: this,
       value: 1.0,
     );
-    if (searchBloc.state is SearchStateSearching) {
-      animationController.repeat(reverse: true);
-    }
+
+    searchBloc.stream.listen((state) {
+      if (searchBloc.state is SearchStateSearching) {
+        animationController.repeat(reverse: true);
+      } else {
+        animationController.animateBack(1);
+      }
+    });
 
     colorAnimation = ColorTween(begin: const Color.fromARGB(255, 0, 88, 46), end: const Color(0xff004323)).animate(animationController);
   }
@@ -62,36 +69,31 @@ class _SearchBtnState extends State<SearchBtn>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return BlocBuilder<SearchBloc, SearchState>(
-      bloc: searchBloc,
-      builder: (context, state) {
-        return AnimatedBuilder(
-          animation: animationController,
-          builder: (context, color) {
-            return Container(
-              width: 180,
-              height: 180,
-              child: Ink(
-                decoration: BoxDecoration(
-                  color: colorAnimation.value,
-                  border: Border.all(color: theme.primaryColor, width: 5),
-                  borderRadius: BorderRadius.circular(100),
-                ),
-                child: InkWell(
-                  onTap: () => searchHandler(state),
-                  customBorder: CircleBorder(),
-                  splashColor: theme.primaryColor,
-                  child: Icon(
-                    Icons.search,
-                    color: Colors.white, 
-                    size: 100
-                  ),
-                ),
+    return AnimatedBuilder(
+      animation: animationController,
+      builder: (context, color) {
+        return SizedBox(
+          width: 180,
+          height: 180,
+          child: Ink(
+            decoration: BoxDecoration(
+              color: colorAnimation.value,
+              border: Border.all(color: theme.primaryColor, width: 5),
+              borderRadius: BorderRadius.circular(100),
+            ),
+            child: InkWell(
+              onTap: () => searchHandler(widget.state),
+              customBorder: CircleBorder(),
+              splashColor: theme.primaryColor,
+              child: Icon(
+                Icons.search,
+                color: Colors.white, 
+                size: 100
               ),
-            );
-          }
+            ),
+          ),
         );
-      },
+      }
     );
   }
 }

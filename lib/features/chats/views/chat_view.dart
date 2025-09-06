@@ -12,6 +12,7 @@ import 'package:teamup/features/user/bloc/user_states.dart';
 import 'package:teamup/features/user/user_repository.dart';
 import 'package:teamup/features/user/views/views.dart';
 import 'package:teamup/features/user/widgets/avatar_widget.dart';
+import 'package:teamup/features/analytics/repositories/analytics_repository.dart';
 
 class ChatView extends StatefulWidget {
   const ChatView({super.key, required this.chat});
@@ -25,6 +26,7 @@ class _ChatViewState extends State<ChatView> {
 
   final userBloc = GetIt.I<UserBloc>();
   final userRepository = GetIt.I<UserRepository>();
+  final analyticsRepository = GetIt.I<AnalyticsRepository>();
   final supabase = GetIt.I<SupabaseClient>();
   late RealtimeChannel isOnlineChannel;
 
@@ -33,7 +35,7 @@ class _ChatViewState extends State<ChatView> {
   @override
   void initState() {
     super.initState();
-    
+    analyticsRepository.logEvent('open_chat_screen');
     getIsOnline();
   }
 
@@ -97,6 +99,10 @@ class _ChatViewState extends State<ChatView> {
               ],
             ),
             body: MessengerWidget(chat: widget.chat)
+          );
+        } else if (state is UserStateError) {
+          return Scaffold(
+            body: Center(child: Text('Произошла ошибка при загрузке данных пользователя', style: theme.textTheme.titleMedium)),
           );
         } else {
           return Scaffold();

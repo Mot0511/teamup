@@ -8,6 +8,7 @@ import 'package:teamup/features/teams/bloc/teams_events.dart';
 import 'package:teamup/features/teams/models/team.dart';
 import 'package:teamup/features/teams/teams_repository.dart';
 import 'package:teamup/features/teams/views/choose_members_view.dart';
+import 'package:teamup/features/teams/views/team2_view.dart';
 import 'package:teamup/features/teams/widgets/team_icon_widget.dart';
 import 'package:teamup/features/user/bloc/user_bloc.dart';
 import 'package:teamup/features/user/bloc/user_events.dart';
@@ -42,6 +43,8 @@ class _CreateTeamViewState extends State<CreateTeamView> {
   final userBloc = GetIt.I<UserBloc>();
   final teamsBloc = GetIt.I<TeamsBloc>();
 
+  String? nameError;
+
   @override
   void initState() {
     super.initState();
@@ -75,13 +78,25 @@ class _CreateTeamViewState extends State<CreateTeamView> {
   }
 
   void createTeamHandler(context) {
-    final team = Team(id: id, users: members, name: nameController.text);
+    final name = nameController.text.trim();
+    if (name == '') {
+      nameError = 'Придумай название команды';
+      setState(() {});
+      return;
+    }
+    final team = Team(id: id, users: members, name: name);
     teamsBloc.add(AddTeam(team: team, choosenIcon: choosenIcon));
-    Navigator.pop(context);
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => TeamView(team: team)));
   }
 
   void editTeamHandler(context) {
-    widget.team!.name = nameController.text;
+    final name = nameController.text.trim();
+    if (name == '') {
+      nameError = 'Придумай название команды';
+      setState(() {});
+      return;
+    }
+    widget.team!.name = name;
     widget.team!.users = members;
     teamsBloc.add(EditTeam(
       team: (widget.team as Team),
@@ -128,7 +143,7 @@ class _CreateTeamViewState extends State<CreateTeamView> {
               )
             ),
             SizedBox(height: 20),
-            Field(title: 'Название команды', controller: nameController),
+            Field(title: 'Название команды', controller: nameController, error: nameError),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

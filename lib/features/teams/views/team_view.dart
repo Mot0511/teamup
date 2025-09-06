@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:provider/provider.dart';
 import 'package:teamup/features/chats/widgets/messenger_widget.dart';
 import 'package:teamup/features/teams/models/team.dart';
 import 'package:teamup/features/teams/views/create_team_view.dart';
-import 'package:teamup/features/teams/signaling_service.dart';
+import 'package:teamup/features/teams/voice_service.dart';
+import 'package:teamup/features/teams/voice_provider.dart';
 import 'package:teamup/features/teams/widgets/team_icon_widget.dart';
 import 'package:teamup/features/user/bloc/user_bloc.dart';
 import 'package:teamup/features/user/bloc/user_states.dart';
 import 'package:teamup/features/user/models/models.dart';
 import 'package:teamup/features/user/widgets/avatar_widget.dart';
+import 'package:teamup/features/analytics/repositories/analytics_repository.dart';
 
 class TeamView extends StatefulWidget {
   const TeamView({super.key, required this.team});
@@ -22,39 +25,41 @@ class TeamView extends StatefulWidget {
 
 class _TeamViewState extends State<TeamView> {
 
-  bool isVoiceOn = true;
+  bool isVoiceOn = false;
   bool isSoundOn = true;
 
   final userBloc = GetIt.I<UserBloc>();
-  SignalingService? signalingService;
+  final analyticsRepository = GetIt.I<AnalyticsRepository>();
+
+  VoiceService? voiceService;
   
-  final List<RTCVideoRenderer> remoteRTCVideoRenderers = [];
-
-  List<User> usersInOnline = [];
-
-  bool joined = false;
-
   @override
   void initState() {
     super.initState();
-
-    join();
+    analyticsRepository.logEvent('open_team_screen');
+    final voiceProvider = Provider.of<VoiceProvider>(context, listen: false);
+    voiceService = voiceProvider.voiceService;
+    if (voiceProvider.voiceService != null) {
+      if (voiceProvider.voiceService!.roomId == widget.team.id.toString()) {
+        isVoiceOn = voiceProvider.isVoiceOn;
+        isSoundOn = voiceProvider.isSoundOn;
+      } else {
+        isSoundOn = false;
+      }
+      setState(() {});
+    } else {
+      join(voiceProvider, false, true);
+    }
   }
-
-  Future<void> join() async {
+ 
+  Future<void> join(VoiceProvider voiceProvider, bool isVoiceOn, bool isSoundOn) async {
     final user = (userBloc.state as UserStateLoaded).user;
-    signalingService = SignalingService(
-      wsUrl: "ws://192.168.0.127:8080",
+    await voiceProvider.init(      
       roomId: widget.team.id.toString(),
       selfId: user.uid,
-      onPeersChanged: (peers) {
-        usersInOnline = widget.team.users.where((user) => peers.contains(user.uid)).toList();
-        usersInOnline.insert(0, user);
-        setState(() {});
-      },
+      isVoiceOn: isVoiceOn,
+      isSoundOn: isSoundOn,
     );
-    await signalingService!.init();
-    setState(() => joined = true);
   }
 
   @override
@@ -64,15 +69,41 @@ class _TeamViewState extends State<TeamView> {
     }
   }
 
+  void onToggleVoice(VoiceProvider voiceProvider) async {
+    if (voiceProvider.voiceService == null || voiceProvider.voiceService!.roomId != widget.team.id.toString()) {
+      voiceProvider.voiceService?.dispose();
+      await join(voiceProvider, true, false);
+    } else {
+      await voiceProvider.toggleVoice();
+    }
+    isVoiceOn = !isVoiceOn;
+    setState(() {});
+  }
+
+  void onToggleSound(VoiceProvider voiceProvider) async {
+    if (voiceProvider.voiceService == null || voiceProvider.voiceService!.roomId != widget.team.id.toString()) {
+      voiceProvider.voiceService?.dispose();
+      await join(voiceProvider, false, true);
+    } else {
+      await voiceProvider.toggleSound();
+    }
+    isSoundOn = !isSoundOn;
+    setState(() {});
+  }
+
   @override
   void dispose() {
-    signalingService?.dispose();
+    if (!isSoundOn && !isVoiceOn) {
+      voiceService?.dispose();
+      voiceService = null;
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final voiceProvider = Provider.of<VoiceProvider>(context);
     return BlocBuilder<UserBloc, UserState>(
       bloc: userBloc,
       builder: (context, state) {
@@ -95,11 +126,12 @@ class _TeamViewState extends State<TeamView> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     SizedBox(width: 5),
+                    if (voiceProvider.voiceService?.roomId == widget.team.id.toString())
                     Stack(
-                      children: List.generate(usersInOnline.length, (i) {
+                      children: List.generate(voiceProvider.peers.length, (i) {
                         return Padding(
-                          padding: EdgeInsets.only(left: 10.0 * i),
-                          child: AvatarWidget(uid: usersInOnline[i].uid, size: 20)
+                          padding: EdgeInsets.only(left: 5.0 * i),
+                          child: AvatarWidget(uid: voiceProvider.peers[i], size: 20)
                         );
                       })
                     )
@@ -114,20 +146,21 @@ class _TeamViewState extends State<TeamView> {
               ),
               actions: [
                 IconButton(
-                  onPressed: () => setState(() => isVoiceOn = !isVoiceOn),
+                  onPressed: () => onToggleVoice(voiceProvider),
                   icon: isVoiceOn ? Icon(Icons.mic, color: Colors.green) : Icon(Icons.mic_off, color: Colors.red)
                 ),
                 IconButton(
-                  onPressed: () => setState(() => isSoundOn = !isSoundOn),
+                  onPressed: () => onToggleSound(voiceProvider),
                   icon: isSoundOn ? Icon(Icons.volume_up, color: Colors.green) : Icon(Icons.volume_off, color: Colors.red)
                 ),
               ],
             ),
             body: MessengerWidget(chat: widget.team)
           );
-        } else {
-          return Scaffold();
+        } else if (state is UserStateError) {
+          return Center(child: Text('Ошибка при загурзке данных пользователя'));
         }
+        return Scaffold();
       }
     );
   }
