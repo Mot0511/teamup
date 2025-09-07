@@ -27,7 +27,7 @@ class DropdowmWidget extends StatelessWidget {
       width: MediaQuery.of(context).size.width,
       child: DropdownButton<String>(
         
-        isExpanded: true, // Устанавливаем флаг для расширения на всю ширину
+        isExpanded: true,
         value: value,
         items: items.map((DropdownItem item) {
           return DropdownMenuItem(value: item.value, child: Text(item.text));

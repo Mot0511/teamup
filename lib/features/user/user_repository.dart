@@ -29,13 +29,10 @@ class UserRepository {
 
   final Map<String, ImageProvider> avatarProviders = {};
 
- 
-
   Future<void> googleSignIn() async {
       const androidClientId = '677191252450-plq6hd0tkmh0befgpm2lrh06hpf7mj37.apps.googleusercontent.com';
       const desktopClientId = '677191252450-ibg34ij1u3kcjo5pid4ptjtf8dadp10f.apps.googleusercontent.com';
       const webClientId = '677191252450-s6a7kuf9dek6arhufeot9i968a8bhloh.apps.googleusercontent.com';
-      
       
       if (Platform.isAndroid) {
         final googleSignIn = GoogleSignIn(
@@ -76,23 +73,30 @@ class UserRepository {
   }
 
   Future<void> discordSignIn() async {
-    final loginUrl = (await supabase.auth.getOAuthSignInUrl(
-      provider: sb.OAuthProvider.discord,
-      redirectTo: "https://flvcuqostwctdicmncrb.supabase.co/auth/v1/callback"
-    )).url;
+    if (Platform.isAndroid) {
+      await supabase.auth.signInWithOAuth(
+        sb.OAuthProvider.discord,
+        redirectTo: ''
+      );
+    } else {
+      final loginUrl = (await supabase.auth.getOAuthSignInUrl(
+        provider: sb.OAuthProvider.discord,
+        redirectTo: "https://flvcuqostwctdicmncrb.supabase.co/auth/v1/callback"
+      )).url;
 
-    final result = await FlutterWebAuth2.authenticate(
-      url: loginUrl,
-      callbackUrlScheme: "https://flvcuqostwctdicmncrb.supabase.co/auth/v1/callback",
-      options: FlutterWebAuth2Options(useWebview: true)
-    );
-    await supabase.auth.getSessionFromUrl(Uri.parse(result));
+      final result = await FlutterWebAuth2.authenticate(
+        url: loginUrl,
+        callbackUrlScheme: "https://flvcuqostwctdicmncrb.supabase.co/auth/v1/callback",
+        options: FlutterWebAuth2Options(useWebview: true)
+      );
+      await supabase.auth.getSessionFromUrl(Uri.parse(result));
+    }
   }
 
   Future<void> signout() async {
     try {
       await GoogleSignIn().disconnect();
-    } on MissingPluginException catch (_) {}
+    } on Exception catch (_) {}
     final uid = supabase.auth.currentUser!.id;
     await supabase.from('fcm_tokens').delete().eq('user_id', uid);
     await supabase.auth.signOut();

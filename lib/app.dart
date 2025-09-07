@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:app_links/app_links.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -47,6 +48,8 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
   final notificationsService = GetIt.I<NotificationsService>();
 
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  
+  final appLinks = AppLinks();
 
   void initState() {
     super.initState();
@@ -72,6 +75,10 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
         userRepository.setOnline(userdata.id);
         notificationsService.setListeners(navigatorKey);
       }
+    });
+
+    appLinks.uriLinkStream.listen((uri) {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => NavScreen()));
     });
 
     WidgetsBinding.instance.addObserver(this);
