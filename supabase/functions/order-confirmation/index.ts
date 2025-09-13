@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { JWT } from 'npm:google-auth-library@9'
 import serviceAccount from '../service-account.json' with { type: 'json' }
+
 interface Notification {
   id: string
   user_id: string
@@ -18,6 +19,7 @@ const supabase = createClient(
 )
 Deno.serve(async (req) => {
   const payload: WebhookPayload = await req.json()
+  console.log(payload.record.text)
   const message = payload.record
   const chatID = message.chat
   const teamName = (await supabase.from('chats').select('name').eq('id', chatID).single()).data.name
@@ -25,10 +27,11 @@ Deno.serve(async (req) => {
 
   const fcmTokens = []
   for (const user of users.data) {
-    const fcmToken = await supabase.from('fcm_tokens').select('fcm_token').eq('user_id', user.member).single()
-    fcmTokens.push(fcmToken.data.fcm_token)
+    const fcmToken = await supabase.from('fcm_tokens').select('fcm_token').eq('user_id', user.member)
+    if (fcmToken.data.length) {
+      fcmTokens.push(fcmToken.data[0].fcm_token)
+    }
   }
-
   const sender = await supabase.from('users').select('username').eq('uid', payload.record.sender).single();
   const storage = supabase.storage.from('main');
 
@@ -36,9 +39,7 @@ Deno.serve(async (req) => {
     clientEmail: serviceAccount.client_email,
     privateKey: serviceAccount.private_key,
   })
-
   for (const token of fcmTokens) {
-    console.log(teamName)
     const res = await fetch(
       `https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`,
       {
@@ -55,10 +56,11 @@ Deno.serve(async (req) => {
               body: payload.record.text,
             },
             data: {
+              id: String(payload.record.id),
+              title: sender.data.username,
+              body: payload.record.text,
+              screen: teamName != null ? `team-${chatID}` : `chat-${chatID}`,
               click_action: "FLUTTER_NOTIFICATION_CLICK",
-              sound: "default", 
-              status: "done",
-              screen: teamName != null ? `team-${chatID}` : `chat-${chatID}`
             }
           },
         }),

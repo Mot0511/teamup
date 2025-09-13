@@ -76,7 +76,10 @@ class UserRepository {
     if (Platform.isAndroid) {
       await supabase.auth.signInWithOAuth(
         sb.OAuthProvider.discord,
-        redirectTo: ''
+        redirectTo: 'teamup://home',
+        queryParams: {
+          'redirectTo': 'teamup://home'
+        }
       );
     } else {
       final loginUrl = (await supabase.auth.getOAuthSignInUrl(
@@ -86,8 +89,8 @@ class UserRepository {
 
       final result = await FlutterWebAuth2.authenticate(
         url: loginUrl,
-        callbackUrlScheme: "https://flvcuqostwctdicmncrb.supabase.co/auth/v1/callback",
-        options: FlutterWebAuth2Options(useWebview: true)
+        callbackUrlScheme: "http://localhost:3000",
+        options: FlutterWebAuth2Options(useWebview: false)
       );
       await supabase.auth.getSessionFromUrl(Uri.parse(result));
     }

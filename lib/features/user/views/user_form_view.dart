@@ -69,11 +69,11 @@ class _UserFormViewState extends State<UserFormView> {
     );
     await userRepository.addUserdata(user);
     userBloc.add(LoadUser(uid: widget.userdata.id));
-    notificationsService.init(widget.userdata.id);
+    notificationsService.setFcmToken(widget.userdata.id);
     userRepository.setOnline(widget.userdata.id);
     if (mounted) {
       await analyticsRepository.logSignup(user, context);
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => 
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) =>
         NavScreen()
       ));
     }

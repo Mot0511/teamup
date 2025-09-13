@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "677191252450",
+    "project_id": "teamup-c302c",
+    "storage_bucket": "teamup-c302c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:677191252450:android:7e67bbdd15bef646f4a1bb",
+        "android_client_info": {
+          "package_name": "ru.ballisty.teamup"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "677191252450-plq6hd0tkmh0befgpm2lrh06hpf7mj37.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "ru.ballisty.teamup",
+            "certificate_hash": "fd51bef8287c024b01e434b912978ce4f0c41c80"
+          }
+        },
+        {
+          "client_id": "677191252450-s6a7kuf9dek6arhufeot9i968a8bhloh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-XiA4BTf2wmqIlwWOVTUagkYI4l9oCDU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "677191252450-s6a7kuf9dek6arhufeot9i968a8bhloh.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

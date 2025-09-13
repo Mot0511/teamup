@@ -41,6 +41,7 @@ dependencies:
   dio: ^5.9.0
   shared_preferences: ^2.5.3
   app_links: ^6.4.1
+  flutter_local_notifications: ^19.4.1
 
 
 dev_dependencies:

@@ -12,12 +12,35 @@ import 'package:teamup/features/user/user_repository.dart';
 import 'package:teamup/features/user/models/user.dart' as models;
 import 'package:windows_notification/notification_message.dart';
 import 'package:windows_notification/windows_notification.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 enum OS {android, windows, web}
 
-class NotificationsService {
-  NotificationsService();
+@pragma('vm:entry-point')
+Future<void> onBgMessage(RemoteMessage message) async {
+  final notificationService = GetIt.I<NotificationsService>();
+  print('BACKGROUND HANDLER');
 
+  final androidDetails = AndroidNotificationDetails(
+    'main_channel', // ID канала
+    'Основной канал', // Имя канала
+    importance: Importance.max,
+    priority: Priority.high,
+  );
+
+  final NotificationDetails details = NotificationDetails(
+    android: androidDetails,
+  );
+
+  await notificationService.notifications!.show(
+    int.parse(message.data['id']) ~/ 10000000000,
+    message.data['title'],
+    message.data['body'],
+    details,
+  );
+}
+
+class NotificationsService {
   bool isOnline = false;
   
   late final String userID;
@@ -27,18 +50,31 @@ class NotificationsService {
   final chatsRepository = GetIt.I<ChatsRepository>();
   final teamsRepository = GetIt.I<TeamsRepository>();
 
-  void init(String uid) async {
+  FlutterLocalNotificationsPlugin? notifications;
+
+  Future<void> init() async {
+    notifications = FlutterLocalNotificationsPlugin();
+
+    final settings = InitializationSettings(
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      iOS: DarwinInitializationSettings()
+    );
+
+    await notifications!.initialize(settings);
+  } 
+
+  Future<void> setFcmToken(String uid) async {
     if (Platform.isAndroid) {
       await FirebaseMessaging.instance.requestPermission();
       await FirebaseMessaging.instance.getAPNSToken();
       final fcmToken = await FirebaseMessaging.instance.getToken();
       if (fcmToken != null) {
-          await supabase.from('fcm_tokens').insert([
+        await supabase.from('fcm_tokens').upsert([
           {
             'user_id': uid,
             'fcm_token': fcmToken
           }
-          ]);
+        ]);
       }
     }
   }
@@ -47,13 +83,16 @@ class NotificationsService {
     final userID = supabase.auth.currentUser!.id;
     if (Platform.isAndroid) {
       FirebaseMessaging.instance.onTokenRefresh.listen((fcmToken) async {
-        await supabase.from('fcm_tokens').upsert(
+        await supabase.from('fcm_tokens').delete().eq('user_id', userID);
+        await supabase.from('fcm_tokens').insert(
           {
             'user_id': userID,
             'fcm_token': fcmToken
           }
         );
       });
+
+      // FirebaseMessaging.onBackgroundMessage(onBgMessage);
 
       FirebaseMessaging.onMessageOpenedApp.listen((message) async {
         final type = message.data['screen'].split('-')[0];
@@ -72,6 +111,7 @@ class NotificationsService {
         }
 
       });
+
     } else {
       final data = await supabase.from('members').select('chat').eq('member', userID);
       final chats = data.map((chat) => chat['chat']);

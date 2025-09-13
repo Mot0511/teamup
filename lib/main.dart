@@ -55,8 +55,13 @@ void main() async {
   GetIt.I.registerSingleton(ChatsBloc(chatsRepository: GetIt.I<ChatsRepository>()));
   GetIt.I.registerSingleton(TeamsBloc(teamsRepository: GetIt.I<TeamsRepository>()));
   GetIt.I.registerSingleton(SearchBloc(searchRepository: GetIt.I<SearchRepository>()));
-  GetIt.I.registerSingleton(NotificationsService());
   GetIt.I.registerSingleton(await SharedPreferences.getInstance());
+
+  final notificationService = NotificationsService();
+  if (Platform.isAndroid) {
+    await notificationService.init();
+  }
+  GetIt.I.registerSingleton(notificationService);
 
   runApp(
     MultiProvider(

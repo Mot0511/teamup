@@ -26,7 +26,6 @@ class DropdowmWidget extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: 10),
       width: MediaQuery.of(context).size.width,
       child: DropdownButton<String>(
-        
         isExpanded: true,
         value: value,
         items: items.map((DropdownItem item) {

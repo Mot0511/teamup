@@ -40,6 +40,7 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
 
   final supabase = GetIt.I<SupabaseClient>();
   late final StreamSubscription<AuthState> _authStateSubscription;
+  late final StreamSubscription<Uri> appLinksSubscription;
 
   final userBloc = GetIt.I<UserBloc>();
   final chatsRepository = GetIt.I<ChatsRepository>();
@@ -53,11 +54,17 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
 
   void initState() {
     super.initState();
+
+    print(1);
+    appLinksSubscription = appLinks.uriLinkStream.listen((uri) {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => NavScreen()));
+    });
+
     _authStateSubscription = supabase.auth.onAuthStateChange.listen((data) async {
       final userdata = supabase.auth.currentUser;
       if (userdata?.id != null) {
         if (data.event == AuthChangeEvent.signedIn) {
-          notificationsService.init(userdata!.id);
+          notificationsService.setFcmToken(userdata!.id);
         }
         final users = await supabase.from('users').select().eq('uid', userdata!.id);
         if (users.isEmpty) {
@@ -75,10 +82,6 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
         userRepository.setOnline(userdata.id);
         notificationsService.setListeners(navigatorKey);
       }
-    });
-
-    appLinks.uriLinkStream.listen((uri) {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => NavScreen()));
     });
 
     WidgetsBinding.instance.addObserver(this);
