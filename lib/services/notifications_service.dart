@@ -16,29 +16,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 enum OS {android, windows, web}
 
-@pragma('vm:entry-point')
-Future<void> onBgMessage(RemoteMessage message) async {
-  final notificationService = GetIt.I<NotificationsService>();
-  print('BACKGROUND HANDLER');
 
-  final androidDetails = AndroidNotificationDetails(
-    'main_channel', // ID канала
-    'Основной канал', // Имя канала
-    importance: Importance.max,
-    priority: Priority.high,
-  );
-
-  final NotificationDetails details = NotificationDetails(
-    android: androidDetails,
-  );
-
-  await notificationService.notifications!.show(
-    int.parse(message.data['id']) ~/ 10000000000,
-    message.data['title'],
-    message.data['body'],
-    details,
-  );
-}
 
 class NotificationsService {
   bool isOnline = false;
@@ -64,18 +42,45 @@ class NotificationsService {
   } 
 
   Future<void> setFcmToken(String uid) async {
+    print(uid);
     if (Platform.isAndroid) {
       await FirebaseMessaging.instance.requestPermission();
       await FirebaseMessaging.instance.getAPNSToken();
       final fcmToken = await FirebaseMessaging.instance.getToken();
       if (fcmToken != null) {
-        await supabase.from('fcm_tokens').upsert([
-          {
-            'user_id': uid,
-            'fcm_token': fcmToken
-          }
-        ]);
+        final token = await supabase.from('fcm_tokens').select().eq('user_id', uid);
+        if (token.isEmpty) {
+          await supabase.from('fcm_tokens').insert([
+            {
+              'user_id': uid,
+              'fcm_token': fcmToken
+            }
+          ]);
+        } else if (token[0]['fcm_token'] != fcmToken) {
+          await supabase.from('fcm_tokens').update(
+            {
+              'fcm_token': fcmToken
+            } 
+          ).eq('user_id', uid);
+        }
       }
+    }
+  }
+
+  Future<void> redirect(message, navigatorKey) async {
+    final type = message.data['screen'].split('-')[0];
+    final id = message.data['screen'].split('-')[1];
+
+    if (type == 'chat') {
+      final chat = await chatsRepository.getChat(int.parse(id));
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(builder: (_) => ChatView(chat: chat))
+      );
+    } else {
+      final team = await teamsRepository.getTeam(int.parse(id));
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(builder: (_) => TeamView(team: team))
+      );
     }
   }
 
@@ -92,25 +97,8 @@ class NotificationsService {
         );
       });
 
-      // FirebaseMessaging.onBackgroundMessage(onBgMessage);
-
-      FirebaseMessaging.onMessageOpenedApp.listen((message) async {
-        final type = message.data['screen'].split('-')[0];
-        final id = message.data['screen'].split('-')[1];
-
-        if (type == 'chat') {
-          final chat = await chatsRepository.getChat(int.parse(id));
-          navigatorKey.currentState?.push(
-            MaterialPageRoute(builder: (_) => ChatView(chat: chat))
-          );
-        } else {
-          final team = await teamsRepository.getTeam(int.parse(id));
-          navigatorKey.currentState?.push(
-            MaterialPageRoute(builder: (_) => TeamView(team: team))
-          );
-        }
-
-      });
+      FirebaseMessaging.onMessageOpenedApp.listen((message) => redirect(message, navigatorKey));
+      FirebaseMessaging.instance.getInitialMessage().then((message) => redirect(message, navigatorKey));
 
     } else {
       final data = await supabase.from('members').select('chat').eq('member', userID);

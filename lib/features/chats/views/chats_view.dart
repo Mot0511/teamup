@@ -55,7 +55,10 @@ class _ChatsViewState extends State<ChatsView> {
         title: Text('Личные чаты'),
         actions: [
           if (!Platform.isAndroid)
-          IconButton(onPressed: loadChats, icon: Icon(Icons.refresh))
+          IconButton(onPressed: () {
+            final completer = Completer();
+            loadChats(completer: completer);
+          }, icon: Icon(Icons.refresh))
         ],
        ),
       body: BlocBuilder<UserBloc, UserState>(

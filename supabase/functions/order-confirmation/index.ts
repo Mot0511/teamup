@@ -26,10 +26,13 @@ Deno.serve(async (req) => {
   const users = await supabase.from('members').select('member').eq('chat', chatID)
 
   const fcmTokens = []
-  for (const user of users.data) {
-    const fcmToken = await supabase.from('fcm_tokens').select('fcm_token').eq('user_id', user.member)
-    if (fcmToken.data.length) {
-      fcmTokens.push(fcmToken.data[0].fcm_token)
+  for (const user of users.data.filter(user => user.member != payload.record.sender)) {
+    const isOnline = (await supabase.from('users').select('isOnline').eq('uid', user.member).single()).data.isOnline
+    if (!isOnline) {
+      const fcmToken = await supabase.from('fcm_tokens').select('fcm_token').eq('user_id', user.member)
+      if (fcmToken.data.length) {
+        fcmTokens.push(fcmToken.data[0].fcm_token)
+      }  
     }
   }
   const sender = await supabase.from('users').select('username').eq('uid', payload.record.sender).single();
@@ -55,10 +58,13 @@ Deno.serve(async (req) => {
               title: sender.data.username,
               body: payload.record.text,
             },
+            android: {
+              priority: "high",
+            },
             data: {
               id: String(payload.record.id),
               title: sender.data.username,
-              body: payload.record.text,
+              body: payload.record.text == '' && payload.record.attachment ? 'Изображение' : payload.record.text,
               screen: teamName != null ? `team-${chatID}` : `chat-${chatID}`,
               click_action: "FLUTTER_NOTIFICATION_CLICK",
             }

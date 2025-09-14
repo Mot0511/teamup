@@ -12,6 +12,7 @@ import 'package:teamup/features/user/bloc/user_states.dart';
 import 'package:teamup/features/user/models/models.dart';
 import 'package:teamup/features/user/widgets/user_widget.dart';
 import 'package:teamup/models/game.dart';
+import 'package:teamup/widgets/shimmer_widget.dart';
 
 class InfoWidget extends StatefulWidget {
   const InfoWidget({
@@ -78,7 +79,7 @@ class _InfoWidgetState extends State<InfoWidget> {
               onSetTeamSize: (value) => widget.onSetTeamSize(value),
             ),
           );
-        } else {
+        } else if (state is SearchStateSearching) {
           return FadeTransition(
             opacity: opacity,
             child: PendingTeamStateWidget(
@@ -86,6 +87,8 @@ class _InfoWidgetState extends State<InfoWidget> {
               pendingUsers: widget.pendingUsers
             ),
           );
+        } else {
+          return SihmmerWidget(height: 100);
         }
       }
     );

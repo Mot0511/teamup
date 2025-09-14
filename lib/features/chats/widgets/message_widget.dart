@@ -5,6 +5,7 @@ import 'package:teamup/features/chats/models/message.dart';
 import 'package:teamup/features/user/bloc/user_bloc.dart';
 import 'package:teamup/features/user/bloc/user_states.dart';
 import 'package:teamup/features/user/widgets/avatar_widget.dart';
+import 'package:flutter/services.dart';
 
 class MessageWidget extends StatefulWidget {
   MessageWidget({
@@ -37,12 +38,13 @@ class _MessageWidgetState extends State<MessageWidget> {
     final theme = Theme.of(context);
 
     final List<PopupMenuItem> popupItems = [
-      PopupMenuItem(child: Text("Ответить", style: theme.textTheme.labelSmall), value: 'reply'),
+      PopupMenuItem(value: 'reply', child: Text("Ответить", style: theme.textTheme.labelSmall)),
+      PopupMenuItem(value: 'copy', child: Text("Копировать", style: theme.textTheme.labelSmall)),
     ];
     if (widget.message.user.uid == (userBloc.state as UserStateLoaded).user.uid) {
       popupItems.addAll([
-        PopupMenuItem(child: Text("Изменить", style: theme.textTheme.labelSmall), value: 'edit'),
-        PopupMenuItem(child: Text("Удалить", style: theme.textTheme.labelSmall), value: 'delete'),
+        PopupMenuItem(value: 'edit', child: Text("Изменить", style: theme.textTheme.labelSmall)),
+        PopupMenuItem(value: 'delete', child: Text("Удалить", style: theme.textTheme.labelSmall)),
       ]);
     }
     final res = await showMenu(
@@ -56,6 +58,9 @@ class _MessageWidgetState extends State<MessageWidget> {
     );
 
     switch (res) {
+      case 'copy':
+        await Clipboard.setData(ClipboardData(text: widget.message.text));
+        break;
       case 'reply':
         widget.onReplyMessage!(widget.message);
         break;

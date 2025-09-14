@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
@@ -27,6 +28,11 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:teamup/features/analytics/repositories/analytics_repository.dart';
 import 'package:teamup/services/notifications_service.dart';
 import 'package:window_size/window_size.dart';
+
+@pragma('vm:entry-point')
+Future<void> onBgMessage(RemoteMessage message) async {
+  print(message.data['body']);
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -63,6 +69,8 @@ void main() async {
   }
   GetIt.I.registerSingleton(notificationService);
 
+  FirebaseMessaging.onBackgroundMessage(onBgMessage);
+  
   runApp(
     MultiProvider(
       providers: [

@@ -30,13 +30,17 @@ class _NavScreenState extends State<NavScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Expanded(
-          child: navitems[currentView].page
-        ),
-        Navbar(items: navitems, currentView: currentView, onTap: (i) => setState(() => currentView = i))
-      ],
+    final theme = Theme.of(context);
+    return Container(
+      color: theme.scaffoldBackgroundColor,
+      child: Column(
+        children: [
+          Expanded(
+            child: navitems[currentView].page
+          ),
+          Navbar(items: navitems, currentView: currentView, onTap: (i) => setState(() => currentView = i))
+        ],
+      )
     );
   }
 }

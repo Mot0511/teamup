@@ -52,7 +52,10 @@ class _TeamsViewState extends State<TeamsView> {
         title: Text('Команды'),
         actions: [
           if (!Platform.isAndroid)
-          IconButton(onPressed: loadTeams, icon: Icon(Icons.refresh))
+          IconButton(onPressed: () {
+            final completer = Completer();
+            loadTeams(completer: completer);
+          }, icon: Icon(Icons.refresh))
         ],
       ),
       body: Column(

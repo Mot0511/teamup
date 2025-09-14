@@ -64,9 +64,14 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
       final userdata = supabase.auth.currentUser;
       if (userdata?.id != null) {
         if (data.event == AuthChangeEvent.signedIn) {
-          notificationsService.setFcmToken(userdata!.id);
+          await FirebaseMessaging.instance.requestPermission(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
         }
-        final users = await supabase.from('users').select().eq('uid', userdata!.id);
+        notificationsService.setFcmToken(userdata!.id);
+        final users = await supabase.from('users').select().eq('uid', userdata.id);
         if (users.isEmpty) {
           navigatorKey.currentState?.pushReplacement(
             MaterialPageRoute(builder: (_) => UserFormView(userdata: userdata))

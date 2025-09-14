@@ -91,12 +91,6 @@ class _ChatViewState extends State<ChatView> {
                 title: Text(user.username, style: theme.textTheme.labelMedium),
                 subtitle: isOnline ? Text('в сети', style: theme.textTheme.labelSmall?.copyWith(color: theme.primaryColor)) : null
               ),
-              actions: [
-                IconButton(
-                  onPressed: () {},
-                  icon: Icon(Icons.phone)
-                ),
-              ],
             ),
             body: MessengerWidget(chat: widget.chat)
           );

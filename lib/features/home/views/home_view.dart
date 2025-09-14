@@ -107,10 +107,6 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     }
   }
 
-  Future<void> loadMemoryData() async {
-    
-  }
-
   SearchParams getParams() {
     return SearchParams(
       gameID: int.parse(currentGame), 
