@@ -54,10 +54,13 @@ class AnalyticsRepository {
   }
 
   Future<void> logEvent(String eventName, {Map? properties}) async {
-    await supabase.from('stats').insert([{
-      'event': eventName,
-      'properties': properties,
-      'timestamp': DateTime.now().millisecondsSinceEpoch
-    }]);
+    if (supabase.auth.currentUser != null) {
+      await supabase.from('stats').insert([{
+        'event': eventName,
+        'properties': properties,
+        'timestamp': DateTime.now().millisecondsSinceEpoch
+      }]);
+    }
+
   }
 }

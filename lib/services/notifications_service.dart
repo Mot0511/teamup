@@ -44,8 +44,7 @@ class NotificationsService {
   Future<void> setFcmToken(String uid) async {
     print(uid);
     if (Platform.isAndroid) {
-      await FirebaseMessaging.instance.requestPermission();
-      await FirebaseMessaging.instance.getAPNSToken();
+      final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
       final fcmToken = await FirebaseMessaging.instance.getToken();
       if (fcmToken != null) {
         final token = await supabase.from('fcm_tokens').select().eq('user_id', uid);
@@ -68,59 +67,62 @@ class NotificationsService {
   }
 
   Future<void> redirect(message, navigatorKey) async {
-    final type = message.data['screen'].split('-')[0];
-    final id = message.data['screen'].split('-')[1];
+    if (message != null) {
+      final type = message.data['screen'].split('-')[0];
+      final id = message.data['screen'].split('-')[1];
 
-    if (type == 'chat') {
-      final chat = await chatsRepository.getChat(int.parse(id));
-      navigatorKey.currentState?.push(
-        MaterialPageRoute(builder: (_) => ChatView(chat: chat))
-      );
-    } else {
-      final team = await teamsRepository.getTeam(int.parse(id));
-      navigatorKey.currentState?.push(
-        MaterialPageRoute(builder: (_) => TeamView(team: team))
-      );
+      if (type == 'chat') {
+        final chat = await chatsRepository.getChat(int.parse(id));
+        navigatorKey.currentState?.push(
+          MaterialPageRoute(builder: (_) => ChatView(chat: chat))
+        );
+      } else {
+        final team = await teamsRepository.getTeam(int.parse(id));
+        navigatorKey.currentState?.push(
+          MaterialPageRoute(builder: (_) => TeamView(team: team))
+        );
+      }
     }
   }
 
-  void setListeners(GlobalKey<NavigatorState> navigatorKey) async {
-    final userID = supabase.auth.currentUser!.id;
-    if (Platform.isAndroid) {
-      FirebaseMessaging.instance.onTokenRefresh.listen((fcmToken) async {
-        await supabase.from('fcm_tokens').delete().eq('user_id', userID);
-        await supabase.from('fcm_tokens').insert(
-          {
-            'user_id': userID,
-            'fcm_token': fcmToken
+  Future<void> setListeners(GlobalKey<NavigatorState> navigatorKey, userdata) async {
+    if (userdata != null) {
+      final userID = userdata.id;
+      if (Platform.isAndroid) {
+        FirebaseMessaging.instance.onTokenRefresh.listen((fcmToken) async {
+          await supabase.from('fcm_tokens').delete().eq('user_id', userID);
+          await supabase.from('fcm_tokens').insert(
+            {
+              'user_id': userID,
+              'fcm_token': fcmToken
+            }
+          );
+        });
+
+        FirebaseMessaging.onMessageOpenedApp.listen((message) => redirect(message, navigatorKey));
+        FirebaseMessaging.instance.getInitialMessage().then((message) => redirect(message, navigatorKey));
+      } else {
+        final data = await supabase.from('members').select('chat').eq('member', userID);
+        final chats = data.map((chat) => chat['chat']);
+        final channel = supabase.channel('notification-channel');
+        channel.onPostgresChanges(
+          table: 'messages',
+          event: PostgresChangeEvent.insert,
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.inFilter,
+            column: 'chat',
+            value: chats
+          ),
+          callback: (payload) async {
+            final models.User sender = await userRepository.getUserdata(payload.newRecord['sender']);
+            if (sender.uid != userID && !isOnline) {
+              showNotification(payload.newRecord['id'].toString(), sender.username, payload.newRecord['text']);
+            }
           }
         );
-      });
 
-      FirebaseMessaging.onMessageOpenedApp.listen((message) => redirect(message, navigatorKey));
-      FirebaseMessaging.instance.getInitialMessage().then((message) => redirect(message, navigatorKey));
-
-    } else {
-      final data = await supabase.from('members').select('chat').eq('member', userID);
-      final chats = data.map((chat) => chat['chat']);
-      final channel = supabase.channel('notification-channel');
-      channel.onPostgresChanges(
-        table: 'messages',
-        event: PostgresChangeEvent.insert,
-        filter: PostgresChangeFilter(
-          type: PostgresChangeFilterType.inFilter,
-          column: 'chat',
-          value: chats
-        ),
-        callback: (payload) async {
-          final models.User sender = await userRepository.getUserdata(payload.newRecord['sender']);
-          if (sender.uid != userID && !isOnline) {
-            showNotification(payload.newRecord['id'].toString(), sender.username, payload.newRecord['text']);
-          }
-        }
-      );
-
-      channel.subscribe();
+        channel.subscribe();
+      }
     }
   }
 

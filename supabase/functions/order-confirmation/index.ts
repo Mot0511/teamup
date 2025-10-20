@@ -62,9 +62,6 @@ Deno.serve(async (req) => {
               priority: "high",
             },
             data: {
-              id: String(payload.record.id),
-              title: sender.data.username,
-              body: payload.record.text == '' && payload.record.attachment ? 'Изображение' : payload.record.text,
               screen: teamName != null ? `team-${chatID}` : `chat-${chatID}`,
               click_action: "FLUTTER_NOTIFICATION_CLICK",
             }

@@ -70,6 +70,9 @@ void main() async {
   GetIt.I.registerSingleton(notificationService);
 
   FirebaseMessaging.onBackgroundMessage(onBgMessage);
+
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('currentGame', '206');
   
   runApp(
     MultiProvider(

@@ -55,11 +55,6 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
   void initState() {
     super.initState();
 
-    print(1);
-    appLinksSubscription = appLinks.uriLinkStream.listen((uri) {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => NavScreen()));
-    });
-
     _authStateSubscription = supabase.auth.onAuthStateChange.listen((data) async {
       final userdata = supabase.auth.currentUser;
       if (userdata?.id != null) {
@@ -70,8 +65,8 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
             sound: true,
           );
         }
-        notificationsService.setFcmToken(userdata!.id);
-        final users = await supabase.from('users').select().eq('uid', userdata.id);
+        // await notificationsService.setFcmToken(userdata!.id);
+        final users = await supabase.from('users').select().eq('uid', userdata!.id);
         if (users.isEmpty) {
           navigatorKey.currentState?.pushReplacement(
             MaterialPageRoute(builder: (_) => UserFormView(userdata: userdata))
@@ -82,10 +77,9 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
           MaterialPageRoute(builder: (_) => NavScreen())
         );
         
-        
         userBloc.add(LoadUser(uid: userdata.id));
-        userRepository.setOnline(userdata.id);
-        notificationsService.setListeners(navigatorKey);
+        await userRepository.setOnline(userdata.id);
+        await notificationsService.setListeners(navigatorKey, userdata);
       }
     });
 
