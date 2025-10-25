@@ -95,7 +95,7 @@ class _ProfileViewState extends State<ProfileView> {
   }
 
   void allowFriendRequestHandler(String uid) async {
-    await userRepository.allowFriendRequest(uid);
+    await userRepository.allowFriendRequest(widget.user!.uid, uid);
     friendState = FriendState.friend;
     setState(() {});
   }

@@ -1,1 +1,2 @@
 -keep class **.zego.** { *; }
+-keep class androidx.lifecycle.DefaultLifecycleObserver

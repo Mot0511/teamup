@@ -122,26 +122,28 @@ class VoiceService {
   Future<RTCPeerConnection> _createPcFor(String peerId, {bool isCaller = false}) async {
     final config = {
       'iceServers': [
-        {'urls': 'stun:stun.l.google.com:19302'},
-        {
-          "urls": "turn:global.relay.metered.ca:80",
-          "username": "5db6bd697c3849fa85812cb3",
-          "credential": "UiNaqoi4aJNKIkTx",
+         {
+          'urls': "stun:stun.relay.metered.ca:80",
         },
         {
-          "urls": "turn:global.relay.metered.ca:80?transport=tcp",
-          "username": "5db6bd697c3849fa85812cb3",
-          "credential": "UiNaqoi4aJNKIkTx",
+          'urls': "turn:global.relay.metered.ca:80",
+          'username': "132a3c9d1d34d556fe7efc2b",
+          'credential': "xbWXFYaTYFM9Fd3D",
         },
         {
-          "urls": "turn:global.relay.metered.ca:443",
-          "username": "5db6bd697c3849fa85812cb3",
-          "credential": "UiNaqoi4aJNKIkTx",
+          'urls': "turn:global.relay.metered.ca:80?transport=tcp",
+          'username': "132a3c9d1d34d556fe7efc2b",
+          'credential': "xbWXFYaTYFM9Fd3D",
         },
         {
-          "urls": "turns:global.relay.metered.ca:443?transport=tcp",
-          "username": "5db6bd697c3849fa85812cb3",
-          "credential": "UiNaqoi4aJNKIkTx",
+          'urls': "turn:global.relay.metered.ca:443",
+          'username': "132a3c9d1d34d556fe7efc2b",
+          'credential': "xbWXFYaTYFM9Fd3D",
+        },
+        {
+          'urls': "turns:global.relay.metered.ca:443?transport=tcp",
+          'username': "132a3c9d1d34d556fe7efc2b",
+          'credential': "xbWXFYaTYFM9Fd3D",
         },
       ],
     };

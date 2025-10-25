@@ -56,6 +56,8 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
     super.initState();
 
     _authStateSubscription = supabase.auth.onAuthStateChange.listen((data) async {
+      final event = data.event;
+      final session = data.session;
       final userdata = supabase.auth.currentUser;
       if (userdata?.id != null) {
         if (data.event == AuthChangeEvent.signedIn) {
@@ -94,7 +96,7 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed && uid != null) {
       userRepository.setOnline(uid);
       notificationsService.isOnline = true;
-    } else if (
+    } else if ( 
       (state == AppLifecycleState.paused || 
       state == AppLifecycleState.inactive || 
       state == AppLifecycleState.detached) && uid != null

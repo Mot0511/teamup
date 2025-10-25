@@ -173,10 +173,11 @@ class UserRepository {
     ]);
   }
 
-  Future<void> allowFriendRequest(String uid) async {
+  Future<void> allowFriendRequest(String from_user, String to_user) async {
     await supabase.from('friends').update({
       'status': true
-    }).eq('to_user', uid);
+    }).eq('from_user', from_user)
+    .eq('to_user', to_user);
   }
 
   Future<List<Friendship>> getFriends(String uid) async {
