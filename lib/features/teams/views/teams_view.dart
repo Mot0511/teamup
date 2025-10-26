@@ -61,37 +61,47 @@ class _TeamsViewState extends State<TeamsView> {
       body: Column(
         children: [
           Expanded(
-            child: BlocBuilder(
-              bloc: teamsBloc,
-              builder: (context, state) {
-                if (state is TeamsStateLoaded) {
-                  if (state.teams.isNotEmpty) {
-                    return RefreshIndicator(
-                      onRefresh: () async {
-                        final completer = Completer();
-                        loadTeams(completer: completer);
-                        return completer.future;
-                      },
-                      child: ListView(
+            child: RefreshIndicator(
+              onRefresh: () async {
+                final completer = Completer();
+                loadTeams(completer: completer);
+                return completer.future;
+              },
+              child: BlocBuilder(
+                bloc: teamsBloc,
+                builder: (context, state) {
+                  if (state is TeamsStateLoaded) {
+                    if (state.teams.isNotEmpty) {
+                      return ListView(
                         children: state.teams.map((team) => TeamWidget(team: team)).toList(),
-                      )
-                    );
+                      );
+                    } else {
+                      return CustomScrollView(
+                        shrinkWrap: true,
+                        slivers: [
+                          SliverFillRemaining(
+                          hasScrollBody: false,
+                          child: Center(
+                            child: Text('У тебя нет личных чатов', style: theme.textTheme.titleMedium),
+                          ),
+                        ),
+                        ],
+                      );
+                    }
+                  } else if (state is TeamsStateError) {
+                    return Center(child: Text('Произошла ошибка при загрузке команд', textAlign: TextAlign.center, style: theme.textTheme.titleMedium));
                   } else {
-                    return Center(child: Text('Ты не состоишь ни в одной команде', textAlign: TextAlign.center, style: theme.textTheme.titleMedium));
+                    return ListView.builder(
+                      itemCount: 3 + Random().nextInt(5),
+                      itemBuilder: (context, state) => 
+                        Padding(
+                          padding: EdgeInsets.all(8),
+                          child: SihmmerWidget(),
+                        )
+                    );
                   }
-                } else if (state is TeamsStateError) {
-                  return Center(child: Text('Произошла ошибка при загрузке команд', textAlign: TextAlign.center, style: theme.textTheme.titleMedium));
-                } else {
-                  return ListView.builder(
-                    itemCount: 3 + Random().nextInt(5),
-                    itemBuilder: (context, state) => 
-                      Padding(
-                        padding: EdgeInsets.all(8),
-                        child: SihmmerWidget(),
-                      )
-                  );
                 }
-              }
+              )
             )
           ),
         ],
