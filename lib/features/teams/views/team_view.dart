@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:teamup/features/chats/widgets/messenger_widget.dart';
 import 'package:teamup/features/teams/models/team.dart';
 import 'package:teamup/features/teams/views/create_team_view.dart';
@@ -29,36 +30,38 @@ class _TeamViewState extends State<TeamView> {
   bool isSoundOn = true;
 
   final userBloc = GetIt.I<UserBloc>();
+  final supabase = GetIt.I<SupabaseClient>();
   final analyticsRepository = GetIt.I<AnalyticsRepository>();
+  final voiceService = GetIt.I<VoiceService>();
 
-  VoiceService? voiceService;
-  
+  List<String> peers = [];
+
   @override
   void initState() {
     super.initState();
     analyticsRepository.logEvent('open_team_screen');
-    final voiceProvider = Provider.of<VoiceProvider>(context, listen: false);
-    voiceService = voiceProvider.voiceService;
-    if (voiceProvider.voiceService != null) {
-      if (voiceProvider.voiceService!.roomId == widget.team.id.toString()) {
-        isVoiceOn = voiceProvider.isVoiceOn;
-        isSoundOn = voiceProvider.isSoundOn;
+
+    if (voiceService.room != null) {
+      if (voiceService.roomID == widget.team.id) {
+        isVoiceOn = voiceService.isVoiceOn;
+        isSoundOn = voiceService.isSoundOn;
       } else {
         isSoundOn = false;
       }
       setState(() {});
     } else {
-      join(voiceProvider, false, true);
+      join(false, true);
     }
   }
  
-  Future<void> join(VoiceProvider voiceProvider, bool isVoiceOn, bool isSoundOn) async {
-    final user = (userBloc.state as UserStateLoaded).user;
-    await voiceProvider.init(      
-      roomId: widget.team.id.toString(),
-      selfId: user.uid,
-      isVoiceOn: isVoiceOn,
-      isSoundOn: isSoundOn,
+  Future<void> join(bool isVoiceOn, bool isSoundOn) async {
+    final uid = supabase.auth.currentUser!.id;
+    voiceService.onPeersChanged = (List<String> peers) => setState(() => this.peers = peers);
+    await voiceService.connect(
+      uid,
+      widget.team.id,
+      isVoiceOn,
+      isSoundOn,
     );
   }
 
@@ -69,23 +72,23 @@ class _TeamViewState extends State<TeamView> {
     }
   }
 
-  void onToggleVoice(VoiceProvider voiceProvider) async {
-    if (voiceProvider.voiceService == null || voiceProvider.voiceService!.roomId != widget.team.id.toString()) {
-      voiceProvider.voiceService?.dispose();
-      await join(voiceProvider, true, false);
+  void onToggleVoice() async {
+    if (voiceService.room == null || voiceService.roomID != widget.team.id) {
+      await voiceService.disconnect();
+      await join(true, false);
     } else {
-      await voiceProvider.toggleVoice();
+      await voiceService.setIsVoiceOn(!isVoiceOn);
     }
     isVoiceOn = !isVoiceOn;
     setState(() {});
   }
 
-  void onToggleSound(VoiceProvider voiceProvider) async {
-    if (voiceProvider.voiceService == null || voiceProvider.voiceService!.roomId != widget.team.id.toString()) {
-      voiceProvider.voiceService?.dispose();
-      await join(voiceProvider, false, true);
+  void onToggleSound() async {
+    if (voiceService.room == null || voiceService.roomID != widget.team.id) {
+      await voiceService.disconnect();
+      await join(false, true);
     } else {
-      await voiceProvider.toggleSound();
+      await voiceService.setIsSoundOn(!isSoundOn);
     }
     isSoundOn = !isSoundOn;
     setState(() {});
@@ -94,8 +97,7 @@ class _TeamViewState extends State<TeamView> {
   @override
   void dispose() {
     if (!isSoundOn && !isVoiceOn) {
-      voiceService?.dispose();
-      voiceService = null;
+      voiceService.disconnect();
     }
     super.dispose();
   }
@@ -103,7 +105,6 @@ class _TeamViewState extends State<TeamView> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final voiceProvider = Provider.of<VoiceProvider>(context);
     return BlocBuilder<UserBloc, UserState>(
       bloc: userBloc,
       builder: (context, state) {
@@ -126,12 +127,12 @@ class _TeamViewState extends State<TeamView> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     SizedBox(width: 5),
-                    if (voiceProvider.voiceService?.roomId == widget.team.id.toString())
+                    if (voiceService.roomID == widget.team.id)
                     Stack(
-                      children: List.generate(voiceProvider.peers.length, (i) {
+                      children: List.generate(voiceService.peers.length, (i) {
                         return Padding(
                           padding: EdgeInsets.only(left: 5.0 * i),
-                          child: AvatarWidget(uid: voiceProvider.peers[i], size: 20)
+                          child: AvatarWidget(uid: voiceService.peers[i], size: 20)
                         );
                       })
                     )
@@ -146,11 +147,11 @@ class _TeamViewState extends State<TeamView> {
               ),
               actions: [
                 IconButton(
-                  onPressed: () => onToggleVoice(voiceProvider),
+                  onPressed: () => onToggleVoice(),
                   icon: isVoiceOn ? Icon(Icons.mic, color: Colors.green) : Icon(Icons.mic_off, color: Colors.red)
                 ),
                 IconButton(
-                  onPressed: () => onToggleSound(voiceProvider),
+                  onPressed: () => onToggleSound(),
                   icon: isSoundOn ? Icon(Icons.volume_up, color: Colors.green) : Icon(Icons.volume_off, color: Colors.red)
                 ),
               ],
