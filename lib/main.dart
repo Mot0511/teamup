@@ -55,6 +55,7 @@ void main() async {
     GetIt.I.registerSingleton(AnalyticsRepository());
     GetIt.I.registerSingleton(SearchRepository());
     GetIt.I.registerSingleton(ChatsRepository());
+    GetIt.I.registerSingleton(VoiceService());
     GetIt.I.registerSingleton(UserBloc(userRepository: GetIt.I<UserRepository>()));
     GetIt.I.registerSingleton(ChatsBloc(chatsRepository: GetIt.I<ChatsRepository>()));
     GetIt.I.registerSingleton(TeamsBloc(teamsRepository: GetIt.I<TeamsRepository>()));
@@ -78,7 +79,6 @@ void main() async {
       providers: [
         ChangeNotifierProvider<GlobalProvider>(create: (context) => GlobalProvider()),
         ChangeNotifierProvider<HomeProvider>(create: (context) => HomeProvider()),
-        ChangeNotifierProvider<VoiceProvider>(create: (context) => VoiceProvider())
       ],
       child: Teamup(),
     )

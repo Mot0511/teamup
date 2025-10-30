@@ -1,263 +1,80 @@
-import 'dart:async';
-import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
+import 'package:livekit_client/livekit_client.dart';
+import 'package:teamup/features/teams/utils/getLivekitToken.dart';
 
 class VoiceService {
-  final String roomId;
-  final String selfId;
-  final void Function(List<String> peers) onPeersChanged;
+  Room? room;
 
-  final _supabase = Supabase.instance.client;
-  RealtimeChannel? _channel;
-  MediaStream? _localStream;
+  int? roomID;
+  bool isVoiceOn = false;
+  bool isSoundOn = true;
 
-  // peerId -> RTCPeerConnection
-  final Map<String, RTCPeerConnection> _pcs = {};
-  // если кандидаты приходят до remoteDescription
-  final Map<String, List<RTCIceCandidate>> _pendingCandidates = {};
-  final Map<String, List<MediaStreamTrack>> _remoteAudioTracks = {};
+  void Function(List<String> peers)? onPeersChanged;
 
-  List<String> get peers => _pcs.keys.toList()..sort();
+  List<String> get peers {
+    if (room == null) return [];
+    final remotes = room!.remoteParticipants.values;
+    return remotes.map((p) => p.identity).toList()..sort();
+  }
 
-  VoiceService({
-    required this.roomId,
-    required this.selfId,
-    required this.onPeersChanged,
-  });
+  Future<void> connect(String uid, int roomID, bool isVoiceOn, bool isSoundOn) async {
+    this.roomID = roomID;
 
-  Future<void> init() async {
-    // 1) локальный аудио поток
-    _localStream = await navigator.mediaDevices.getUserMedia({
-      'audio': {
-        'echoCancellation': true,
-        'noiseSuppression': true,
-        'autoGainControl': true,
-      },
-      'video': false,
+    final token = await getLivekitToken(uid, roomID);
+    if (token == null) throw Exception('Произошла ошибка при получении Livekit токена');
+    
+    room = Room();
+    
+    room!.events.listen((RoomEvent event) {
+      if (event is ParticipantConnectedEvent ||
+          event is ParticipantDisconnectedEvent) {
+        onPeersChanged!(peers);
+        print('Изменен состав комнаты $peers');
+      }
+
+      if (event is TrackSubscribedEvent) {
+        print('Получен аудиотрек от ${event.participant.identity}');
+      }
+
+      if (event is TrackUnsubscribedEvent) {
+        print('Трек отключён: ${event.participant.identity}');
+      }
+
+      if (event is RoomDisconnectedEvent) {
+        print('Отключено от комнаты');
+      }
     });
 
-    // 2) подписка на канал комнаты
-    _channel = _supabase.channel(roomId);
-
-    _channel!
-      .onBroadcast(
-        event: 'signal',
-        callback: (payload, [ref]) {
-          // нормализация: иногда SDK кладёт всё в payload.payload
-          final data = (payload is Map && payload.containsKey('payload'))
-              ? payload['payload']
-              : payload;
-          if (data is Map<String, dynamic>) {
-            _handleMessage(data);
-          } else if (data is Map) {
-            _handleMessage(Map<String, dynamic>.from(data));
-          }
-        },
-      )
-      .subscribe((status, [err]) {
-        if (status == RealtimeSubscribeStatus.subscribed) {
-          _send({'action': 'join', 'peerId': selfId});
-        } else if (err != null) {
-          // Можно повесить retry/backoff
-          // debugPrint('Supabase subscribe error: ${err.message}');
-        }
-      });
-  }
-
-  // Отправка сигнального сообщения
-  void _send(Map<String, dynamic> msg) {
-    _channel?.sendBroadcastMessage(
-      event: 'signal',
-      payload: {...msg, 'from': selfId},
+    await room!.connect(
+      'wss://livekit-94gn.onrender.com',
+      token
     );
+
+    await room!.localParticipant?.setMicrophoneEnabled(isVoiceOn);
   }
 
-  Future<void> leave() async {
-    _send({'action': 'leave', 'peerId': selfId});
-    for (final pc in _pcs.values) {
-      try { await pc.close(); } catch (_) {}
-    }
-    _pcs.clear();
-    _pendingCandidates.clear();
-
-    try { await _localStream?.dispose(); } catch (_) {}
-    _localStream = null;
-    onPeersChanged(peers);
-
-    if (_channel != null) {
-      await _supabase.removeChannel(_channel!);
-      _channel = null;
-    }
+  Future<void> setIsVoiceOn(bool value) async {
+    await room?.localParticipant?.setMicrophoneEnabled(value);
   }
 
-  void dispose() { leave(); }
-
-  Future<void> setMuted(bool muted) async {
-    for (final t in _localStream?.getAudioTracks() ?? const []) {
-      t.enabled = !muted;
-    }
-    if (muted) {
-      _send({'action': 'remoteVoiceOff'});
-    } else {
-      _send({'action': 'remoteVoiceOn'});
-    }
-  }
-
-  Future<void> setRemoteMuted(String peerId, bool muted) async {
-    final tracks = _remoteAudioTracks[peerId];
-    if (tracks != null) {
-      for (final t in tracks) {
-        t.enabled = !muted;
-      }
-    }
-  }
-
-  String connectionStateOf(String peerId) {
-    final pc = _pcs[peerId];
-    if (pc == null) return 'disconnected';
-    return pc.iceConnectionState?.toString().split('.').last ?? 'unknown';
-  }
-
-  // Создание/настройка PC на пира
-  Future<RTCPeerConnection> _createPcFor(String peerId, {bool isCaller = false}) async {
-    final config = {
-      'iceServers': [
-         {
-          'urls': "stun:stun.relay.metered.ca:80",
-        },
-        {
-          'urls': "turn:global.relay.metered.ca:80",
-          'username': "132a3c9d1d34d556fe7efc2b",
-          'credential': "xbWXFYaTYFM9Fd3D",
-        },
-        {
-          'urls': "turn:global.relay.metered.ca:80?transport=tcp",
-          'username': "132a3c9d1d34d556fe7efc2b",
-          'credential': "xbWXFYaTYFM9Fd3D",
-        },
-        {
-          'urls': "turn:global.relay.metered.ca:443",
-          'username': "132a3c9d1d34d556fe7efc2b",
-          'credential': "xbWXFYaTYFM9Fd3D",
-        },
-        {
-          'urls': "turns:global.relay.metered.ca:443?transport=tcp",
-          'username': "132a3c9d1d34d556fe7efc2b",
-          'credential': "xbWXFYaTYFM9Fd3D",
-        },
-      ],
-    };
-
-    final pc = await createPeerConnection(config);
-
-    // добавляем локальный аудио-трек
-    final local = _localStream;
-    if (local != null) {
-      for (final track in local.getTracks()) {
-        await pc.addTrack(track, local);
-      }
-    }
-
-    // входящие треки (аудио автоматически проигрывается)
-    pc.onTrack = (event) {
-      for (final track in event.streams.first.getAudioTracks()) {
-        _remoteAudioTracks.putIfAbsent(peerId, () => []).add(track);
-      }
-    };
-
-    // отправка ICE
-    pc.onIceCandidate = (c) {
-      if (c.candidate != null) {
-        _send({
-          'action': 'candidate',
-          'to': peerId,
-          'candidate': c.toMap(),
-        });
-      }
-    };
-
-    _pcs[peerId] = pc;
-    onPeersChanged(peers);
-
-    if (isCaller) {
-      final offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      _send({'action': 'offer', 'to': peerId, 'sdp': offer.sdp});
-    }
-
-    return pc;
-  }
-
-  // Обработка входящих сигналов
-  Future<void> _handleMessage(Map<String, dynamic> msg) async {
-    final action = msg['action'] as String?;
-    final from = (msg['peerId'] ?? msg['from'])?.toString();
-    if (from == null || from == selfId) return;
-
-    switch (action) {
-      case 'join':
-        // новый участник → инициируем звонок ему
-        if (!_pcs.containsKey(from)) {
-          await _createPcFor(from, isCaller: true);
-        }
-        break;
-
-      case 'leave':
-        _removePeer(from);
-        break;
-
-      case 'offer':
-        final pc = _pcs[from] ?? await _createPcFor(from, isCaller: false);
-        await pc.setRemoteDescription(RTCSessionDescription(msg['sdp'] as String, 'offer'));
-        final answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        _send({'action': 'answer', 'to': from, 'sdp': answer.sdp});
-        // применяем отложенные кандидаты
-        await _flushPending(from);
-        break;
-
-      case 'answer':
-        final pcAns = _pcs[from];
-        if (pcAns != null) {
-          await pcAns.setRemoteDescription(RTCSessionDescription(msg['sdp'] as String, 'answer'));
-          await _flushPending(from);
-        }
-        break;
-
-      case 'candidate':
-        final pcCand = _pcs[from];
-        final c = msg['candidate'] as Map<String, dynamic>;
-        final ice = RTCIceCandidate(
-          c['candidate'] as String?,
-          c['sdpMid'] as String?,
-          (c['sdpMLineIndex'] is int)
-              ? c['sdpMLineIndex'] as int
-              : (c['sdpMLineIndex'] as num?)?.toInt(),
-        );
-        if (pcCand != null) {
-          await pcCand.addCandidate(ice);
+  Future<void> setIsSoundOn(bool value) async {
+    for (RemoteParticipant participant in room!.remoteParticipants.values) {
+      for (RemoteTrackPublication track in participant.audioTrackPublications) {
+        if (value) {
+          track.enable();
         } else {
-          _pendingCandidates.putIfAbsent(from, () => []).add(ice);
+          track.disable();
         }
-        break;
+      }
     }
   }
 
-  Future<void> _flushPending(String peerId) async {
-    final pc = _pcs[peerId];
-    if (pc == null) return;
-    final list = _pendingCandidates.remove(peerId);
-    if (list == null) return;
-    for (final c in list) {
-      try { await pc.addCandidate(c); } catch (_) {}
-    }
-  }
-
-  void _removePeer(String peerId) {
-    final pc = _pcs.remove(peerId);
-    try { pc?.close(); } catch (_) {}
-    _pendingCandidates.remove(peerId);
-    _remoteAudioTracks.remove(peerId);
-    onPeersChanged(peers);
+  Future<void> disconnect() async {
+    try {
+      await room?.disconnect();
+      room = null;
+      roomID = null;
+      onPeersChanged!([]);
+    } catch (_) {}
   }
 }

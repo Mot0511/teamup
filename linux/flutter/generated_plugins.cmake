@@ -8,6 +8,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   file_selector_linux
   flutter_webrtc
   gtk
+  livekit_client
   url_launcher_linux
   window_size
   window_to_front
