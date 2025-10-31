@@ -38,6 +38,7 @@ class SearchRepository {
   Future<List<Game>> getGames() async {
     final res = await supabase.from('games').select();
     final games = res.map((game) => Game.fromJSON(game)).toList();
+    games.sort((a, b) => a.id.compareTo(b.id));
     return games;
   }
 

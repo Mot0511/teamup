@@ -9,6 +9,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get_it/get_it.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+import 'package:teamup/features/teams/voice_service.dart';
 import 'package:teamup/features/user/enums.dart';
 import 'package:teamup/features/user/models/friendship.dart';
 import 'package:teamup/features/user/models/models.dart';
@@ -25,7 +26,7 @@ class AuthResult {
 
 class UserRepository {
 
-  final sb.SupabaseClient supabase = GetIt.I<sb.SupabaseClient>();
+  final supabase = GetIt.I<sb.SupabaseClient>();
 
   final Map<String, ImageProvider> avatarProviders = {};
 

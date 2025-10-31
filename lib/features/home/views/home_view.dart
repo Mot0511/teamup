@@ -20,7 +20,7 @@ import 'package:teamup/features/home/widgets/info_widget.dart';
 import 'package:teamup/features/home/widgets/widgets.dart';
 import 'package:teamup/features/teams/models/team.dart';
 import 'package:teamup/features/teams/signaling_service2.dart';
-import 'package:teamup/features/teams/views/team2_view.dart';
+import 'package:teamup/features/teams/views/team_view.dart';
 import 'package:teamup/features/user/bloc/user_bloc.dart';
 import 'package:teamup/features/user/bloc/user_events.dart';
 import 'package:teamup/features/user/bloc/user_states.dart';
@@ -183,8 +183,12 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                                 radius: 100,
                               ); 
                             } else if (state is SearchStateError) {
-                              Fluttertoast.showToast(msg: 'Ошибка при инициализации поиска');
-                              return Text('Ошибка при инициализации поиска', style: theme.textTheme.titleMedium);
+                              return Column(
+                                children: [
+                                  Text('Ошибка при инициализации поиска', style: theme.textTheme.titleMedium),
+                                  Text(state.e.toString(), style: theme.textTheme.titleMedium)
+                                ],
+                              );
                             }
                             return SearchBtn(
                               onStartSearching: onStartSearching,

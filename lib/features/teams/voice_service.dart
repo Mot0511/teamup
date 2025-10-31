@@ -23,7 +23,15 @@ class VoiceService {
     final token = await getLivekitToken(uid, roomID);
     if (token == null) throw Exception('Произошла ошибка при получении Livekit токена');
     
-    room = Room();
+    room = Room(
+      roomOptions: const RoomOptions(
+        defaultAudioCaptureOptions: AudioCaptureOptions(
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+        ),
+      ),
+    );
     
     room!.events.listen((RoomEvent event) {
       if (event is ParticipantConnectedEvent ||
@@ -47,7 +55,10 @@ class VoiceService {
 
     await room!.connect(
       'wss://livekit-94gn.onrender.com',
-      token
+      token,
+      connectOptions: ConnectOptions(
+        autoSubscribe: true,
+      ),
     );
 
     await room!.localParticipant?.setMicrophoneEnabled(isVoiceOn);

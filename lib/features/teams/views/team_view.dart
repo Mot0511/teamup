@@ -120,12 +120,12 @@ class _TeamViewState extends State<TeamView> {
                 leading: TeamIconWidget(id: widget.team.id, size: 50),
                 title: Row(
                   children: [
-                    Text(
+                    Expanded(child: Text(
                       widget.team.name, 
                       style: theme.textTheme.labelMedium,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                    ),
+                    )),
                     SizedBox(width: 5),
                     if (voiceService.roomID == widget.team.id)
                     Stack(

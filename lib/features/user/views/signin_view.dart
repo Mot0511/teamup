@@ -34,7 +34,7 @@ class SigninView extends StatelessWidget {
             )
           ),
           Expanded(
-            flex: 2,
+            flex: 3,
             child: Column(
               children: [
                 ElevatedButton(
@@ -50,6 +50,15 @@ class SigninView extends StatelessWidget {
                 ),
               ],
             )
+          ),
+          Expanded(
+            flex: 1,
+            child: Column(
+              children: [
+                Text('Author: MatveySuvorov', style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey)),
+                Text('tg: @Mot0511 web: https://matvey.vercel.app', style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey)),
+              ],
+            ),
           )
         ]
       ),
