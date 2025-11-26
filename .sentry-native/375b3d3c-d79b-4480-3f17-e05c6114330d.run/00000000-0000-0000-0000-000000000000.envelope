@@ -1,0 +1,3 @@
+{"dsn":"https://1e8bc80cc0c617cf421c8d858922f4c3@o4510294283649024.ingest.de.sentry.io/4510294287646800"}
+{"type":"session","length":209}
+{"init":true,"sid":"46aaeef3-ca4d-4dd4-9af4-6b48b29163a3","status":"crashed","errors":1,"started":"2025-11-17T17:41:09.759421Z","duration":536.955952,"attrs":{"release":"teamup@1.0.0+1","environment":"debug"}}
