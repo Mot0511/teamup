@@ -1,16 +1,23 @@
-# teamup
+# Teamup - это приложение для быстрого поиска тиммейтов в команду для игры, просто по нажатию одной кнопки.
 
-A new Flutter project.
+Во многих играх функция матчмейкинга встроена (CS 2, Dota 2, Fortnite), но существуют и такие игры, которые не имеют быстрый автопоиск тиммейтов (Rust, Minecraft, Terraria). Игрокам таких игр приходится искать себе товарищей на разных серверах через встроенные чаты, если их друзья не могут с ними поиграть, что долго и очень неудобно.
 
-## Getting Started
+Поэтому я решил создать приложение, в котором геймеры могли бы найти себе соперников или партнеров в команду, просто указав фильтры (игра, пол, кол-во игроков) и нажав на кнопку. После формирования команды, приложение перенаправляло бы пользователя на экран этой команды, где игроки могли бы переписываться в чате либо общаться друг с другом голосом.
 
-This project is a starting point for a Flutter application.
+## Как это работает?
+- Пользователь устанавливает фильтры поиска
+- Нажимает кнопку поиска
+- После завершения формирования команды приложение перенаправляет пользователя на экран команды
 
-A few resources to get you started if this is your first Flutter project:
+## Функционал приложения
+- Простые фильтры для автопоиска
+- Голосовой чат команды
+- Возможность добавлять друг друга в друзья
+- Личные и групповые чаты
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+Приложение можно скачать из Rustore или с его сайта (все ссылки внизу)
+В целях развития приложения был создан сайт и опубликовано видео, где я рассказываю, как я создавал Teamup и с какими трудностями столкнулся
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Сайт Teamup - https://teamup-site.vercel.app/
+Teamup в Rustore - 
+Видео про Teamup на ютубе - 
