@@ -31,6 +31,7 @@ import 'package:teamup/features/analytics/repositories/analytics_repository.dart
 import 'package:teamup/services/notifications_service.dart';
 import 'package:window_size/window_size.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:teamup/env.dart' as env;
 
 
 void main() async {
@@ -44,10 +45,9 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    await dotenv.load(fileName: ".env");
     await Supabase.initialize(
-      url: dotenv.get('SUPABASE_URL'),
-      anonKey: dotenv.get('SUPABASE_SERVICE_ROLE_KEY'),
+      url: env.SUPABASE_URL,
+      anonKey: env.SUPABASE_SERVICE_ROLE_KEY,
     );
     
     GetIt.I.registerSingleton(Supabase.instance.client);
@@ -78,7 +78,7 @@ void main() async {
 
   await SentryFlutter.init(
     (options) {
-      options.dsn = dotenv.get('SENTRY_URL');
+      options.dsn = env.SENTRY_URL;
       // Adds request headers and IP for users, for more info visit:
       // https://docs.sentry.io/platforms/dart/guides/flutter/data-management/data-collected/
       options.sendDefaultPii = true;

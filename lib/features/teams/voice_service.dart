@@ -1,6 +1,7 @@
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:teamup/features/teams/utils/getLivekitToken.dart';
+import 'package:teamup/features/teams/utils/getServerIP.dart';
 
 class VoiceService {
   Room? room;
@@ -53,8 +54,9 @@ class VoiceService {
       }
     });
 
+    final ip = await getServerIP(uid, roomID);
     await room!.connect(
-      'ws://178.141.247.121:7880',
+      'ws://$ip:7880',
       token,
       connectOptions: ConnectOptions(
         autoSubscribe: true,

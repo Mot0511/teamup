@@ -154,7 +154,7 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                   title: Text('Teamup', style: theme.textTheme.headlineMedium),
                   centerTitle: true,
                   actions: [
-                    if (state.user.uid == '09612dbd-fcc7-48f5-bc49-63101fb73ce4')
+                    if (state.user.uid == 'ea28f58d-2679-4c86-b0fb-2506947b0794')
                     IconButton(
                       onPressed: () => Navigator.push(
                         context,

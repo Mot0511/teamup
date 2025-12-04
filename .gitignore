@@ -52,3 +52,4 @@ app.*.map.json
 sentry.properties
 sentry-wizard.exe
 livekit.yaml
+/lib/env.dart
