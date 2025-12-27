@@ -1217,7 +1217,7 @@ packages:
     source: hosted
     version: "9.8.0"
   sentry_dart_plugin:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: sentry_dart_plugin
       sha256: "4b25aa60b5cbb46bb23859ac9212c4de5b22e2b3bc3fecbcd611756ada8973b5"
