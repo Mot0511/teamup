@@ -8,12 +8,14 @@ class Field extends StatelessWidget {
     this.error,
     this.type=TextInputType.text,
     this.maxLines=1,
+    this.obscureText=false,
   });
   final String title;
   final TextEditingController controller;
   final TextInputType type;
   final int maxLines;
   final String? error;
+  final bool obscureText;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +31,8 @@ class Field extends StatelessWidget {
           ),
           style: theme.textTheme.labelMedium,
           keyboardType: type,
-          maxLines: maxLines
+          maxLines: maxLines,
+          obscureText: obscureText
         ),
         SizedBox(height: 5),
         if (error != null)

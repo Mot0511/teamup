@@ -97,6 +97,21 @@ class UserRepository {
     }
   }
 
+  Future<void> emailSignIn(String email, String password) async {
+    await supabase.auth.signInWithPassword(
+      email: email,
+      password: password
+    );
+    
+  }
+
+  Future<void> emailSignUp(String email, String password) async {
+    await supabase.auth.signUp(
+      email: email,
+      password: password
+    );
+  }
+ 
   Future<void> signout() async {
     try {
       await GoogleSignIn().disconnect();
@@ -124,6 +139,12 @@ class UserRepository {
       }
       return true;
     }
+    return false;
+  }
+  
+  Future<bool> isEmailExists(String email) async {
+    final users = await supabase.from('users').select('email').eq('email', email);
+    if (users.isNotEmpty) return true;
     return false;
   }
 
