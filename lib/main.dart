@@ -37,11 +37,14 @@ import 'package:teamup/env.dart' as env;
 void main() async {
   try {
     WidgetsFlutterBinding.ensureInitialized();
-    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
       setWindowTitle('Teamup');
       setWindowMinSize(const Size(540, 810));
       setWindowMaxSize(const Size(540, 810));
     }
+
+    await dotenv.load(fileName: '.env');
+
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
@@ -49,6 +52,7 @@ void main() async {
       url: env.SUPABASE_URL,
       anonKey: env.SUPABASE_SERVICE_ROLE_KEY,
     );
+
     
     GetIt.I.registerSingleton(Supabase.instance.client);
 
@@ -65,7 +69,7 @@ void main() async {
     GetIt.I.registerSingleton(await SharedPreferences.getInstance());
 
     final notificationsService = NotificationsService();
-    // if (Platform.isAndroid) {
+    // if (!kIsWeb && Platform.isAndroid) {
     //   await notificationService.init();
     // }
     GetIt.I.registerSingleton(notificationsService);
@@ -75,7 +79,6 @@ void main() async {
   } on Exception catch (e) {
     Fluttertoast.showToast(msg: e.toString());
   }
-
   await SentryFlutter.init(
     (options) {
       options.dsn = env.SENTRY_URL;

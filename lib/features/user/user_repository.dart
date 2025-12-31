@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get_it/get_it.dart';
@@ -35,7 +36,12 @@ class UserRepository {
       const desktopClientId = '677191252450-ibg34ij1u3kcjo5pid4ptjtf8dadp10f.apps.googleusercontent.com';
       const webClientId = '677191252450-s6a7kuf9dek6arhufeot9i968a8bhloh.apps.googleusercontent.com';
       
-      if (Platform.isAndroid) {
+      if (kIsWeb) {
+        await supabase.auth.signInWithOAuth(
+          sb.OAuthProvider.google,
+          redirectTo: '${dotenv.env['WEB_CLIENT_URL']}',
+        );
+      } else if (Platform.isAndroid) {
         final googleSignIn = GoogleSignIn(
           clientId: androidClientId,
           serverClientId: webClientId,
@@ -58,7 +64,7 @@ class UserRepository {
           idToken: idToken,
           accessToken: accessToken,
         );
-      } else {
+      } else  {
         final loginUrl = (await supabase.auth.getOAuthSignInUrl(
           provider: sb.OAuthProvider.google,
           redirectTo: "https://flvcuqostwctdicmncrb.supabase.co/auth/v1/callback"
@@ -74,7 +80,12 @@ class UserRepository {
   }
 
   Future<void> discordSignIn() async {
-    if (Platform.isAndroid) {
+    if (kIsWeb) {
+      await supabase.auth.signInWithOAuth(
+        sb.OAuthProvider.discord,
+        redirectTo: '${dotenv.env['WEB_CLIENT_URL']}',
+      );
+    } else if (Platform.isAndroid) {
       await supabase.auth.signInWithOAuth(
         sb.OAuthProvider.discord,
         redirectTo: 'teamup://home',
@@ -173,10 +184,10 @@ class UserRepository {
 
   }
 
-  Future<void> uploadAvatar(File file, String uid) async {
-    await supabase.storage.from('main').upload(
+  Future<void> uploadAvatar(Uint8List avatarBytes, String uid) async {
+    await supabase.storage.from('main').uploadBinary(
       'avatars/$uid.png', 
-      file, 
+      avatarBytes, 
       fileOptions: sb.FileOptions(upsert: true)
     );
   }

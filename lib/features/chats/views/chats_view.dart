@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -54,7 +55,7 @@ class _ChatsViewState extends State<ChatsView> {
       appBar: AppBar(
         title: Text('Личные чаты'),
         actions: [
-          if (!Platform.isAndroid)
+          if (kIsWeb || !Platform.isAndroid)
           IconButton(onPressed: () {
             final completer = Completer();
             loadChats(completer: completer);

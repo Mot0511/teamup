@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -42,7 +43,7 @@ class NotificationsService {
   } 
 
   Future<void> setFcmToken(String uid) async {
-    if (Platform.isAndroid) {
+    if (!kIsWeb && Platform.isAndroid) {
       final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
       final fcmToken = await FirebaseMessaging.instance.getToken();
       if (fcmToken != null) {
@@ -87,7 +88,7 @@ class NotificationsService {
   Future<void> setListeners(GlobalKey<NavigatorState> navigatorKey, userdata) async {
     if (userdata != null) {
       final userID = userdata.id;
-      if (Platform.isAndroid) {
+      if (!kIsWeb && Platform.isAndroid) {
         FirebaseMessaging.instance.onTokenRefresh.listen((fcmToken) async {
           await supabase.from('fcm_tokens').delete().eq('user_id', userID);
           await supabase.from('fcm_tokens').insert(

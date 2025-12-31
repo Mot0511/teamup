@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:teamup/features/chats/views/chats_view.dart';
@@ -10,6 +11,7 @@ import 'package:teamup/features/user/views/views.dart';
 import 'package:teamup/loading.dart';
 import 'package:teamup/models/navitem.dart';
 import 'package:teamup/widgets/navbar_widget.dart';
+import 'package:teamup/widgets/web_navbar_widget.dart';
 
 class NavScreen extends StatefulWidget {
   const NavScreen({super.key});
@@ -33,14 +35,23 @@ class _NavScreenState extends State<NavScreen> {
     final theme = Theme.of(context);
     return Container(
       color: theme.scaffoldBackgroundColor,
-      child: Column(
-        children: [
-          Expanded(
-            child: navitems[currentView].page
-          ),
-          Navbar(items: navitems, currentView: currentView, onTap: (i) => setState(() => currentView = i))
-        ],
-      )
+      child: kIsWeb
+        ? Row(
+          children: [
+            WebNavbar(items: navitems, currentView: currentView, onTap: (i) => setState(() => currentView = i)),
+            Expanded(
+              child: navitems[currentView].page
+            )
+          ],
+        )
+        : Column(
+          children: [
+            Expanded(
+              child: navitems[currentView].page
+            ),
+            Navbar(items: navitems, currentView: currentView, onTap: (i) => setState(() => currentView = i))
+          ],
+        )
     );
   }
 }

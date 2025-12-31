@@ -1,7 +1,11 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import * as jose from "https://deno.land/x/jose@v4.14.4/index.ts";
+import { corsHeaders } from '../_shared/cors.ts'
 
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
   try {
     const { uid, roomID } = await req.json()
 
@@ -30,13 +34,13 @@ Deno.serve(async (req) => {
       JSON.stringify({
         'token': token
       }),
-      { headers: { "Content-Type": "application/json" } },
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     )
   } catch (err) {
     console.error(err);
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 })

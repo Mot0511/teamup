@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -68,9 +67,9 @@ class ChatsRepository {
     return messages;
   }
 
-  Future<void> sendMessage(Message message, File? attachment) async {
+  Future<void> sendMessage(Message message, Uint8List? attachment) async {
     if (attachment != null) {
-      await supabase.storage.from('main').upload('attachments/${message.id}.png', attachment);
+      await supabase.storage.from('main').uploadBinary('attachments/${message.id}.png', attachment);
     }
     await supabase.from('messages').insert(message.toJSON());
   }
