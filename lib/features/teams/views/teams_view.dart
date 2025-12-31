@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
@@ -51,7 +52,7 @@ class _TeamsViewState extends State<TeamsView> {
       appBar: AppBar(
         title: Text('Команды'),
         actions: [
-          if (!Platform.isAndroid)
+          if (kIsWeb || !Platform.isAndroid)
           IconButton(onPressed: () {
             final completer = Completer();
             loadTeams(completer: completer);
@@ -82,7 +83,7 @@ class _TeamsViewState extends State<TeamsView> {
                           SliverFillRemaining(
                           hasScrollBody: false,
                           child: Center(
-                            child: Text('У тебя нет личных чатов', style: theme.textTheme.titleMedium),
+                            child: Text('Нет команд, в которых ты состоишь.', style: theme.textTheme.titleMedium),
                           ),
                         ),
                         ],

@@ -103,18 +103,17 @@ class _SignupViewState extends State<SignupView> {
             flex: 4,
             child: Padding(
               padding: const EdgeInsets.all(20),
-              child: ListView(
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Field(controller: emailController, title: 'Почта'),
-                      Field(controller: passwordController, title: 'Пароль', obscureText: true),
-                      Field(controller: repeatedPasswordController, error: error, title: 'Повторите пароль', obscureText: true),
-                    ]
-                  )
-                ]
-              ),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: 500),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Field(controller: emailController, title: 'Почта'),
+                    Field(controller: passwordController, title: 'Пароль', obscureText: true),
+                    Field(controller: repeatedPasswordController, error: error, title: 'Повторите пароль', obscureText: true),
+                  ]
+                ),
+              )
             )
           ),
           Expanded(

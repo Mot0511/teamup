@@ -1,11 +1,11 @@
 
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get_it/get_it.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
@@ -33,6 +33,7 @@ import 'package:teamup/models/game.dart';
 import 'package:teamup/features/analytics/repositories/analytics_repository.dart';
 import 'package:teamup/services/notifications_service.dart';
 import 'package:teamup/widgets/shimmer_widget.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -77,9 +78,10 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
       homeProvider.loadGames();
     }
 
-    searchRepository.onTeamFormed = (Team team) {
+    searchRepository.onTeamFormed = (Team team) async {
       analyticsRepository.logEvent('finish_searching', properties: getParams().toJSON());
-      if (Platform.isWindows && !notificationsService.isOnline) notificationsService.showNotification(DateTime.now().millisecondsSinceEpoch.toString(), 'Команда сформирована', '');
+      if (!kIsWeb && Platform.isWindows && !notificationsService.isOnline) notificationsService.showNotification(DateTime.now().millisecondsSinceEpoch.toString(), 'Команда сформирована', '');
+      await AudioPlayer().play(AssetSource('audio/team_formed.mp3'));
       Navigator.push(context, MaterialPageRoute(builder: (_) => TeamView(team: team)));
       searchBloc.add(StopSearching(user: (userBloc.state as UserStateLoaded).user));
     };

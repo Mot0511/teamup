@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
@@ -38,7 +39,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
   Message? editingMessage;
   Message? replyMessage;
   String tmpMessage = '';
-  File? attachment;
+  Uint8List? attachmentBytes;
 
 
   @override
@@ -73,8 +74,8 @@ class _MessengerWidgetState extends State<MessengerWidget> {
             .where((user) => user.uid == payload.newRecord['sender'])
             .toList()[0];
         payload.newRecord['sender'] = sender.toJSON();
-        if (payload.newRecord['attachment'] != null) {
-          payload.newRecord['attachment'] = await chatsRepository.getAttachment(payload.newRecord['attachment']);
+        if (payload.newRecord['attachmentBytes'] != null) {
+          payload.newRecord['attachmentBytes'] = await chatsRepository.getAttachment(payload.newRecord['attachmentBytes']);
         }
         messages?.add(Message.fromJSON(payload.newRecord));
         setState(() {});
@@ -93,8 +94,8 @@ class _MessengerWidgetState extends State<MessengerWidget> {
             final sender = widget.chat.users
                 .where((user) => user.uid == payload.newRecord['sender'])
                 .toList()[0];
-            if (payload.newRecord['attachment'] != null) {
-              payload.newRecord['attachment'] = await chatsRepository.getAttachment(payload.newRecord['attachment']);
+            if (payload.newRecord['attachmentBytes'] != null) {
+              payload.newRecord['attachmentBytes'] = await chatsRepository.getAttachment(payload.newRecord['attachmentBytes']);
             }
             payload.newRecord['sender'] = sender.toJSON();
             messages![i] = Message.fromJSON(payload.newRecord);
@@ -123,20 +124,20 @@ class _MessengerWidgetState extends State<MessengerWidget> {
 
   void onSendMessage() {
     final text = messageController.text.trim();
-    if (text == '' && attachment == null) return;
+    if (text == '' && attachmentBytes == null) return;
     final message = Message(
       id: DateTime.now().millisecondsSinceEpoch,
       chatId: widget.chat.id,
       user: (userBloc.state as UserStateLoaded).user,
       text: text,
       repliedMesssageID: replyMessage?.id,
-      attachment: attachment != null ? FileImage(attachment!) : null,
+      attachment: attachmentBytes != null ? MemoryImage(attachmentBytes!) : null,
       time: DateTime.now().toUtc(),
     );
-    chatsRepository.sendMessage(message, attachment);
+    chatsRepository.sendMessage(message, attachmentBytes);
     message.time = message.time.toLocal();
     messages?.add(message);
-    attachment = null;
+    attachmentBytes = null;
     setState(() {});
     messageController.text = '';
     focusNode.requestFocus();
@@ -199,7 +200,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
     );
 
     if (result != null) {
-      attachment = File(result.files.single.path!);
+      attachmentBytes = Uint8List.fromList(result.files.first.bytes!);
       setState(() {});
     }
   }
@@ -375,7 +376,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                           ),
                         ],
                       )
-                      else if (attachment != null)
+                      else if (attachmentBytes != null)
                       Container(
                         height: 150,
                         color: theme.canvasColor,
@@ -389,7 +390,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                                   height: double.infinity,
                                   decoration: BoxDecoration(
                                     image: DecorationImage(
-                                      image: FileImage(attachment!),
+                                      image: MemoryImage(attachmentBytes!),
                                     ),
                                     borderRadius: BorderRadius.circular(10)
                                   ),
@@ -404,7 +405,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                                         ),
                                       child: Ink(
                                         child: InkWell(
-                                          onTap: () => setState(() => attachment = null),
+                                          onTap: () => setState(() => attachmentBytes = null),
                                           customBorder: CircleBorder(),
                                           splashColor: theme.primaryColor,
                                           child: Icon(Icons.close, size: 20),

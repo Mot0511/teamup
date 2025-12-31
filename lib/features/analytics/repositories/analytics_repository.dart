@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
@@ -41,7 +42,7 @@ class AnalyticsRepository {
       'Country': Localizations.localeOf(context).countryCode,
       'Age': user.age,
       'Gender': user.gender,
-      'OS': Platform.operatingSystem
+      'OS': !kIsWeb ? Platform.operatingSystem : 'web'
     });
   }
 
@@ -49,7 +50,7 @@ class AnalyticsRepository {
     await logEvent('open_app', properties: {
       'Age': user.age,
       'Gender': user.gender,
-      'OS': Platform.operatingSystem
+      'OS': !kIsWeb ? Platform.operatingSystem : 'web'
     });
   }
 

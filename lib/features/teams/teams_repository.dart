@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -90,9 +89,9 @@ class TeamsRepository {
 
   }
 
-  Future<void> uploadIcon(int id, File file) async {
-    iconProviders[id] = FileImage(file);
-    await supabase.storage.from('main').upload(
+  Future<void> uploadIcon(int id, Uint8List file) async {
+    iconProviders[id] = MemoryImage(file);
+    await supabase.storage.from('main').uploadBinary(
       'team_icons/$id.png', 
       file, 
       fileOptions: FileOptions(upsert: true)

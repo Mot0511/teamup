@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter/widgets.dart';
@@ -18,12 +19,11 @@ class LoadUser extends UserEvent {
 
 class UpdateUser extends UserEvent {
   final User user;
-  final File? choosenAvatar;
   
-  UpdateUser({required this.user, required this.choosenAvatar});
+  UpdateUser({required this.user});
 
   @override
-  List get props => [user, choosenAvatar];
+  List get props => [user];
 }
 
 class Signout extends UserEvent {

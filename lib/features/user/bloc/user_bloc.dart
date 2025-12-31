@@ -27,9 +27,6 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       try {
         emit(UserStateLoading());
         await userRepository.updateUser(event.user);
-        if (event.choosenAvatar != null){
-          await userRepository.uploadAvatar(event.choosenAvatar as File, event.user.uid);
-        }
         emit(UserStateLoaded(user: event.user));
       } on Exception catch (e) {
         emit(UserStateError(e: e));

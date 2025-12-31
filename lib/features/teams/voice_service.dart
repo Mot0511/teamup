@@ -26,7 +26,7 @@ class VoiceService {
 
     final token = await getLivekitToken(uid, roomID);
     if (token == null) throw Exception('Произошла ошибка при получении Livekit токена');
-    
+    print(token);
     room = Room(
       roomOptions: const RoomOptions(
         defaultAudioCaptureOptions: AudioCaptureOptions(
@@ -41,7 +41,7 @@ class VoiceService {
       if (event is ParticipantConnectedEvent ||
           event is ParticipantDisconnectedEvent) {
         onPeersChanged!(peers);
-        await player.play(AssetSource('audio/join_voice.wav'));
+        await player.play(AssetSource('audio/join_voice.mp3'));
         print('Изменен состав комнаты $peers');
       }
 

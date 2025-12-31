@@ -77,21 +77,24 @@ class _SigninViewState extends State<SigninView> {
                       padding: EdgeInsets.symmetric(horizontal: 100), 
                       child: Expanded(
                       flex: 2,
-                      child: Column(
-                        children: [
-                          OutlinedField(controller: emailController, error: emailError, hint: 'Почта'),
-                          OutlinedField(controller: passwordController, error: passwordError, hint: 'Пароль', obscureText: true),
-                          ElevatedButton(
-                            onPressed: onEmailSignIn, 
-                            child: Text('Войти', style: theme.textTheme.labelMedium)
-                          ),
-                          SizedBox(height: 5),
-                          TextButton(
-                            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => SignupView())), 
-                            child: Text('Зарегистрироваться', style: theme.textTheme.labelMedium)
-                          )
-                        ],
-                      ),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: 500),
+                        child: Column(
+                          children: [
+                            OutlinedField(controller: emailController, error: emailError, hint: 'Почта'),
+                            OutlinedField(controller: passwordController, error: passwordError, hint: 'Пароль', obscureText: true),
+                            ElevatedButton(
+                              onPressed: onEmailSignIn, 
+                              child: Text('Войти', style: theme.textTheme.labelMedium)
+                            ),
+                            SizedBox(height: 5),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => SignupView())), 
+                              child: Text('Зарегистрироваться', style: theme.textTheme.labelMedium)
+                            )
+                          ],
+                        ),
+                      )
                     ),
                   ),
                 ],

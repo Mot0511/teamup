@@ -11,6 +11,17 @@
             "program": "lib/main.dart"
         },
         {
+            "name": "Teamup Web",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "-d",
+                "chrome",
+                "--web-port",
+                "3000"
+            ]
+        },
+        {
             "name": "teamup",
             "request": "launch",
             "type": "dart"
