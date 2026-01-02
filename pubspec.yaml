@@ -48,6 +48,7 @@ dependencies:
   dart_jsonwebtoken: ^3.3.1
   package_info_plus: ^9.0.0
   sentry_dart_plugin: ^3.2.0
+  url_launcher: ^6.3.2
 
 
 dev_dependencies:

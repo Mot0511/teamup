@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get_it/get_it.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
@@ -15,10 +16,13 @@ import 'package:teamup/features/home/bloc/search_events.dart';
 import 'package:teamup/features/home/bloc/search_states.dart';
 import 'package:teamup/features/home/home_provider.dart';
 import 'package:teamup/features/home/models/search_params.dart';
+import 'package:teamup/features/home/models/update_info.dart';
 import 'package:teamup/features/home/repositories/search_repository.dart';
 import 'package:teamup/features/home/views/search_view.dart';
+import 'package:teamup/features/home/views/update_info_view.dart';
 import 'package:teamup/features/home/widgets/drop_down_widget.dart';
 import 'package:teamup/features/home/widgets/info_widget.dart';
+import 'package:teamup/features/home/widgets/update_message_widget.dart';
 import 'package:teamup/features/home/widgets/widgets.dart';
 import 'package:teamup/features/teams/models/team.dart';
 import 'package:teamup/features/teams/signaling_service2.dart';
@@ -64,10 +68,15 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
 
   List<User> pendingUsers = [];
 
+  UpdateInfo? updateInfo;
+  String? appVersion;
+
   @override
   void initState() {
     super.initState();
-    
+
+    checkVersion();
+
     currentGame = prefs.getString('currentGame') ?? '106';
     currentTeamSize = prefs.getString('currentTeamSize') ?? '2';
     currentGender = prefs.getString('currentGender') ?? 'male';
@@ -101,6 +110,17 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     userBloc.stream.listen((state) {
       checkSearching();
     });
+  }
+
+  Future<void> checkVersion() async {
+    final platformInfo = await PackageInfo.fromPlatform();
+    appVersion = platformInfo.version;
+    final res = await supabase.functions.invoke(
+      'check-version',
+    );
+
+    updateInfo = UpdateInfo.fromJSON(res.data);
+    setState(() {});
   }
 
   Future<void> checkSearching() async {
@@ -154,6 +174,7 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
               return Scaffold(
                 appBar: AppBar(
                   title: Text('Teamup', style: theme.textTheme.headlineMedium),
+                  bottom: updateInfo != null && updateInfo?.currentVersion != appVersion ? UpdateMessageWidget(updateInfo: updateInfo!) : null,
                   centerTitle: true,
                   actions: [
                     if (state.user.uid == 'ea28f58d-2679-4c86-b0fb-2506947b0794')

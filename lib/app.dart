@@ -45,6 +45,7 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
   final supabase = GetIt.I<SupabaseClient>();
   late final StreamSubscription<AuthState> _authStateSubscription;
   late final StreamSubscription<Uri> appLinksSubscription;
+  late final AppLifecycleListener lifecycleListener;
 
   final userBloc = GetIt.I<UserBloc>();
   final searchBloc = GetIt.I<SearchBloc>();
@@ -60,7 +61,6 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
 
   void initState() {
     super.initState();
-    
 
     _authStateSubscription = supabase.auth.onAuthStateChange.listen((data) async {
       final event = data.event;
@@ -88,6 +88,9 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
         
         userBloc.add(LoadUser(uid: userdata.id));
         await userRepository.setOnline(userdata.id);
+        lifecycleListener = AppLifecycleListener(
+          
+        )
         await notificationsService.setListeners(navigatorKey, userdata);
       }
     });
@@ -95,13 +98,17 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
   }
 
+  Future<void> onStartApp() async {
+    
+  }
+
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) async {
+  Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
     super.didChangeAppLifecycleState(state);
 
     final uid = supabase.auth.currentUser?.id;
     if (state == AppLifecycleState.resumed && uid != null) {
-      userRepository.setOnline(uid);
+      await userRepository.setOnline(uid);
       notificationsService.isOnline = true;
       final pendingTeamID = await searchRepository.getPendingTeamID(uid);
       if (pendingTeamID == null && userBloc.state is UserStateLoaded) {
@@ -112,7 +119,7 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
       state == AppLifecycleState.inactive || 
       state == AppLifecycleState.detached) && uid != null
     ) {
-      userRepository.setOffline(uid);
+      await userRepository.setOffline(uid);
       notificationsService.isOnline = false;
     }
   }

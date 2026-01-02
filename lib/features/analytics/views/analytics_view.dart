@@ -22,6 +22,7 @@ class _AnalyticsViewState extends State<AnalyticsView> {
     this.period = period;
     setState(() {});
     analytics = await analytcsRepository.getAnalytics(period);
+    print(analytics);
     setState(() {});
   }
 

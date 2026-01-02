@@ -30,9 +30,10 @@ class VoiceService {
     room = Room(
       roomOptions: const RoomOptions(
         defaultAudioCaptureOptions: AudioCaptureOptions(
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          highPassFilter: true,
         ),
       ),
     );
