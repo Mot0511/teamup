@@ -25,7 +25,6 @@ class AnalyticsRepository {
         finishSearchingCount: (await supabase.from('stats').select('id').eq('event', 'finish_searching').gte('timestamp', time - period).count()).count,
       );
     }
-
     return AnalyticsResults(
       usersCount: await supabase.from('users').count(),
       signUpCount: await supabase.from('stats').count().eq('event', 'sign_up'), 

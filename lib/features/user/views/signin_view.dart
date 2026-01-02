@@ -64,8 +64,7 @@ class _SigninViewState extends State<SigninView> {
         children: [
           Expanded(
             flex: 8,
-            child: Center(
-              child: Column(
+            child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [ 
@@ -74,32 +73,28 @@ class _SigninViewState extends State<SigninView> {
                   Text('Платформа для поиска\nтиммейтов в команду', textAlign: TextAlign.center, style: theme.textTheme.titleMedium),
                   SizedBox(height: 60),
                   Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 100), 
-                      child: Expanded(
-                      flex: 2,
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: 500),
-                        child: Column(
-                          children: [
-                            OutlinedField(controller: emailController, error: emailError, hint: 'Почта'),
-                            OutlinedField(controller: passwordController, error: passwordError, hint: 'Пароль', obscureText: true),
-                            ElevatedButton(
-                              onPressed: onEmailSignIn, 
-                              child: Text('Войти', style: theme.textTheme.labelMedium)
-                            ),
-                            SizedBox(height: 5),
-                            TextButton(
-                              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => SignupView())), 
-                              child: Text('Зарегистрироваться', style: theme.textTheme.labelMedium)
-                            )
-                          ],
-                        ),
-                      )
-                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 100), 
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: 500),
+                      child: Column(
+                        children: [
+                          OutlinedField(controller: emailController, error: emailError, hint: 'Почта'),
+                          OutlinedField(controller: passwordController, error: passwordError, hint: 'Пароль', obscureText: true),
+                          ElevatedButton(
+                            onPressed: onEmailSignIn, 
+                            child: Text('Войти', style: theme.textTheme.labelMedium)
+                          ),
+                          SizedBox(height: 5),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => SignupView())), 
+                            child: Text('Зарегистрироваться', style: theme.textTheme.labelMedium)
+                          )
+                        ],
+                      ),
+                    )
                   ),
                 ],
               )
-            )
           ),
           Expanded(
             flex: 1,

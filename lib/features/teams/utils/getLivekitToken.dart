@@ -12,6 +12,5 @@ Future<String?> getLivekitToken(String uid, int roomID) async {
     body: {'uid': uid, 'roomID': roomID},
   );
 
-  if (response.data != null) return response.data['token'];
-  return null;  
+  return response.data['token'];
 }
