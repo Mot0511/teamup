@@ -2,9 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:teamup/features/chats/models/chat.dart';
-import 'package:teamup/features/chats/models/message.dart';
-import 'package:teamup/features/user/models/user.dart' as models;
+import 'package:teamup/features/chats/chats.dart';
+import 'package:teamup/features/user/models/models.dart' as models;
 
 class ChatsRepository {
   final SupabaseClient supabase = GetIt.I<SupabaseClient>();

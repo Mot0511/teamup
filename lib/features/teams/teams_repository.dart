@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:teamup/features/teams/models/team.dart';
+import 'package:teamup/features/teams/teams.dart';
 import 'package:teamup/features/user/models/models.dart' as models;
 
 class TeamsRepository {

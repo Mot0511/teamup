@@ -1,10 +1,5 @@
-import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:equatable/equatable.dart';
-import 'package:flutter/widgets.dart';
-import 'package:teamup/features/user/models/friendship.dart';
-import 'package:teamup/features/user/models/models.dart';
+import 'package:teamup/features/user/user.dart';
 
 abstract class UserEvent extends Equatable {}
 

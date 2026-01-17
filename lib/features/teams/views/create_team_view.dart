@@ -3,22 +3,8 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:teamup/features/home/repositories/search_repository.dart';
-import 'package:teamup/features/teams/bloc/teams_bloc.dart';
-import 'package:teamup/features/teams/bloc/teams_events.dart';
-import 'package:teamup/features/teams/models/team.dart';
-import 'package:teamup/features/teams/teams_repository.dart';
-import 'package:teamup/features/teams/views/choose_members_view.dart';
-import 'package:teamup/features/teams/views/team2_view.dart';
-import 'package:teamup/features/teams/widgets/team_icon_widget.dart';
-import 'package:teamup/features/user/bloc/user_bloc.dart';
-import 'package:teamup/features/user/bloc/user_events.dart';
-import 'package:teamup/features/user/bloc/user_states.dart';
-import 'package:teamup/features/user/models/models.dart';
-import 'package:teamup/features/user/widgets/avatar_widget.dart';
-import 'package:teamup/features/user/widgets/user_widget.dart';
-import 'package:teamup/models/game.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:teamup/features/teams/teams.dart';
+import 'package:teamup/features/user/user.dart';
 import 'package:teamup/widgets/widgets.dart';
 
 class CreateTeamView extends StatefulWidget {

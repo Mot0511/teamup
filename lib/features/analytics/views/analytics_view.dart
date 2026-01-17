@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get_it/get_it.dart';
-import 'package:teamup/features/analytics/models/analytics_results.dart';
-import 'package:teamup/features/analytics/repositories/analytics_repository.dart';
+import 'package:teamup/features/analytics/analytics.dart';
 
 class AnalyticsView extends StatefulWidget {
   const AnalyticsView({super.key});

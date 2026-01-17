@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:teamup/features/user/user_repository.dart';
+import 'package:teamup/features/user/user.dart';
 import 'package:teamup/widgets/field_widget.dart';
 
 class EmailSigninView extends StatefulWidget {

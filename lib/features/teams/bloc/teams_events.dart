@@ -1,9 +1,8 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:equatable/equatable.dart';
-import 'package:teamup/features/teams/models/team.dart';
-import 'package:teamup/features/user/models/models.dart';
+import 'package:teamup/features/teams/teams.dart';
+import 'package:teamup/features/user/user.dart';
 
 abstract class TeamsEvent extends Equatable {}
 

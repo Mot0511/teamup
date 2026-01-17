@@ -1,20 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:get_it/get_it.dart';
-import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:teamup/features/chats/widgets/messenger_widget.dart';
-import 'package:teamup/features/teams/models/team.dart';
-import 'package:teamup/features/teams/views/create_team_view.dart';
-import 'package:teamup/features/teams/voice_service.dart';
-import 'package:teamup/features/teams/voice_provider.dart';
-import 'package:teamup/features/teams/widgets/team_icon_widget.dart';
-import 'package:teamup/features/user/bloc/user_bloc.dart';
-import 'package:teamup/features/user/bloc/user_states.dart';
-import 'package:teamup/features/user/models/models.dart';
-import 'package:teamup/features/user/widgets/avatar_widget.dart';
-import 'package:teamup/features/analytics/repositories/analytics_repository.dart';
+import 'package:teamup/features/chats/chats.dart';
+import 'package:teamup/features/teams/teams.dart';
+import 'package:teamup/features/user/user.dart';
+import 'package:teamup/features/analytics/analytics.dart';
 
 class TeamView extends StatefulWidget {
   const TeamView({super.key, required this.team});

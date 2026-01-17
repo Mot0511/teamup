@@ -18,13 +18,11 @@ class Navbar extends StatelessWidget {
 
     return Container(
       height: 75,
+      margin: EdgeInsets.all(10),
       padding: EdgeInsets.all(5),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
+        borderRadius: BorderRadius.circular(50)
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,

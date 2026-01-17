@@ -2,17 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:teamup/features/chats/chats_repository.dart';
-import 'package:teamup/features/chats/models/chat.dart';
-import 'package:teamup/features/chats/models/message.dart';
-import 'package:teamup/features/chats/widgets/message_widget.dart';
-import 'package:teamup/features/chats/widgets/messenger_widget.dart';
-import 'package:teamup/features/user/bloc/user_bloc.dart';
-import 'package:teamup/features/user/bloc/user_states.dart';
-import 'package:teamup/features/user/user_repository.dart';
-import 'package:teamup/features/user/views/views.dart';
-import 'package:teamup/features/user/widgets/avatar_widget.dart';
-import 'package:teamup/features/analytics/repositories/analytics_repository.dart';
+import 'package:teamup/features/chats/chats.dart';
+import 'package:teamup/features/user/user.dart';
+import 'package:teamup/features/analytics/analytics.dart';
 
 class ChatView extends StatefulWidget {
   const ChatView({super.key, required this.chat});

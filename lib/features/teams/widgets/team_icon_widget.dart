@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:teamup/features/teams/teams_repository.dart';
-import 'package:teamup/features/user/user_repository.dart';
+import 'package:teamup/features/teams/teams.dart';
 
 class TeamIconWidget extends StatelessWidget {
   TeamIconWidget({super.key, required this.id, this.size=150, this.image});

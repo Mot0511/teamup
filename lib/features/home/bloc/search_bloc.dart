@@ -1,9 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:teamup/features/home/bloc/search_events.dart';
-import 'package:teamup/features/home/bloc/search_states.dart';
-import 'package:teamup/features/home/models/search_params.dart';
-import 'package:teamup/features/home/repositories/repositories.dart';
-import 'package:teamup/models/game.dart';
+import 'package:teamup/features/home/home.dart';
 
 class SearchBloc extends Bloc<SearchEvent, SearchState> {
   SearchBloc({required this.searchRepository}) : super(SearchStateInitial()) {

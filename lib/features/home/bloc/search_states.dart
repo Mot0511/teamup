@@ -1,6 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:teamup/features/home/models/search_params.dart';
-import 'package:teamup/models/game.dart';
+import 'package:teamup/features/home/home.dart';
 
 abstract class SearchState extends Equatable {}
 

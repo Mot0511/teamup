@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:livekit_client/livekit_client.dart';
-import 'package:teamup/features/home/models/update_info.dart';
+import 'package:teamup/features/home/home.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class UpdateInfoView extends StatefulWidget {

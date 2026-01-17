@@ -1,9 +1,5 @@
-import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:teamup/features/teams/bloc/teams_events.dart';
-import 'package:teamup/features/teams/bloc/teams_states.dart';
-import 'package:teamup/features/teams/models/team.dart';
-import 'package:teamup/features/teams/teams_repository.dart';
+import 'package:teamup/features/teams/teams.dart';
 
 class TeamsBloc extends Bloc<TeamsEvent, TeamsState> {
   TeamsBloc({required this.teamsRepository}) : super(TeamsStateInitial()) {

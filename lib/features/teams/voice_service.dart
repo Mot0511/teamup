@@ -1,7 +1,5 @@
-import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:livekit_client/livekit_client.dart';
-import 'package:teamup/features/teams/utils/getLivekitToken.dart';
-import 'package:teamup/features/teams/utils/getServerIP.dart';
+import 'package:teamup/features/teams/teams.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 class VoiceService {

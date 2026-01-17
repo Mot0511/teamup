@@ -1,6 +1,5 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:teamup/features/user/models/models.dart';
+import 'package:teamup/features/user/user.dart';
 
 class Message {
   final int id;

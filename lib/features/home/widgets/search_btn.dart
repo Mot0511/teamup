@@ -1,13 +1,6 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import 'package:teamup/features/home/bloc/search_bloc.dart';
-import 'package:teamup/features/home/bloc/search_events.dart';
-import 'package:teamup/features/home/bloc/search_states.dart';
-import 'package:teamup/features/home/models/search_params.dart';
-import 'package:teamup/features/user/bloc/user_states.dart';
+import 'package:teamup/features/home/home.dart';
 
 class SearchBtn extends StatefulWidget {
   SearchBtn({

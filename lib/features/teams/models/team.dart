@@ -1,5 +1,5 @@
-import 'package:teamup/features/chats/models/chat.dart';
-import 'package:teamup/features/user/models/models.dart';
+import 'package:teamup/features/chats/chats.dart';
+import 'package:teamup/features/user/user.dart';
 
 class Team extends Chat {
   String name;
