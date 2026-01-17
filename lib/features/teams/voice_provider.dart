@@ -1,9 +1,9 @@
 // import 'package:flutter/material.dart';
 // import 'package:get_it/get_it.dart';
-// import 'package:teamup/features/teams/voice_service.dart';
-// import 'package:teamup/features/user/bloc/user_bloc.dart';
-// import 'package:teamup/features/user/bloc/user_states.dart';
-// import 'package:teamup/features/user/models/models.dart';
+// import 'package:teamup/features/teams/teams.dart';
+// import 'package:teamup/features/user/user.dart';
+// import 'package:teamup/features/user/user.dart';
+// import 'package:teamup/features/user/user.dart';
 
 // class VoiceProvider extends ChangeNotifier {
 //   bool isVoiceOn = true;

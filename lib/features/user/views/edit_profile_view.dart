@@ -1,16 +1,10 @@
-import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:teamup/features/home/repositories/search_repository.dart';
-import 'package:teamup/features/user/bloc/user_bloc.dart';
-import 'package:teamup/features/user/bloc/user_events.dart';
-import 'package:teamup/features/user/models/models.dart';
-import 'package:teamup/features/user/user_repository.dart';
-import 'package:teamup/features/user/widgets/avatar_widget.dart';
+import 'package:teamup/features/home/home.dart';
+import 'package:teamup/features/user/user.dart';
 import 'package:teamup/models/game.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:teamup/widgets/widgets.dart';
 
 class EditProfileView extends StatefulWidget {
@@ -105,6 +99,12 @@ class _EditProfileViewState extends State<EditProfileView> {
     Navigator.pop(context);
   }
 
+  Future<void> onChooseGame() async {
+    final Game game = await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChooseGameView()));
+    choosenGame = game.id;
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -151,16 +151,10 @@ class _EditProfileViewState extends State<EditProfileView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Любимая игра:', style: theme.textTheme.labelLarge),
-                  DropdownButton(
-                    isExpanded: true,
-                    value: choosenGame,
-                    items: [DropdownMenuItem(child: Text('Нет'), value: 0)] + 
-                      (games?.map((game) => DropdownMenuItem(child: Text(game.name), value: game.id)).toList() as List<DropdownMenuItem<int>>),
-                    onChanged: (value) => setState(() => choosenGame = (value as int))
-                  )
+                  GameWidget(game: games!.firstWhere((game) => game.id == choosenGame), onTap: onChooseGame)
                 ],
               )
-              : Center(child: CircularProgressIndicator()),
+              : ShimmerWidget(height: 30),
               Align(
                 alignment: Alignment.centerRight,
                 child: ElevatedButton(

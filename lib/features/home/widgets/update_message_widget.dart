@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:teamup/features/home/models/update_info.dart';
-import 'package:teamup/features/home/views/update_info_view.dart';
+import 'package:teamup/features/home/home.dart';
 
 class UpdateMessageWidget extends StatelessWidget implements PreferredSizeWidget {
-  UpdateMessageWidget({super.key, required this.updateInfo});
+  const UpdateMessageWidget({super.key, required this.updateInfo});
   final UpdateInfo updateInfo;
 
   @override
@@ -13,7 +12,7 @@ class UpdateMessageWidget extends StatelessWidget implements PreferredSizeWidget
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text('Вышло обновление 1.0.1', style: theme.textTheme.titleSmall),
+          Text('Вышло обновление ${updateInfo.currentVersion}', style: theme.textTheme.titleSmall),
           SizedBox(width: 10),
           TextButton(
             onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => UpdateInfoView(updateInfo: updateInfo))),

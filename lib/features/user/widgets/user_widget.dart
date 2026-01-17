@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:teamup/features/user/models/models.dart';
-import 'package:teamup/features/user/views/profile_view.dart';
-import 'package:teamup/features/user/widgets/avatar_widget.dart';
+import 'package:teamup/features/user/user.dart';
 
 class UserWidget extends StatelessWidget {
   const UserWidget({super.key, required this.user, this.trailing});

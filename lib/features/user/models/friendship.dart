@@ -1,5 +1,4 @@
-import 'package:teamup/features/user/enums.dart';
-import 'package:teamup/features/user/models/models.dart';
+import 'package:teamup/features/user/user.dart';
 
 class Friendship {
   final User friend;

@@ -1,5 +1,3 @@
-import 'package:teamup/models/game.dart';
-
 class SearchParams {
   final int gameID;
   final int age;

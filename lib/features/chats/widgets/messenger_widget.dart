@@ -1,20 +1,13 @@
-import 'dart:io';
 import 'dart:math';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:teamup/features/chats/chats_repository.dart';
-import 'package:teamup/features/chats/models/chat.dart';
-import 'package:teamup/features/chats/models/message.dart';
-import 'package:teamup/features/chats/widgets/message_widget.dart';
+import 'package:teamup/features/chats/chats.dart';
 import 'package:teamup/widgets/shimmer_widget.dart';
-import 'package:teamup/features/user/bloc/user_bloc.dart';
-import 'package:teamup/features/user/bloc/user_states.dart';
+import 'package:teamup/features/user/user.dart';
 
 class MessengerWidget extends StatefulWidget {
   const MessengerWidget({super.key, required this.chat});
@@ -303,7 +296,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                     itemBuilder: (context, index) {
                       return Padding(
                         padding: EdgeInsets.only(bottom: 10),
-                        child: SihmmerWidget(height: 50, radius: 0),
+                        child: ShimmerWidget(height: 50, radius: 0),
                       );
                     },
                 )

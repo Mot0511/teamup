@@ -1,17 +1,13 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
-import 'package:teamup/features/user/bloc/user_bloc.dart';
-import 'package:teamup/features/user/bloc/user_events.dart';
-import 'package:teamup/features/user/models/models.dart';
-import 'package:teamup/features/user/user_repository.dart';
+import 'package:teamup/features/home/home.dart';
+import 'package:teamup/features/user/user.dart';
+import 'package:teamup/models/game.dart';
 import 'package:teamup/nav_screen.dart';
-import 'package:teamup/providers/global_provider.dart';
-import 'package:teamup/features/analytics/repositories/analytics_repository.dart';
+import 'package:teamup/features/analytics/analytics.dart';
 import 'package:teamup/services/notifications_service.dart';
 import 'package:teamup/widgets/widgets.dart';
 
@@ -33,9 +29,24 @@ class _UserFormViewState extends State<UserFormView> {
   final userBloc = GetIt.I<UserBloc>();
   final notificationsService = GetIt.I<NotificationsService>();
   final analyticsRepository = GetIt.I<AnalyticsRepository>();
+  final prefs = GetIt.I<SharedPreferences>();
 
   String? usernameError;
   String? ageError;
+
+  Game? choosenGame;
+
+  @override
+  void initState() {
+    super.initState();
+
+    loadGames();
+  }
+
+  Future<void> loadGames() async {
+    final homeProvider = Provider.of<HomeProvider>(context, listen: false);
+    await homeProvider.loadGames();
+  }
 
   Future<void> submit() async {
     final username = usernameController.text.trim();
@@ -66,17 +77,32 @@ class _UserFormViewState extends State<UserFormView> {
       username: username,
       age: int.parse(age),
       gender: gender,
+      favouriteGame: choosenGame
     );
     await userRepository.addUserdata(user);
     userBloc.add(LoadUser(uid: widget.userdata.id));
-    notificationsService.setFcmToken(widget.userdata.id);
-    userRepository.setOnline(widget.userdata.id);
+    if (choosenGame != null) {
+      await prefs.setString('currentGame', choosenGame!.id.toString());
+    } 
+    await notificationsService.setFcmToken(widget.userdata.id);
+    await userRepository.setOnline(widget.userdata.id);
     if (mounted) {
       await analyticsRepository.logSignup(user, context);
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) =>
         NavScreen()
       ));
     }
+  }
+
+  Future<void> chooseGame() async {
+    final Game game = await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChooseGameView()));
+    choosenGame = game;
+    setState(() {});
+  }
+
+  Future<void> exit() async {
+    await userRepository.signout();
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => SigninView()));
   }
 
   @override
@@ -86,7 +112,7 @@ class _UserFormViewState extends State<UserFormView> {
       body: Column(
         children: [
           Expanded(
-            flex: 3,
+            flex: 2,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -115,6 +141,20 @@ class _UserFormViewState extends State<UserFormView> {
                         ], 
                         onChanged: (value) => setState(() => gender = (value as String))
                       ),
+                      Text('Любимая игра', style: theme.textTheme.labelLarge),
+                      SizedBox(height: 10),
+                      Consumer<HomeProvider>(
+                        builder: (context, homeProvider, child) {
+                          if (homeProvider.games == null) {
+                            return ShimmerWidget(height: 80);
+                          } else if (choosenGame == null) {
+                            return ElevatedButton(onPressed: () => chooseGame(), child: Text('Выбрать любимую игру', style: theme.textTheme.labelMedium));
+                          } else {
+                            return GameWidget(game: choosenGame!, onTap: chooseGame);
+                          }
+                        }
+                      )
+                      
                     ]
                   )
                 ]
@@ -122,16 +162,32 @@ class _UserFormViewState extends State<UserFormView> {
             )
           ),
           Expanded(
-            flex: 2,
+            flex: 1,
             child: Center(
-              child: ElevatedButton(
-                onPressed: submit, 
-                child: Icon(Icons.arrow_forward_ios, color: Colors.white, size: 40),
-                style: ElevatedButton.styleFrom(
-                  shape: CircleBorder(),
-                  padding: EdgeInsets.all(20),
-                  backgroundColor: theme.primaryColor
-                )
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  OutlinedButton(
+                    onPressed: exit, 
+                    child: Padding(
+                      padding: EdgeInsets.only(left: 10),
+                      child: Icon(Icons.arrow_back_ios, color: Colors.white, size: 40),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      shape: CircleBorder(),
+                      padding: EdgeInsets.all(20),
+                    )
+                  ),
+                  ElevatedButton(
+                    onPressed: submit, 
+                    child: Icon(Icons.arrow_forward_ios, color: Colors.white, size: 40),
+                    style: ElevatedButton.styleFrom(
+                      shape: CircleBorder(),
+                      padding: EdgeInsets.all(20),
+                      backgroundColor: theme.primaryColor
+                    )
+                  )
+                ],
               )
             )
           )

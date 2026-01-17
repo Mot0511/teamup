@@ -1,8 +1,5 @@
 import 'dart:io';
-
-import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -11,28 +8,18 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:teamup/app.dart';
-import 'package:teamup/features/chats/bloc/chats_bloc.dart';
-import 'package:teamup/features/chats/chats_repository.dart';
-import 'package:teamup/features/home/bloc/search_bloc.dart';
-import 'package:teamup/features/home/home_provider.dart';
-import 'package:teamup/features/home/repositories/search_repository.dart';
-import 'package:teamup/features/teams/bloc/teams_bloc.dart';
-import 'package:teamup/features/teams/teams_repository.dart';
-import 'package:teamup/features/teams/signaling_service2.dart';
-import 'package:teamup/features/teams/voice_provider.dart';
-import 'package:teamup/features/teams/voice_service.dart';
-import 'package:teamup/features/user/bloc/user_bloc.dart';
-import 'package:teamup/features/user/user_repository.dart';
+import 'package:teamup/features/chats/chats.dart';
+import 'package:teamup/features/home/home.dart';
+import 'package:teamup/features/teams/teams.dart';
+import 'package:teamup/features/user/user.dart';
 import 'package:teamup/firebase_options.dart';
-import 'package:teamup/lifecycle_event_handler.dart';
-import 'package:teamup/providers/global_provider.dart';
+import 'package:teamup/providers/notifications_provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:teamup/features/analytics/repositories/analytics_repository.dart';
+import 'package:teamup/features/analytics/analytics.dart';
 import 'package:teamup/services/notifications_service.dart';
 import 'package:window_size/window_size.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:teamup/env.dart' as env;
-
 
 void main() async {
   try {
@@ -48,6 +35,7 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+
     await Supabase.initialize(
       url: env.SUPABASE_URL,
       anonKey: env.SUPABASE_SERVICE_ROLE_KEY,
@@ -63,7 +51,7 @@ void main() async {
     GetIt.I.registerSingleton(ChatsRepository());
     GetIt.I.registerSingleton(VoiceService());
     GetIt.I.registerSingleton(UserBloc(userRepository: GetIt.I<UserRepository>()));
-    GetIt.I.registerSingleton(ChatsBloc(chatsRepository: GetIt.I<ChatsRepository>()));
+    GetIt.I.registerSingleton(ChatsBloc(chatsRepository: GetIt.I<ChatsRepository>())); 
     GetIt.I.registerSingleton(TeamsBloc(teamsRepository: GetIt.I<TeamsRepository>()));
     GetIt.I.registerSingleton(SearchBloc(searchRepository: GetIt.I<SearchRepository>()));
     GetIt.I.registerSingleton(await SharedPreferences.getInstance());
@@ -90,7 +78,7 @@ void main() async {
       SentryWidget(
         child: MultiProvider(
           providers: [
-            ChangeNotifierProvider<GlobalProvider>(create: (context) => GlobalProvider()),
+            ChangeNotifierProvider<NotificationsProvider>(create: (context) => NotificationsProvider()),
             ChangeNotifierProvider<HomeProvider>(create: (context) => HomeProvider()),
           ],
           child: Teamup(),

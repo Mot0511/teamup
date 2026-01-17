@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:teamup/features/home/widgets/drop_down_widget.dart';
+import 'package:teamup/features/home/home.dart';
 import 'package:teamup/models/game.dart';
 
-class FiltersWidget extends StatefulWidget {
+class FiltersWidget extends StatelessWidget {
   const FiltersWidget({
     super.key, 
     required this.currentGame,
-    required this.games,
     required this.onSetGame,
 
     required this.currentGender,
@@ -16,8 +15,7 @@ class FiltersWidget extends StatefulWidget {
     required this.currentTeamSize,
     required this.onSetTeamSize
   });
-  final String currentGame;
-  final List<Game> games;
+  final Game currentGame;
   final Function onSetGame;
 
   final String currentGender;
@@ -25,13 +23,6 @@ class FiltersWidget extends StatefulWidget {
 
   final String currentTeamSize;
   final Function onSetTeamSize;
-
-  @override
-  State<FiltersWidget> createState() => _FiltersWidgetState();
-}
-
-class _FiltersWidgetState extends State<FiltersWidget> {
-
 
   @override
   Widget build(BuildContext context) {
@@ -46,18 +37,14 @@ class _FiltersWidgetState extends State<FiltersWidget> {
           ),
         ),
         Text("Игра", style: theme.textTheme.labelMedium),
-        DropdowmWidget(
-          items: widget.games
-              .map(
-                (game) => DropdownItem(
-                  text: game.name,
-                  value: game.id.toString(),
-                ),
-              )
-              .toList(),
-          value: widget.currentGame,
-          onChange: (value) =>
-              widget.onSetGame(value)
+        GameWidget(
+          game: currentGame, 
+          onTap: () async {
+            final game = await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChooseGameView()));
+            if (game != null) {
+              onSetGame(game);
+            }
+          }
         ),
         Text(
           "Кол-во игроков в команде",
@@ -75,9 +62,9 @@ class _FiltersWidgetState extends State<FiltersWidget> {
             DropdownItem(text: '9', value: '9'),
             DropdownItem(text: '10', value: '10'),
           ],
-          value: widget.currentTeamSize,
+          value: currentTeamSize,
           onChange: (value) =>
-              widget.onSetTeamSize(value)
+              onSetTeamSize(value)
         ),
         Text("Пол", style: theme.textTheme.labelMedium),
         DropdowmWidget(
@@ -86,9 +73,9 @@ class _FiltersWidgetState extends State<FiltersWidget> {
             DropdownItem(text: "Мужской", value: "male"),
             DropdownItem(text: "Женский", value: "female"),
           ],
-          value: widget.currentGender,
+          value: currentGender,
           onChange: (value) =>
-              widget.onSetGender(value)
+              onSetGender(value)
         ),
       ],
     );

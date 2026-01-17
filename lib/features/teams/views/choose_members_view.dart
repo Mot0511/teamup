@@ -1,12 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:teamup/features/user/bloc/user_bloc.dart';
-import 'package:teamup/features/user/bloc/user_states.dart';
-import 'package:teamup/features/user/enums.dart';
-import 'package:teamup/features/user/models/friendship.dart';
-import 'package:teamup/features/user/models/models.dart';
-import 'package:teamup/features/user/user_repository.dart';
-import 'package:teamup/features/user/widgets/user_widget.dart';
+import 'package:teamup/features/user/user.dart';
 
 class ChooseMembersView extends StatefulWidget {
   const ChooseMembersView({super.key});

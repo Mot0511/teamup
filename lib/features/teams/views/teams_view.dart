@@ -6,14 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import 'package:teamup/features/teams/bloc/teams_bloc.dart';
-import 'package:teamup/features/teams/bloc/teams_events.dart';
-import 'package:teamup/features/teams/bloc/teams_states.dart';
-import 'package:teamup/features/teams/teams_repository.dart';
-import 'package:teamup/features/teams/views/create_team_view.dart';
-import 'package:teamup/features/teams/widgets/team_widget.dart';
-import 'package:teamup/features/user/bloc/user_bloc.dart';
-import 'package:teamup/features/user/bloc/user_states.dart';
+import 'package:teamup/features/teams/teams.dart';
+import 'package:teamup/features/user/user.dart';
 import 'package:teamup/widgets/shimmer_widget.dart';
 
 class TeamsView extends StatefulWidget {
@@ -97,7 +91,7 @@ class _TeamsViewState extends State<TeamsView> {
                       itemBuilder: (context, state) => 
                         Padding(
                           padding: EdgeInsets.all(8),
-                          child: SihmmerWidget(),
+                          child: ShimmerWidget(),
                         )
                     );
                   }

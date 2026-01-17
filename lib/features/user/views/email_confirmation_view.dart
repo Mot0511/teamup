@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:teamup/features/user/views/views.dart';
+import 'package:teamup/features/user/user.dart';
 
 class EmailConfirmationView extends StatelessWidget {
   const EmailConfirmationView({super.key});

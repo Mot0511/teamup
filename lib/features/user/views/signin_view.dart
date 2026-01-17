@@ -1,13 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:teamup/features/user/user_repository.dart';
-import 'package:teamup/features/user/views/signup_view.dart';
-import 'package:teamup/features/user/views/user_form_view.dart';
-import 'package:teamup/features/user/widgets/social_provider_widget.dart';
-import 'package:teamup/nav_screen.dart';
-import 'package:teamup/providers/global_provider.dart';
+import 'package:teamup/features/user/user.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:teamup/widgets/outlined_field_widget.dart';
 
@@ -46,13 +40,15 @@ class _SigninViewState extends State<SigninView> {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
 
-    await userRepository.emailSignIn(email, password);
 
-    // try {
-    //   await userRepository.emailSignIn(email, password);
-    // } on Exception catch (e) {
-    //   print(e);
-    // }
+    try {
+      await userRepository.emailSignIn(email, password);
+    } on AuthApiException catch (e) {
+      if (e.code == 'invalid_credentials') {
+        passwordError = 'Неверная почта или пароль';
+        setState(() {});
+      }
+    }
   }
 
   @override

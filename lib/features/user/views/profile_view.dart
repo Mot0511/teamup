@@ -1,32 +1,14 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
-import 'package:shimmer/shimmer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
-import 'package:teamup/features/chats/bloc/chats_bloc.dart';
-import 'package:teamup/features/chats/bloc/chats_events.dart';
-import 'package:teamup/features/chats/bloc/chats_states.dart';
-import 'package:teamup/features/chats/chats_repository.dart';
-import 'package:teamup/features/chats/models/chat.dart';
-import 'package:teamup/features/chats/views/chat_view.dart';
-import 'package:teamup/features/teams/bloc/teams_bloc.dart';
-import 'package:teamup/features/teams/bloc/teams_events.dart';
-import 'package:teamup/features/user/bloc/user_bloc.dart';
-import 'package:teamup/features/user/bloc/user_events.dart';
-import 'package:teamup/features/user/bloc/user_states.dart';
-import 'package:teamup/features/user/enums.dart';
-import 'package:teamup/features/user/models/friendship.dart';
-import 'package:teamup/features/user/models/user.dart';
-import 'package:teamup/features/user/user_repository.dart';
-import 'package:teamup/features/user/views/friends_requests.dart';
-import 'package:teamup/features/user/views/views.dart';
-import 'package:teamup/features/user/widgets/avatar_widget.dart';
-import 'package:teamup/features/user/widgets/user_widget.dart';
-import 'package:teamup/providers/global_provider.dart';
+import 'package:teamup/features/chats/chats.dart';
+import 'package:teamup/features/home/home.dart';
+import 'package:teamup/features/teams/teams.dart';
+import 'package:teamup/features/user/user.dart';
+import 'package:teamup/models/game.dart';
 import 'package:teamup/widgets/shimmer_widget.dart';
 
 class ProfileView extends StatefulWidget {
@@ -154,7 +136,7 @@ class _ProfileViewState extends State<ProfileView> {
                       icon: Icon(Icons.edit)
                     ),
                     IconButton(
-                      onPressed: singoutHandler, 
+                      onPressed: singoutHandler,
                       icon: Icon(Icons.logout)
                     ),
                   ],
@@ -188,7 +170,7 @@ class _ProfileViewState extends State<ProfileView> {
                           if (user != null)
                           Text(widget.user != null ? widget.user!.username : user.username, style: theme.textTheme.headlineLarge, textAlign: TextAlign.center)
                           else
-                          SihmmerWidget(width: 200, height: 30),
+                          ShimmerWidget(width: 200, height: 30),
                           SizedBox(height: 10),
                           if (user != null)
                           if (widget.user?.description != null || (widget.user == null && user.description != null))
@@ -196,7 +178,7 @@ class _ProfileViewState extends State<ProfileView> {
                           else
                           SizedBox.shrink()
                           else
-                          SihmmerWidget(width: 500, height: 30),
+                          ShimmerWidget(width: 500, height: 30),
                           SizedBox(height: 20),
                           user != null && widget.user != null && widget.user?.uid != user.uid
                           ? Row(
@@ -223,7 +205,7 @@ class _ProfileViewState extends State<ProfileView> {
                                       Fluttertoast.showToast(msg: 'Произошла ошибка при загрузке чатов');
                                       return SizedBox.shrink();
                                     } else {
-                                      return SihmmerWidget(width: 70, height: 70, radius: 50);
+                                      return ShimmerWidget(width: 70, height: 70, radius: 50);
                                     }
                                   }
                                 ),
@@ -281,7 +263,7 @@ class _ProfileViewState extends State<ProfileView> {
                                               ],
                                             )
                                           )
-                                  : SihmmerWidget(width: 200, height: 40, radius: 50)
+                                  : ShimmerWidget(width: 200, height: 40, radius: 50)
                               ],
                             )
                           : SizedBox.shrink()
@@ -290,6 +272,29 @@ class _ProfileViewState extends State<ProfileView> {
                       )
                     ),
                     SizedBox(height: 50),
+                    Consumer<HomeProvider>(
+                      builder: (context, homeProvider, child) {
+                        if (homeProvider.games != null) {
+                          Game? game;
+                          if (widget.user?.favouriteGame != null) {
+                            game = widget.user!.favouriteGame!;
+                          } else if (widget.user == null && user?.favouriteGame != null) {
+                            game = user!.favouriteGame!;
+                          }
+
+                          if (game != null) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Любимая игра', style: theme.textTheme.titleLarge),
+                                GameWidget(game: game),
+                              ],
+                            );
+                          }
+                        }
+                        return SizedBox.shrink();
+                      }
+                    ),
                     if (user != null)
                     Row(
                       children: [
@@ -302,7 +307,7 @@ class _ProfileViewState extends State<ProfileView> {
                       ],
                     )
                     else
-                    SihmmerWidget(height: 300),
+                    ShimmerWidget(height: 300),
                     SizedBox(height: 20),
                     Column(
                       children: friends.map((friend) => UserWidget(user: friend)).toList()

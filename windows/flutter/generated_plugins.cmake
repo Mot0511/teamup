@@ -5,11 +5,13 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
   audioplayers_windows
+  awesome_notifications
   connectivity_plus
   desktop_webview_window
   file_selector_windows
   firebase_core
   flutter_webrtc
+  flutter_window_close
   livekit_client
   permission_handler_windows
   sentry_flutter

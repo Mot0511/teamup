@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import 'package:teamup/features/chats/models/message.dart';
-import 'package:teamup/features/user/bloc/user_bloc.dart';
-import 'package:teamup/features/user/bloc/user_states.dart';
-import 'package:teamup/features/user/widgets/avatar_widget.dart';
+import 'package:teamup/features/chats/chats.dart';
+import 'package:teamup/features/user/user.dart';
 import 'package:flutter/services.dart';
 
 class MessageWidget extends StatefulWidget {
