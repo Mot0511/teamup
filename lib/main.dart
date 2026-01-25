@@ -30,8 +30,6 @@ void main() async {
       setWindowMaxSize(const Size(540, 810));
     }
 
-    await dotenv.load(fileName: '.env');
-
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );

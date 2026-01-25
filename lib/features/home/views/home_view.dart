@@ -95,7 +95,9 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     }
     final currentGameID = prefs.getString('currentGame') ?? '206';
     currentGame = homeProvider.games!.firstWhere((game) => game.id.toString() == currentGameID);
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> checkVersion() async {
