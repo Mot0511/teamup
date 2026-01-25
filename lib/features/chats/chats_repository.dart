@@ -54,14 +54,20 @@ class ChatsRepository {
     await supabase.from('messages').delete().eq('chat', chat.id);
   }
 
-  Future<List<Message>> getMessages(int chatID) async {
+  Future<List<Message>> getMessages(String uid, int chatID) async {
     final data = await supabase.from('messages').select('*, sender(*, favouriteGame(*))').eq('chat', chatID);
+    final readedMessages = await getReadedMessages(uid, chatID);
     final List<Message> messages = [];
     for (Map message in data) {
       if (message['attachment'] != null) {
         message['attachment'] = await getAttachment(message['attachment']);
       }
-      messages.add(Message.fromJSON(message));
+      messages.add(
+        Message.fromJSON(
+          message,
+          readedMessages.contains(message['id'])
+        )
+      );
     }
     return messages;
   }
@@ -96,5 +102,20 @@ class ChatsRepository {
     final provider = NetworkImage(imageUrl);
     attachmentProviders[id] = provider;
     return provider;
+  }
+
+  Future<void> setReaded(String uid, int messageID, int chatID) async {
+    await supabase.from('readed_messages').insert([{
+      'user': uid,
+      'message': messageID,
+      'chat': chatID
+    }]);
+  }
+
+  Future<List<int>> getReadedMessages(String uid, int chatID) async {
+    final data = await supabase.from('readed_messages').select('message').eq('chat', chatID);
+    final List<int> messages = data.map((e) => e['message'] as int).toList();
+
+    return messages;
   }
 }

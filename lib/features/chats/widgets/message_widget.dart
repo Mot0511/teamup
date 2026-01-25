@@ -100,64 +100,71 @@ class _MessageWidgetState extends State<MessageWidget> {
               child: Ink(
                 color: widget.message.user.uid == state.user.uid ? const Color.fromARGB(255, 41, 41, 41) : null,
                 child: InkWell(
-                onTap: () {},
-                child: Padding(
-                  padding: EdgeInsets.all(10),
-                  child: Row(
-                    children: [
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          AvatarWidget(uid: widget.message.user.uid, size: 50),
-                        ]
-                      ),
-                      SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(widget.message.user.username, style: theme.textTheme.bodyMedium),
-                                SizedBox(width: 10),
-                                if (widget.message.repliedMesssageID != null)
-                                Text(
-                                  widget.messages.where((message) => message.id == widget.message.repliedMesssageID).toList()[0].text, 
-                                  style: theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                            if (widget.message.attachment != null)
-                            Container(
-                              height: 200,
-                              margin: EdgeInsets.symmetric(vertical: 10),
-                              decoration: BoxDecoration(
-                                image: DecorationImage(
-                                  image: widget.message.attachment!,
-                                  fit: BoxFit.contain,
-                                  alignment: Alignment.centerLeft
+                  onTap: () {},
+                  child: Padding(
+                    padding: EdgeInsets.all(10),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 1,
+                          child: AvatarWidget(uid: widget.message.user.uid, size: 50),
+                        ),
+                        SizedBox(width: 10),
+                        Expanded(
+                          flex: 8,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(widget.message.user.username, style: theme.textTheme.bodyMedium),
+                                  SizedBox(width: 10),
+                                  if (widget.message.repliedMesssageID != null)
+                                  Text(
+                                    widget.messages.where((message) => message.id == widget.message.repliedMesssageID).toList()[0].text,                                    style: theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                              if (widget.message.attachment != null)
+                              Container(
+                                height: 200,
+                                margin: EdgeInsets.symmetric(vertical: 10),
+                                decoration: BoxDecoration(
+                                  image: DecorationImage(
+                                    image: widget.message.attachment!,
+                                    fit: BoxFit.contain,
+                                    alignment: Alignment.centerLeft
+                                  ),
                                 ),
                               ),
-                            ),
-                            if (widget.message.text != '')
-                            Text(widget.message.text, style: theme.textTheme.titleMedium),
-                          ],
-                        ),
-                      ),
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Text(
-                            '${widget.message.time.hour}:${(widget.message.time.minute.toString().padLeft(2, '0'))}', 
-                            style: TextStyle(fontSize: 14, color: Colors.grey)
+                              if (widget.message.text != '')
+                              Text(widget.message.text, style: theme.textTheme.titleMedium),
+                            ],
                           ),
-                        ],
-                      )
-                    ],
-                  ),
-                )
-              ),
+                        ),
+                        Expanded(
+                          flex: 1,
+                          child: Row(
+                            children: [
+                              Text(
+                                '${widget.message.time.hour}:${(widget.message.time.minute.toString().padLeft(2, '0'))}', 
+                                style: TextStyle(fontSize: 14, color: Colors.grey)
+                              ),
+                              SizedBox(width: 2),
+                              if (widget.message.user.uid == state.user.uid)
+                              Icon(
+                                widget.message.isReaded! ? Icons.done_all : Icons.check,
+                                size: 12
+                              )
+                            ],
+                          ),
+                        )
+                      ],
+                    ),
+                  )
+                ),
               )
             )
           );

@@ -24,7 +24,6 @@ class VoiceService {
 
     final token = await getLivekitToken(uid, roomID);
     if (token == null) throw Exception('Произошла ошибка при получении Livekit токена');
-    print(token);
     room = Room(
       roomOptions: const RoomOptions(
         defaultAudioCaptureOptions: AudioCaptureOptions(

@@ -43,10 +43,22 @@ class _MessengerWidgetState extends State<MessengerWidget> {
   }
 
   Future<void> loadMessages() async {
-    messages = await chatsRepository.getMessages(widget.chat.id);
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) return;
+    messages = await chatsRepository.getMessages(uid, widget.chat.id);
+    setMessagesReaded(uid);
     setState(() {});
     scrollToBottom();
     sortMessages();
+  }
+
+  Future<void> setMessagesReaded(String uid) async {
+    if (messages == null) return;
+    for (Message message in messages!) {
+      if (message.user.uid != uid && !message.isReaded) {
+        await chatsRepository.setReaded(uid, message.id, widget.chat.id);
+      }
+    }
   }
 
   void listenMessages() {
@@ -62,7 +74,8 @@ class _MessengerWidgetState extends State<MessengerWidget> {
       filter: filter,
       event: PostgresChangeEvent.insert,
       callback: (payload) async {
-        if (payload.newRecord['sender'] == supabase.auth.currentUser!.id) return;
+        final uid = supabase.auth.currentUser!.id;
+        if (payload.newRecord['sender'] == uid) return;
         final sender = widget.chat.users
             .where((user) => user.uid == payload.newRecord['sender'])
             .toList()[0];
@@ -70,7 +83,8 @@ class _MessengerWidgetState extends State<MessengerWidget> {
         if (payload.newRecord['attachmentBytes'] != null) {
           payload.newRecord['attachmentBytes'] = await chatsRepository.getAttachment(payload.newRecord['attachmentBytes']);
         }
-        messages?.add(Message.fromJSON(payload.newRecord));
+        await chatsRepository.setReaded(uid, payload.newRecord['id'], widget.chat.id);
+        messages?.add(Message.fromJSON(payload.newRecord, true));
         setState(() {});
         scrollToBottomAnimated();
         sortMessages();
@@ -91,7 +105,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
               payload.newRecord['attachmentBytes'] = await chatsRepository.getAttachment(payload.newRecord['attachmentBytes']);
             }
             payload.newRecord['sender'] = sender.toJSON();
-            messages![i] = Message.fromJSON(payload.newRecord);
+            messages![i] = Message.fromJSON(payload.newRecord, true);
           }
         }
         setState(() {});
@@ -111,6 +125,23 @@ class _MessengerWidgetState extends State<MessengerWidget> {
       },
     );
 
+    channel.onPostgresChanges(
+      table: 'readed_messages',
+      filter: filter,
+      event: PostgresChangeEvent.insert,
+      callback: (payload) {
+        if (messages == null) return;
+        for (int i = messages!.length - 1; i >= 0; i--) {
+          final Message message = messages![i];
+          if (message.id == payload.newRecord['message']) {
+            message.isReaded = true;
+            setState(() {});
+            break;
+          }
+        }
+      },
+    );
+
     channel.subscribe();
   }
   
@@ -126,6 +157,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
       repliedMesssageID: replyMessage?.id,
       attachment: attachmentBytes != null ? MemoryImage(attachmentBytes!) : null,
       time: DateTime.now().toUtc(),
+      isReaded: false
     );
     chatsRepository.sendMessage(message, attachmentBytes);
     message.time = message.time.toLocal();
