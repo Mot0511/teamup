@@ -106,10 +106,7 @@ class _MessageWidgetState extends State<MessageWidget> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          flex: 1,
-                          child: AvatarWidget(uid: widget.message.user.uid, size: 50),
-                        ),
+                        AvatarWidget(uid: widget.message.user.uid, size: 50),
                         SizedBox(width: 10),
                         Expanded(
                           flex: 8,
@@ -144,23 +141,20 @@ class _MessageWidgetState extends State<MessageWidget> {
                             ],
                           ),
                         ),
-                        Expanded(
-                          flex: 1,
-                          child: Row(
-                            children: [
-                              Text(
-                                '${widget.message.time.hour}:${(widget.message.time.minute.toString().padLeft(2, '0'))}', 
-                                style: TextStyle(fontSize: 14, color: Colors.grey)
-                              ),
-                              SizedBox(width: 2),
-                              if (widget.message.user.uid == state.user.uid)
-                              Icon(
-                                widget.message.isReaded! ? Icons.done_all : Icons.check,
-                                size: 12
-                              )
-                            ],
-                          ),
-                        )
+                        Row(
+                          children: [
+                            Text(
+                              '${widget.message.time.hour}:${(widget.message.time.minute.toString().padLeft(2, '0'))}', 
+                              style: TextStyle(fontSize: 14, color: Colors.grey)
+                            ),
+                            SizedBox(width: 2),
+                            if (widget.message.user.uid == state.user.uid)
+                            Icon(
+                              widget.message.isReaded ? Icons.done_all : Icons.check,
+                              size: 12
+                            )
+                          ],
+                        ),
                       ],
                     ),
                   )
