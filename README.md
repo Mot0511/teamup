@@ -18,6 +18,8 @@
 Приложение можно скачать из Rustore или с его сайта (все ссылки внизу)
 В целях развития приложения был создан сайт и опубликовано видео, где я рассказываю, как я создавал Teamup и с какими трудностями столкнулся
 
-Сайт Teamup - https://teamup-site.vercel.app/
-Teamup в Rustore - 
-Видео про Teamup на ютубе - 
+**Сайт Teamup - https://teamup-site.vercel.app**
+
+**Teamup в Rustore - https://www.rustore.ru/catalog/app/ru.ballisty.teamup**
+
+**Видео про Teamup на ютубе - https://www.youtube.com/watch?v=Fvg1dgjPPCM**
