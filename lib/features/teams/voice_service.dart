@@ -1,7 +1,6 @@
-import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:livekit_client/livekit_client.dart';
-import 'package:teamup/features/teams/utils/getLivekitToken.dart';
-import 'package:teamup/features/teams/utils/getServerIP.dart';
+import 'package:teamup/features/teams/teams.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 class VoiceService {
   Room? room;
@@ -21,23 +20,27 @@ class VoiceService {
   Future<void> connect(String uid, int roomID, bool isVoiceOn, bool isSoundOn) async {
     this.roomID = roomID;
 
+    final player = AudioPlayer();
+
     final token = await getLivekitToken(uid, roomID);
     if (token == null) throw Exception('Произошла ошибка при получении Livekit токена');
-    
     room = Room(
       roomOptions: const RoomOptions(
         defaultAudioCaptureOptions: AudioCaptureOptions(
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          highPassFilter: true,
+          
         ),
       ),
     );
     
-    room!.events.listen((RoomEvent event) {
+    room!.events.listen((RoomEvent event) async {
       if (event is ParticipantConnectedEvent ||
           event is ParticipantDisconnectedEvent) {
         onPeersChanged!(peers);
+        await player.play(AssetSource('audio/join_voice.mp3'));
         print('Изменен состав комнаты $peers');
       }
 
@@ -62,6 +65,8 @@ class VoiceService {
         autoSubscribe: true,
       ),
     );
+    
+    await player.play(AssetSource('audio/connect_voice.mp3'));
 
     await room!.localParticipant?.setMicrophoneEnabled(isVoiceOn);
   }
@@ -71,15 +76,15 @@ class VoiceService {
   }
 
   Future<void> setIsSoundOn(bool value) async {
-    for (RemoteParticipant participant in room!.remoteParticipants.values) {
-      for (RemoteTrackPublication track in participant.audioTrackPublications) {
-        if (value) {
-          track.enable();
-        } else {
-          track.disable();
-        }
-      }
-    }
+    // for (RemoteParticipant participant in room!.remoteParticipants.values) {
+    //   for (RemoteTrackPublication track in participant.audioTrackPublications) {
+    //     if (value) {
+    //       track.enable();
+    //     } else {
+    //       track.disable();
+    //     }
+    //   }
+    // }
   }
 
   Future<void> disconnect() async {

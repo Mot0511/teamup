@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:teamup/features/user/models/models.dart';
+import 'package:teamup/features/user/user.dart';
 
 abstract class UserState extends Equatable {}
 

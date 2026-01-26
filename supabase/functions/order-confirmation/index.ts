@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { JWT } from 'npm:google-auth-library@9'
 import serviceAccount from '../service-account.json' with { type: 'json' }
+import { corsHeaders } from '../_shared/cors.ts'
 
 interface Notification {
   id: string
@@ -18,6 +19,9 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 )
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
   const payload: WebhookPayload = await req.json()
   console.log(payload.record.text)
   const message = payload.record
@@ -75,7 +79,7 @@ Deno.serve(async (req) => {
     }
   }
   return new Response(JSON.stringify(resData), {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   })
 })
 const getAccessToken = ({

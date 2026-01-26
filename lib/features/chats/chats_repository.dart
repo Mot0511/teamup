@@ -1,11 +1,9 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:teamup/features/chats/models/chat.dart';
-import 'package:teamup/features/chats/models/message.dart';
-import 'package:teamup/features/user/models/user.dart' as models;
+import 'package:teamup/features/chats/chats.dart';
+import 'package:teamup/features/user/models/models.dart' as models;
 
 class ChatsRepository {
   final SupabaseClient supabase = GetIt.I<SupabaseClient>();
@@ -56,21 +54,27 @@ class ChatsRepository {
     await supabase.from('messages').delete().eq('chat', chat.id);
   }
 
-  Future<List<Message>> getMessages(int chatID) async {
+  Future<List<Message>> getMessages(String uid, int chatID) async {
     final data = await supabase.from('messages').select('*, sender(*, favouriteGame(*))').eq('chat', chatID);
+    final readedMessages = await getReadedMessages(uid, chatID);
     final List<Message> messages = [];
     for (Map message in data) {
       if (message['attachment'] != null) {
         message['attachment'] = await getAttachment(message['attachment']);
       }
-      messages.add(Message.fromJSON(message));
+      messages.add(
+        Message.fromJSON(
+          message,
+          readedMessages.contains(message['id'])
+        )
+      );
     }
     return messages;
   }
 
-  Future<void> sendMessage(Message message, File? attachment) async {
+  Future<void> sendMessage(Message message, Uint8List? attachment) async {
     if (attachment != null) {
-      await supabase.storage.from('main').upload('attachments/${message.id}.png', attachment);
+      await supabase.storage.from('main').uploadBinary('attachments/${message.id}.png', attachment);
     }
     await supabase.from('messages').insert(message.toJSON());
   }
@@ -98,5 +102,20 @@ class ChatsRepository {
     final provider = NetworkImage(imageUrl);
     attachmentProviders[id] = provider;
     return provider;
+  }
+
+  Future<void> setReaded(String uid, int messageID, int chatID) async {
+    await supabase.from('readed_messages').insert([{
+      'user': uid,
+      'message': messageID,
+      'chat': chatID
+    }]);
+  }
+
+  Future<List<int>> getReadedMessages(String uid, int chatID) async {
+    final data = await supabase.from('readed_messages').select('message').eq('chat', chatID);
+    final List<int> messages = data.map((e) => e['message'] as int).toList();
+
+    return messages;
   }
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:teamup/features/user/user_repository.dart';
+import 'package:teamup/features/user/user.dart';
 
 class AvatarWidget extends StatelessWidget {
   AvatarWidget({super.key, required this.uid, this.size=150, this.image});

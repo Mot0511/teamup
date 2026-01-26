@@ -1,6 +1,6 @@
 {
-    "name": "teamup",
-    "short_name": "teamup",
+    "name": "Teamup",
+    "short_name": "Teamup",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#016335",

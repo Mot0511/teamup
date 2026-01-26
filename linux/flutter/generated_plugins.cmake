@@ -4,9 +4,11 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   audioplayers_linux
+  awesome_notifications
   desktop_webview_window
   file_selector_linux
   flutter_webrtc
+  flutter_window_close
   gtk
   livekit_client
   sentry_flutter

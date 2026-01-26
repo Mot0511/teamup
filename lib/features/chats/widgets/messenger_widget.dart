@@ -1,19 +1,13 @@
-import 'dart:io';
 import 'dart:math';
-
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:teamup/features/chats/chats_repository.dart';
-import 'package:teamup/features/chats/models/chat.dart';
-import 'package:teamup/features/chats/models/message.dart';
-import 'package:teamup/features/chats/widgets/message_widget.dart';
+import 'package:teamup/features/chats/chats.dart';
 import 'package:teamup/widgets/shimmer_widget.dart';
-import 'package:teamup/features/user/bloc/user_bloc.dart';
-import 'package:teamup/features/user/bloc/user_states.dart';
+import 'package:teamup/features/user/user.dart';
 
 class MessengerWidget extends StatefulWidget {
   const MessengerWidget({super.key, required this.chat});
@@ -38,7 +32,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
   Message? editingMessage;
   Message? replyMessage;
   String tmpMessage = '';
-  File? attachment;
+  Uint8List? attachmentBytes;
 
 
   @override
@@ -49,10 +43,22 @@ class _MessengerWidgetState extends State<MessengerWidget> {
   }
 
   Future<void> loadMessages() async {
-    messages = await chatsRepository.getMessages(widget.chat.id);
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) return;
+    messages = await chatsRepository.getMessages(uid, widget.chat.id);
+    setMessagesReaded(uid);
     setState(() {});
     scrollToBottom();
     sortMessages();
+  }
+
+  Future<void> setMessagesReaded(String uid) async {
+    if (messages == null) return;
+    for (Message message in messages!) {
+      if (message.user.uid != uid && !message.isReaded) {
+        await chatsRepository.setReaded(uid, message.id, widget.chat.id);
+      }
+    }
   }
 
   void listenMessages() {
@@ -68,15 +74,17 @@ class _MessengerWidgetState extends State<MessengerWidget> {
       filter: filter,
       event: PostgresChangeEvent.insert,
       callback: (payload) async {
-        if (payload.newRecord['sender'] == supabase.auth.currentUser!.id) return;
+        final uid = supabase.auth.currentUser!.id;
+        if (payload.newRecord['sender'] == uid) return;
         final sender = widget.chat.users
             .where((user) => user.uid == payload.newRecord['sender'])
             .toList()[0];
         payload.newRecord['sender'] = sender.toJSON();
-        if (payload.newRecord['attachment'] != null) {
-          payload.newRecord['attachment'] = await chatsRepository.getAttachment(payload.newRecord['attachment']);
+        if (payload.newRecord['attachmentBytes'] != null) {
+          payload.newRecord['attachmentBytes'] = await chatsRepository.getAttachment(payload.newRecord['attachmentBytes']);
         }
-        messages?.add(Message.fromJSON(payload.newRecord));
+        await chatsRepository.setReaded(uid, payload.newRecord['id'], widget.chat.id);
+        messages?.add(Message.fromJSON(payload.newRecord, true));
         setState(() {});
         scrollToBottomAnimated();
         sortMessages();
@@ -93,11 +101,11 @@ class _MessengerWidgetState extends State<MessengerWidget> {
             final sender = widget.chat.users
                 .where((user) => user.uid == payload.newRecord['sender'])
                 .toList()[0];
-            if (payload.newRecord['attachment'] != null) {
-              payload.newRecord['attachment'] = await chatsRepository.getAttachment(payload.newRecord['attachment']);
+            if (payload.newRecord['attachmentBytes'] != null) {
+              payload.newRecord['attachmentBytes'] = await chatsRepository.getAttachment(payload.newRecord['attachmentBytes']);
             }
             payload.newRecord['sender'] = sender.toJSON();
-            messages![i] = Message.fromJSON(payload.newRecord);
+            messages![i] = Message.fromJSON(payload.newRecord, true);
           }
         }
         setState(() {});
@@ -117,26 +125,44 @@ class _MessengerWidgetState extends State<MessengerWidget> {
       },
     );
 
+    channel.onPostgresChanges(
+      table: 'readed_messages',
+      filter: filter,
+      event: PostgresChangeEvent.insert,
+      callback: (payload) {
+        if (messages == null) return;
+        for (int i = messages!.length - 1; i >= 0; i--) {
+          final Message message = messages![i];
+          if (message.id == payload.newRecord['message']) {
+            message.isReaded = true;
+            setState(() {});
+            break;
+          }
+        }
+      },
+    );
+
     channel.subscribe();
   }
   
 
   void onSendMessage() {
     final text = messageController.text.trim();
-    if (text == '' && attachment == null) return;
+    if (text == '' && attachmentBytes == null) return;
     final message = Message(
       id: DateTime.now().millisecondsSinceEpoch,
       chatId: widget.chat.id,
       user: (userBloc.state as UserStateLoaded).user,
       text: text,
       repliedMesssageID: replyMessage?.id,
-      attachment: attachment != null ? FileImage(attachment!) : null,
+      attachment: attachmentBytes != null ? MemoryImage(attachmentBytes!) : null,
       time: DateTime.now().toUtc(),
+      isReaded: false
     );
-    chatsRepository.sendMessage(message, attachment);
+    chatsRepository.sendMessage(message, attachmentBytes);
     message.time = message.time.toLocal();
     messages?.add(message);
-    attachment = null;
+    attachmentBytes = null;
     setState(() {});
     messageController.text = '';
     focusNode.requestFocus();
@@ -199,7 +225,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
     );
 
     if (result != null) {
-      attachment = File(result.files.single.path!);
+      attachmentBytes = Uint8List.fromList(result.files.first.bytes!);
       setState(() {});
     }
   }
@@ -302,7 +328,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                     itemBuilder: (context, index) {
                       return Padding(
                         padding: EdgeInsets.only(bottom: 10),
-                        child: SihmmerWidget(height: 50, radius: 0),
+                        child: ShimmerWidget(height: 50, radius: 0),
                       );
                     },
                 )
@@ -375,7 +401,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                           ),
                         ],
                       )
-                      else if (attachment != null)
+                      else if (attachmentBytes != null)
                       Container(
                         height: 150,
                         color: theme.canvasColor,
@@ -389,7 +415,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                                   height: double.infinity,
                                   decoration: BoxDecoration(
                                     image: DecorationImage(
-                                      image: FileImage(attachment!),
+                                      image: MemoryImage(attachmentBytes!),
                                     ),
                                     borderRadius: BorderRadius.circular(10)
                                   ),
@@ -404,7 +430,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                                         ),
                                       child: Ink(
                                         child: InkWell(
-                                          onTap: () => setState(() => attachment = null),
+                                          onTap: () => setState(() => attachmentBytes = null),
                                           customBorder: CircleBorder(),
                                           splashColor: theme.primaryColor,
                                           child: Icon(Icons.close, size: 20),

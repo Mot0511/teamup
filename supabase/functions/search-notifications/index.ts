@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import serviceAccount from '../service-account.json' with { type: 'json' }
 import { JWT } from 'npm:google-auth-library@9'
+import { corsHeaders } from '../_shared/cors.ts'
 
 interface WebhookPayload {
   type: 'INSERT'
@@ -16,6 +17,9 @@ const supabase = createClient(
 )
 
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
   const payload: WebhookPayload = await req.json()
   const team = payload.record
 
@@ -77,7 +81,7 @@ Deno.serve(async (req) => {
 
   return new Response(
     JSON.stringify({ok: true}),
-    { headers: { "Content-Type": "application/json" } },
+    { headers: { ...corsHeaders, "Content-Type": "application/json" } },
   )
 })
 

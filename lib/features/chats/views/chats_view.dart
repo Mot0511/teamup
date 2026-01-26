@@ -1,20 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get_it/get_it.dart';
-import 'package:teamup/features/chats/bloc/chats_bloc.dart';
-import 'package:teamup/features/chats/bloc/chats_events.dart';
-import 'package:teamup/features/chats/bloc/chats_states.dart';
-import 'package:teamup/features/chats/chats_repository.dart';
-import 'package:teamup/features/chats/models/chat.dart';
-import 'package:teamup/features/chats/widgets/chat_widget.dart';
-import 'package:teamup/features/user/bloc/user_bloc.dart';
-import 'package:teamup/features/user/bloc/user_states.dart';
-import 'package:teamup/features/analytics/repositories/analytics_repository.dart';
+import 'package:teamup/features/chats/chats.dart';
+import 'package:teamup/features/user/user.dart';
 import 'package:teamup/widgets/shimmer_widget.dart';
 
 class ChatsView extends StatefulWidget {
@@ -54,7 +46,7 @@ class _ChatsViewState extends State<ChatsView> {
       appBar: AppBar(
         title: Text('Личные чаты'),
         actions: [
-          if (!Platform.isAndroid)
+          if (kIsWeb || !Platform.isAndroid)
           IconButton(onPressed: () {
             final completer = Completer();
             loadChats(completer: completer);
@@ -99,7 +91,7 @@ class _ChatsViewState extends State<ChatsView> {
                     itemBuilder: (context, state) => 
                       Padding(
                         padding: EdgeInsets.all(8),
-                        child: SihmmerWidget(),
+                        child: ShimmerWidget(),
                       )
                   );
                 }

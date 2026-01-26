@@ -1,8 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:teamup/features/chats/bloc/chats_events.dart';
-import 'package:teamup/features/chats/bloc/chats_states.dart';
-import 'package:teamup/features/chats/chats_repository.dart';
-import 'package:teamup/features/chats/models/chat.dart';
+import 'package:teamup/features/chats/chats.dart';
 
 class ChatsBloc extends Bloc<ChatsEvent, ChatsState> {
   ChatsBloc({required this.chatsRepository}) : super(ChatsStateInitial()) {

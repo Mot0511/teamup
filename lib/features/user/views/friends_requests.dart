@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:teamup/features/user/models/models.dart';
-import 'package:teamup/features/user/widgets/user_widget.dart';
+import 'package:teamup/features/user/user.dart';
 
 class FriendRequests extends StatelessWidget {
   const FriendRequests({super.key, required this.users});

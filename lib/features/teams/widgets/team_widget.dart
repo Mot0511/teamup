@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:teamup/features/teams/bloc/teams_bloc.dart';
-import 'package:teamup/features/teams/bloc/teams_events.dart';
-import 'package:teamup/features/teams/models/team.dart';
-import 'package:teamup/features/teams/views/team_view.dart';
-import 'package:teamup/features/teams/widgets/team_icon_widget.dart';
-import 'package:teamup/features/user/bloc/user_bloc.dart';
-import 'package:teamup/features/user/bloc/user_states.dart';
+import 'package:teamup/features/teams/teams.dart';
+import 'package:teamup/features/user/user.dart';
 
 class TeamWidget extends StatefulWidget {
   TeamWidget({super.key, required this.team});
