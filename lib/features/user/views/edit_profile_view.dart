@@ -100,7 +100,8 @@ class _EditProfileViewState extends State<EditProfileView> {
   }
 
   Future<void> onChooseGame() async {
-    final Game game = await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChooseGameView()));
+    final Game? game = await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChooseGameView()));
+    if (game == null) return;
     choosenGame = game.id;
     setState(() {});
   }
