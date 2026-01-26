@@ -1,6 +1,5 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:teamup/features/user/models/models.dart';
+import 'package:teamup/features/user/user.dart';
 
 class Message {
   final int id;
@@ -10,6 +9,7 @@ class Message {
   final int? repliedMesssageID;
   final ImageProvider? attachment;
   DateTime time;
+  bool isReaded = false;
 
   Message({
     required this.id, 
@@ -18,10 +18,11 @@ class Message {
     required this.text, 
     this.repliedMesssageID,
     this.attachment,
-    required this.time
+    required this.time,
+    required this.isReaded
   });
 
-  factory Message.fromJSON(Map data) {
+  factory Message.fromJSON(Map data, bool isReaded) {
     return Message(
       id: data['id'],
       chatId: data['chat'],
@@ -30,6 +31,7 @@ class Message {
       repliedMesssageID: data['repliedMessage'],
       attachment: data['attachment'],
       time: DateTime.parse(data['created_at']).toLocal(),
+      isReaded: isReaded
     );
   }
 

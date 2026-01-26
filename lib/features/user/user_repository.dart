@@ -1,21 +1,14 @@
 import 'dart:io';
-import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get_it/get_it.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
-import 'package:teamup/features/teams/voice_service.dart';
-import 'package:teamup/features/user/enums.dart';
-import 'package:teamup/features/user/models/friendship.dart';
-import 'package:teamup/features/user/models/models.dart';
-import 'package:teamup/nav_screen.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:teamup/features/user/user.dart';
 
 class AuthResult {
   final sb.User userdata;
@@ -32,10 +25,14 @@ class UserRepository {
 
   Future<void> googleSignIn() async {
       const androidClientId = '677191252450-plq6hd0tkmh0befgpm2lrh06hpf7mj37.apps.googleusercontent.com';
-      const desktopClientId = '677191252450-ibg34ij1u3kcjo5pid4ptjtf8dadp10f.apps.googleusercontent.com';
       const webClientId = '677191252450-s6a7kuf9dek6arhufeot9i968a8bhloh.apps.googleusercontent.com';
       
-      if (Platform.isAndroid) {
+      if (kIsWeb) {
+        await supabase.auth.signInWithOAuth(
+          sb.OAuthProvider.google,
+          redirectTo: '${dotenv.env['WEB_CLIENT_URL']}',
+        );
+      } else if (Platform.isAndroid) {
         final googleSignIn = GoogleSignIn(
           clientId: androidClientId,
           serverClientId: webClientId,
@@ -58,7 +55,7 @@ class UserRepository {
           idToken: idToken,
           accessToken: accessToken,
         );
-      } else {
+      } else  {
         final loginUrl = (await supabase.auth.getOAuthSignInUrl(
           provider: sb.OAuthProvider.google,
           redirectTo: "https://flvcuqostwctdicmncrb.supabase.co/auth/v1/callback"
@@ -74,7 +71,12 @@ class UserRepository {
   }
 
   Future<void> discordSignIn() async {
-    if (Platform.isAndroid) {
+    if (kIsWeb) {
+      await supabase.auth.signInWithOAuth(
+        sb.OAuthProvider.discord,
+        redirectTo: '${dotenv.env['WEB_CLIENT_URL']}',
+      );
+    } else if (Platform.isAndroid) {
       await supabase.auth.signInWithOAuth(
         sb.OAuthProvider.discord,
         redirectTo: 'teamup://home',
@@ -88,15 +90,33 @@ class UserRepository {
         redirectTo: "https://flvcuqostwctdicmncrb.supabase.co/auth/v1/callback"
       )).url;
 
-      final result = await FlutterWebAuth2.authenticate(
-        url: loginUrl,
-        callbackUrlScheme: "http://localhost:3000",
-        options: FlutterWebAuth2Options(useWebview: false)
-      );
-      await supabase.auth.getSessionFromUrl(Uri.parse(result));
+      try {
+        final result = await FlutterWebAuth2.authenticate(
+          url: loginUrl,
+          callbackUrlScheme: "http://localhost:3000",
+          options: FlutterWebAuth2Options(useWebview: false)
+        );
+        await supabase.auth.getSessionFromUrl(Uri.parse(result));
+      } on PlatformException catch (_) {}
+      
     }
   }
 
+  Future<void> emailSignIn(String email, String password) async {
+    await supabase.auth.signInWithPassword(
+      email: email,
+      password: password
+    );
+    
+  }
+
+  Future<void> emailSignUp(String email, String password) async {
+    await supabase.auth.signUp(
+      email: email,
+      password: password
+    );
+  }
+ 
   Future<void> signout() async {
     try {
       await GoogleSignIn().disconnect();
@@ -126,6 +146,12 @@ class UserRepository {
     }
     return false;
   }
+  
+  Future<bool> isEmailExists(String email) async {
+    final users = await supabase.from('users').select('email').eq('email', email);
+    if (users.isNotEmpty) return true;
+    return false;
+  }
 
   Future<void> updateUser(User user) async {
     await supabase.from('users').update(
@@ -141,7 +167,7 @@ class UserRepository {
     }
     final storage = supabase.storage.from('main');
     if (await storage.exists('avatars/$uid.png')){
-      final imageUrl = supabase.storage.from('main').getPublicUrl('avatars/$uid.png');
+      final imageUrl = storage.getPublicUrl('avatars/$uid.png');
       final provider = NetworkImage(imageUrl);
       avatarProviders[uid] = provider;
       return provider;
@@ -152,10 +178,10 @@ class UserRepository {
 
   }
 
-  Future<void> uploadAvatar(File file, String uid) async {
-    await supabase.storage.from('main').upload(
+  Future<void> uploadAvatar(Uint8List avatarBytes, String uid) async {
+    await supabase.storage.from('main').uploadBinary(
       'avatars/$uid.png', 
-      file, 
+      avatarBytes, 
       fileOptions: sb.FileOptions(upsert: true)
     );
   }

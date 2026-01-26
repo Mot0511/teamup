@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:equatable/equatable.dart';
-import 'package:teamup/features/teams/models/team.dart';
-import 'package:teamup/features/user/models/models.dart';
+import 'package:teamup/features/teams/teams.dart';
+import 'package:teamup/features/user/user.dart';
 
 abstract class TeamsEvent extends Equatable {}
 
@@ -17,29 +17,27 @@ class LoadTeams extends TeamsEvent {
 
 class AddTeam extends TeamsEvent {
   final Team team;
-  final File? choosenIcon; 
+  final Uint8List? choosenIconBytes; 
 
-  AddTeam({required this.team, required this.choosenIcon});
+  AddTeam({required this.team, required this.choosenIconBytes});
 
   @override
-  List get props => [team];
+  List get props => [team, choosenIconBytes];
 }
 
 class EditTeam extends TeamsEvent {
   final Team team;
-  final File? choosenIcon;
   final List<User> addedMembers;
   final List<User> removedMembers;
 
   EditTeam({
     required this.team,
-    required this.choosenIcon,
     required this.addedMembers,
     required this.removedMembers
   });
 
   @override
-  List get props => [team];
+  List get props => [team, addedMembers, removedMembers];
 }
 
 class RemoveTeam extends TeamsEvent {

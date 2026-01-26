@@ -1,23 +1,10 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:teamup/features/home/repositories/search_repository.dart';
-import 'package:teamup/features/teams/bloc/teams_bloc.dart';
-import 'package:teamup/features/teams/bloc/teams_events.dart';
-import 'package:teamup/features/teams/models/team.dart';
-import 'package:teamup/features/teams/teams_repository.dart';
-import 'package:teamup/features/teams/views/choose_members_view.dart';
-import 'package:teamup/features/teams/views/team2_view.dart';
-import 'package:teamup/features/teams/widgets/team_icon_widget.dart';
-import 'package:teamup/features/user/bloc/user_bloc.dart';
-import 'package:teamup/features/user/bloc/user_events.dart';
-import 'package:teamup/features/user/bloc/user_states.dart';
-import 'package:teamup/features/user/models/models.dart';
-import 'package:teamup/features/user/widgets/avatar_widget.dart';
-import 'package:teamup/features/user/widgets/user_widget.dart';
-import 'package:teamup/models/game.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:teamup/features/teams/teams.dart';
+import 'package:teamup/features/user/user.dart';
 import 'package:teamup/widgets/widgets.dart';
 
 class CreateTeamView extends StatefulWidget {
@@ -36,7 +23,9 @@ class _CreateTeamViewState extends State<CreateTeamView> {
   List<User> members = [];
   List<User> addedMembers = [];
   List<User> removedMembers = [];
-  File? choosenIcon;
+
+  Uint8List? choosenIconBytes;
+  bool isUploadingIcon = false;
 
   final teamsRepository = GetIt.I<TeamsRepository>();
 
@@ -60,7 +49,7 @@ class _CreateTeamViewState extends State<CreateTeamView> {
     }
   }
 
-  void pickAvatarHandler() async {
+  Future<void> pickAvatarHandler() async {
     final FilePickerResult? result = await FilePicker.platform.pickFiles(
       dialogTitle: 'Выбор логотипа команды',
       type: FileType.custom,
@@ -68,10 +57,11 @@ class _CreateTeamViewState extends State<CreateTeamView> {
     );
 
     if (result != null) {
-      choosenIcon = File(result.files.single.path!);
+      final choosenAvatarBytes = Uint8List.fromList(result.files.first.bytes!);
       setState(() {});
       if (widget.team != null) {
-        teamsRepository.updateIconCache(widget.team!.id, MemoryImage(await choosenIcon!.readAsBytes()));
+        teamsRepository.updateIconCache(widget.team!.id, MemoryImage(choosenAvatarBytes));
+        await teamsRepository.uploadIcon(widget.team!.id, choosenAvatarBytes);
       }
     }
 
@@ -85,7 +75,7 @@ class _CreateTeamViewState extends State<CreateTeamView> {
       return;
     }
     final team = Team(id: id, users: members, name: name);
-    teamsBloc.add(AddTeam(team: team, choosenIcon: choosenIcon));
+    teamsBloc.add(AddTeam(team: team, choosenIconBytes: choosenIconBytes));
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => TeamView(team: team)));
   }
 
@@ -100,7 +90,6 @@ class _CreateTeamViewState extends State<CreateTeamView> {
     widget.team!.users = members;
     teamsBloc.add(EditTeam(
       team: (widget.team as Team),
-      choosenIcon: choosenIcon,
       addedMembers: addedMembers,
       removedMembers: removedMembers,
     ));
@@ -129,7 +118,7 @@ class _CreateTeamViewState extends State<CreateTeamView> {
                 children: [
                   TeamIconWidget(
                     id: widget.team != null ? widget.team!.id : id,
-                    image: choosenIcon != null ? FileImage((choosenIcon as File)) : null
+                    image: choosenIconBytes != null ? FileImage((choosenIconBytes as File)) : null
                   ),
                   SizedBox(height: 20),
                   OutlinedButton(

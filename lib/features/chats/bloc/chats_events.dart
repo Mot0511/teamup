@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
-import 'package:teamup/features/chats/models/chat.dart';
+import 'package:teamup/features/chats/chats.dart';
 
 abstract class ChatsEvent extends Equatable {}
 

@@ -1,38 +1,22 @@
 
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get_it/get_it.dart';
-import 'package:just_audio/just_audio.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
-import 'package:teamup/features/analytics/views/analytics_view.dart';
-import 'package:teamup/features/home/bloc/search_bloc.dart';
-import 'package:teamup/features/home/bloc/search_events.dart';
-import 'package:teamup/features/home/bloc/search_states.dart';
-import 'package:teamup/features/home/home_provider.dart';
-import 'package:teamup/features/home/models/search_params.dart';
-import 'package:teamup/features/home/repositories/search_repository.dart';
-import 'package:teamup/features/home/views/search_view.dart';
-import 'package:teamup/features/home/widgets/drop_down_widget.dart';
-import 'package:teamup/features/home/widgets/info_widget.dart';
-import 'package:teamup/features/home/widgets/widgets.dart';
-import 'package:teamup/features/teams/models/team.dart';
-import 'package:teamup/features/teams/signaling_service2.dart';
-import 'package:teamup/features/teams/views/team_view.dart';
-import 'package:teamup/features/user/bloc/user_bloc.dart';
-import 'package:teamup/features/user/bloc/user_events.dart';
-import 'package:teamup/features/user/bloc/user_states.dart';
-import 'package:teamup/features/user/models/models.dart';
-import 'package:teamup/features/user/user_repository.dart';
-import 'package:teamup/features/user/widgets/user_widget.dart';
+import 'package:teamup/features/analytics/analytics.dart';
+import 'package:teamup/features/home/home.dart';
+import 'package:teamup/features/teams/teams.dart';
+import 'package:teamup/features/user/user.dart';
 import 'package:teamup/models/game.dart';
-import 'package:teamup/features/analytics/repositories/analytics_repository.dart';
 import 'package:teamup/services/notifications_service.dart';
 import 'package:teamup/widgets/shimmer_widget.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -57,29 +41,30 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
   final notificationsService = GetIt.I<NotificationsService>();
   final prefs = GetIt.I<SharedPreferences>();
 
-  String currentGame = '106';
+  Game? currentGame;
   String currentTeamSize = '2';
   String currentGender = 'male';
 
   List<User> pendingUsers = [];
 
+  UpdateInfo? updateInfo;
+  String? appVersion;
+
   @override
   void initState() {
     super.initState();
-    
-    currentGame = prefs.getString('currentGame') ?? '106';
+
+    checkVersion();
+
     currentTeamSize = prefs.getString('currentTeamSize') ?? '2';
     currentGender = prefs.getString('currentGender') ?? 'male';
-    setState(() {});
 
-    final homeProvider = Provider.of<HomeProvider>(context, listen: false);
-    if (homeProvider.games == null) {
-      homeProvider.loadGames();
-    }
+    loadGames();
 
-    searchRepository.onTeamFormed = (Team team) {
-      analyticsRepository.logEvent('finish_searching', properties: getParams().toJSON());
-      if (Platform.isWindows && !notificationsService.isOnline) notificationsService.showNotification(DateTime.now().millisecondsSinceEpoch.toString(), 'Команда сформирована', '');
+    searchRepository.onTeamFormed = (Team team) async {
+      analyticsRepository.logEvent('finish_searching', properties: getParams()!.toJSON());
+      if (!kIsWeb && Platform.isWindows && !notificationsService.isOnline) notificationsService.showNotification(DateTime.now().millisecondsSinceEpoch.toString(), 'Команда сформирована', '');
+      await AudioPlayer().play(AssetSource('audio/team_formed.mp3'));
       Navigator.push(context, MaterialPageRoute(builder: (_) => TeamView(team: team)));
       searchBloc.add(StopSearching(user: (userBloc.state as UserStateLoaded).user));
     };
@@ -99,6 +84,33 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     userBloc.stream.listen((state) {
       checkSearching();
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => checkVersion());
+  }
+
+  Future<void> loadGames() async {
+    final homeProvider = Provider.of<HomeProvider>(context, listen: false);
+    if (homeProvider.games == null) {
+      await homeProvider.loadGames();
+    }
+    final currentGameID = prefs.getString('currentGame') ?? '206';
+    currentGame = homeProvider.games!.firstWhere((game) => game.id.toString() == currentGameID);
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<void> checkVersion() async {
+    final platformInfo = await PackageInfo.fromPlatform();
+    appVersion = platformInfo.version;
+    final res = await supabase.functions.invoke(
+      'check-version',
+    );
+
+    updateInfo = UpdateInfo.fromJSON(res.data);
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> checkSearching() async {
@@ -112,25 +124,31 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     }
   }
 
-  SearchParams getParams() {
-    return SearchParams(
-      gameID: int.parse(currentGame), 
-      age: (userBloc.state as UserStateLoaded).user.age, 
-      gender: currentGender, 
-      teamSize: int.parse(currentTeamSize)
-    );
+  SearchParams? getParams() {
+    if (currentGame != null) {
+      return SearchParams(
+        gameID: currentGame!.id,
+        age: (userBloc.state as UserStateLoaded).user.age, 
+        gender: currentGender, 
+        teamSize: int.parse(currentTeamSize)
+      );
+    }
+    return null;
   }
 
-  void onStartSearching() async {
-    await animationController.reverse();
-    searchBloc.add(StartSearching(
-      user: (userBloc.state as UserStateLoaded).user,
-      params: getParams(),
-    ));
-    await animationController.forward();
+  Future<void> onStartSearching() async {
+    final params = getParams();
+    if (params != null) {
+      await animationController.reverse();
+      searchBloc.add(StartSearching(
+        user: (userBloc.state as UserStateLoaded).user,
+        params: params,
+      ));
+      await animationController.forward();
+    }
   }
 
-  void onStopSearching() async {
+  Future<void> onStopSearching() async {
     await animationController.reverse();
     searchBloc.add(StopSearching(
       user: (userBloc.state as UserStateLoaded).user,
@@ -152,13 +170,14 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
               return Scaffold(
                 appBar: AppBar(
                   title: Text('Teamup', style: theme.textTheme.headlineMedium),
+                  bottom: updateInfo != null && updateInfo?.currentVersion != appVersion ? UpdateMessageWidget(updateInfo: updateInfo!) : null,
                   centerTitle: true,
                   actions: [
                     if (state.user.uid == 'ea28f58d-2679-4c86-b0fb-2506947b0794')
                     IconButton(
                       onPressed: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => AnalyticsView()),
+                        MaterialPageRoute(builder: (_) => AnalyticsView()), 
                       ),
                       icon: Icon(Icons.analytics_outlined),
                     ),
@@ -175,13 +194,13 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
-                      flex: 4, 
+                      flex: 6, 
                       child: Center(
                         child: BlocBuilder(
                           bloc: searchBloc,
                           builder: (context, state) {
                             if (state is SearchStateInitial) {
-                              return SihmmerWidget(
+                              return ShimmerWidget(
                                 width: 180,
                                 height: 180,
                                 radius: 100,
@@ -204,16 +223,15 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                       )
                     ),
                       Expanded(
-                        flex: 4,
-                        child: homeProvider.games != null
+                        flex: 7,
+                        child: currentGame != null
                           ? Padding(
                               padding: EdgeInsetsGeometry.symmetric(horizontal: 18),
                               child: InfoWidget(
-                                currentGame: currentGame, 
-                                games: homeProvider.games!, 
-                                onSetGame: (value) async {
-                                  await prefs.setString('currentGame', value);
-                                  setState(() => currentGame = value);
+                                currentGame: currentGame!,
+                                onSetGame: (Game game) async {
+                                  await prefs.setString('currentGame', game.id.toString());
+                                  setState(() => currentGame = game);
                                 },
                                 currentGender: currentGender, 
                                 onSetGender: (value) async {
@@ -231,7 +249,7 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                             )
                           : Padding(
                               padding: EdgeInsets.all(16),
-                              child: SihmmerWidget(width: double.infinity, height: double.infinity),
+                              child: ShimmerWidget(width: double.infinity, height: double.infinity),
                             )
                       )
                   ],

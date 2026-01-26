@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:teamup/theme.dart';
 
 class SelectGameWidget extends StatefulWidget {
   const SelectGameWidget({super.key});

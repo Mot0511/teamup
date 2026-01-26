@@ -1,16 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import 'package:teamup/features/home/bloc/search_bloc.dart';
-import 'package:teamup/features/home/bloc/search_states.dart';
-import 'package:teamup/features/home/widgets/drop_down_widget.dart';
-import 'package:teamup/features/home/widgets/filters_widget.dart';
-import 'package:teamup/features/home/widgets/pending_team_state_widget.dart';
-import 'package:teamup/features/user/bloc/user_bloc.dart';
-import 'package:teamup/features/user/bloc/user_states.dart';
-import 'package:teamup/features/user/models/models.dart';
-import 'package:teamup/features/user/widgets/user_widget.dart';
+import 'package:teamup/features/home/home.dart';
+import 'package:teamup/features/user/user.dart';
 import 'package:teamup/models/game.dart';
 import 'package:teamup/widgets/shimmer_widget.dart';
 
@@ -18,7 +10,6 @@ class InfoWidget extends StatefulWidget {
   const InfoWidget({
     super.key, 
     required this.currentGame,
-    required this.games,
     required this.onSetGame,
 
     required this.currentGender,
@@ -31,8 +22,7 @@ class InfoWidget extends StatefulWidget {
 
     required this.pendingUsers
   });
-  final String currentGame;
-  final List<Game> games;
+  final Game currentGame;
   final Function onSetGame;
 
   final String currentGender;
@@ -56,7 +46,6 @@ class _InfoWidgetState extends State<InfoWidget> {
   
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return BlocBuilder(
       bloc: searchBloc,
       builder: (context, state) {
@@ -70,8 +59,7 @@ class _InfoWidgetState extends State<InfoWidget> {
           return FadeTransition(
             opacity: opacity,
             child: FiltersWidget(
-              currentGame: widget.currentGame, 
-              games: widget.games, 
+              currentGame: widget.currentGame,
               onSetGame: (value) => widget.onSetGame(value),
               currentGender: widget.currentGender, 
               onSetGender: (value) => widget.onSetGender(value),
@@ -88,7 +76,7 @@ class _InfoWidgetState extends State<InfoWidget> {
             ),
           );
         } else {
-          return SihmmerWidget(height: 100);
+          return ShimmerWidget(height: 100);
         }
       }
     );

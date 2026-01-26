@@ -1,9 +1,5 @@
-import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:teamup/features/teams/bloc/teams_events.dart';
-import 'package:teamup/features/teams/bloc/teams_states.dart';
-import 'package:teamup/features/teams/models/team.dart';
-import 'package:teamup/features/teams/teams_repository.dart';
+import 'package:teamup/features/teams/teams.dart';
 
 class TeamsBloc extends Bloc<TeamsEvent, TeamsState> {
   TeamsBloc({required this.teamsRepository}) : super(TeamsStateInitial()) {
@@ -22,8 +18,8 @@ class TeamsBloc extends Bloc<TeamsEvent, TeamsState> {
       if (state is TeamsStateLoaded) {
         try {
           final List<Team> teams = (state as TeamsStateLoaded).teams;
-          if (event.choosenIcon != null) {
-            teamsRepository.uploadIcon(event.team.id, event.choosenIcon as File);
+          if (event.choosenIconBytes != null) {
+            teamsRepository.uploadIcon(event.team.id, event.choosenIconBytes!);
           }
           await teamsRepository.addTeam(event.team);
           emit(TeamsStateInitial());
@@ -47,9 +43,6 @@ class TeamsBloc extends Bloc<TeamsEvent, TeamsState> {
             }
           }
           await teamsRepository.editTeam(event.team, event.addedMembers, event.removedMembers);
-          if (event.choosenIcon != null){
-            await teamsRepository.uploadIcon(event.team.id, event.choosenIcon as File);
-          }
           emit(TeamsStateLoaded(teams: teams));
         } on Exception catch (e) {
           emit(TeamsStateError(e: e));

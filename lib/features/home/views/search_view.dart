@@ -1,10 +1,8 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:teamup/features/home/repositories/search_repository.dart';
-import 'package:teamup/features/user/models/user.dart';
-import 'package:teamup/features/user/widgets/user_widget.dart';
+import 'package:teamup/features/home/home.dart';
+import 'package:teamup/features/user/user.dart';
 import 'package:teamup/widgets/shimmer_widget.dart';
 
 class AllUsersView extends StatefulWidget {
@@ -61,7 +59,7 @@ class _AllUsersViewState extends State<AllUsersView> {
                     itemBuilder: (context, state) => 
                       Padding(
                         padding: EdgeInsets.only(bottom: 10),
-                        child: SihmmerWidget(),
+                        child: ShimmerWidget(),
                       )
                   )
             )

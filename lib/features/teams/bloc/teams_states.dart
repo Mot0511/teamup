@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:teamup/features/teams/models/team.dart';
+import 'package:teamup/features/teams/teams.dart';
 
 abstract class TeamsState extends Equatable {}
 

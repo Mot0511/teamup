@@ -1,0 +1,1 @@
+export 'team_name_generator.dart';

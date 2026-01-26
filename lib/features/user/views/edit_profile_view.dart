@@ -1,15 +1,10 @@
-import 'dart:io';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:teamup/features/home/repositories/search_repository.dart';
-import 'package:teamup/features/user/bloc/user_bloc.dart';
-import 'package:teamup/features/user/bloc/user_events.dart';
-import 'package:teamup/features/user/models/models.dart';
-import 'package:teamup/features/user/user_repository.dart';
-import 'package:teamup/features/user/widgets/avatar_widget.dart';
+import 'package:teamup/features/home/home.dart';
+import 'package:teamup/features/user/user.dart';
 import 'package:teamup/models/game.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:teamup/widgets/widgets.dart';
 
 class EditProfileView extends StatefulWidget {
@@ -35,7 +30,7 @@ class _EditProfileViewState extends State<EditProfileView> {
   final userBloc = GetIt.I<UserBloc>();
   late String gender;
   int choosenGame = 0;
-  File? choosenAvatar;
+  Uint8List? choosenAvatarBytes;
 
   List<Game>? games;
   void getGames() async {
@@ -64,9 +59,10 @@ class _EditProfileViewState extends State<EditProfileView> {
     );
 
     if (result != null) {
-      choosenAvatar = File(result.files.single.path!);
+      choosenAvatarBytes = Uint8List.fromList(result.files.first.bytes!);
       setState(() {});
-      userRepository.updateAvatarCache(widget.user.uid, MemoryImage(await choosenAvatar!.readAsBytes()));
+      userRepository.updateAvatarCache(widget.user.uid, MemoryImage(choosenAvatarBytes!));
+      userRepository.uploadAvatar(choosenAvatarBytes!, widget.user.uid);
     }
   }
 
@@ -99,8 +95,15 @@ class _EditProfileViewState extends State<EditProfileView> {
     widget.user.age = int.parse(age);
     widget.user.gender = gender;
     widget.user.favouriteGame = choosenGame != 0 ? games?.where((game) => game.id == choosenGame).toList()[0] : null;
-    userBloc.add(UpdateUser(user: widget.user, choosenAvatar: choosenAvatar));
+    userBloc.add(UpdateUser(user: widget.user));
     Navigator.pop(context);
+  }
+
+  Future<void> onChooseGame() async {
+    final Game? game = await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChooseGameView()));
+    if (game == null) return;
+    choosenGame = game.id;
+    setState(() {});
   }
 
   @override
@@ -117,7 +120,7 @@ class _EditProfileViewState extends State<EditProfileView> {
                 children: [
                   AvatarWidget(
                     uid: widget.user.uid, 
-                    image: choosenAvatar != null ? FileImage((choosenAvatar as File)) : null
+                    image: choosenAvatarBytes != null ? MemoryImage(choosenAvatarBytes!) : null
                   ),
                   OutlinedButton(
                     onPressed: pickAvatarHandler,
@@ -149,16 +152,10 @@ class _EditProfileViewState extends State<EditProfileView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Любимая игра:', style: theme.textTheme.labelLarge),
-                  DropdownButton(
-                    isExpanded: true,
-                    value: choosenGame,
-                    items: [DropdownMenuItem(child: Text('Нет'), value: 0)] + 
-                      (games?.map((game) => DropdownMenuItem(child: Text(game.name), value: game.id)).toList() as List<DropdownMenuItem<int>>),
-                    onChanged: (value) => setState(() => choosenGame = (value as int))
-                  )
+                  GameWidget(game: games!.firstWhere((game) => game.id == choosenGame), onTap: onChooseGame)
                 ],
               )
-              : Center(child: CircularProgressIndicator()),
+              : ShimmerWidget(height: 30),
               Align(
                 alignment: Alignment.centerRight,
                 child: ElevatedButton(

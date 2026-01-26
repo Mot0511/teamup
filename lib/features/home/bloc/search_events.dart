@@ -1,8 +1,6 @@
 import 'package:equatable/equatable.dart';
-import 'package:teamup/features/home/models/search_params.dart';
-import 'package:teamup/features/teams/models/team.dart';
-import 'package:teamup/features/user/models/models.dart';
-import 'package:teamup/models/game.dart';
+import 'package:teamup/features/home/home.dart';
+import 'package:teamup/features/user/user.dart';
 
 abstract class SearchEvent extends Equatable {}
 

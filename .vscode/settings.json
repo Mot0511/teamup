@@ -22,5 +22,6 @@
     "editor.defaultFormatter": "denoland.vscode-deno"
   },
   "deno.enable": true,
-  "java.configuration.updateBuildConfiguration": "disabled"
+  "java.configuration.updateBuildConfiguration": "disabled",
+  "cmake.sourceDirectory": "E:/Apps/teamup/build/windows/x64/_deps/sentry-native-src/external/benchmark"
 }

@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:teamup/features/user/models/friendship.dart';
 import 'package:teamup/models/game.dart';
 
 class User {
