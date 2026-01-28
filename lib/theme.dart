@@ -39,5 +39,4 @@ final theme = ThemeData(
   textTheme: textTheme,
   cardColor: Color.fromARGB(255, 36, 35, 35),
   canvasColor: const Color.fromARGB(255, 36, 35, 35),
-
 );
