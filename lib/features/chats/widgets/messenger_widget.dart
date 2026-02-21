@@ -82,8 +82,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
     );
 
     channel.onPostgresChanges(
-      table: 'messages',
-      filter: filter,
+      schema: 'public',
       event: PostgresChangeEvent.insert,
       callback: (payload) async {
         final uid = supabase.auth.currentUser!.id;
