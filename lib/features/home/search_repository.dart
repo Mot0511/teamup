@@ -140,7 +140,7 @@ class SearchRepository {
         // delete pending team
         await supabase.from('pending_teams').delete().eq('id', pendingTeam['id']);
         await supabase.from('pending_users').delete().eq('pending_team', pendingTeam['id']);
-        onTeamFormed!(Team(id: pendingTeam['id'], users: members, name: teamName));
+        onTeamFormed!(Team(id: pendingTeam['id'], users: members, name: teamName, isPublic: pendingTeam['is_public']));
         return;
       }
 

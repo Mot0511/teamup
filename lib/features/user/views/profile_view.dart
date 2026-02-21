@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -118,6 +121,29 @@ class _ProfileViewState extends State<ProfileView> {
     if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => ChatView(chat: chat)));
   }
 
+  Future<void> onChooseGame(User user) async {
+    final Game? game = await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChooseGameView()));
+    if (game == null) return;
+    user.favouriteGame = game;
+    userBloc.add(UpdateUser(user: user));
+  }
+
+  Future<void> onPickAvatar(User user) async {
+    final FilePickerResult? result = await FilePicker.platform.pickFiles(
+      dialogTitle: 'Выбор аватарки',
+      type: FileType.custom,
+      allowedExtensions: ['png', 'jpg'],
+      withData: true
+    );
+
+    if (result != null) {
+      final choosenAvatarBytes = Uint8List.fromList(result.files.first.bytes!);
+      await userRepository.uploadAvatar(choosenAvatarBytes, user.uid);
+      userRepository.updateAvatarCache(user.uid, MemoryImage(choosenAvatarBytes));
+      if (mounted) setState(() {});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -165,7 +191,11 @@ class _ProfileViewState extends State<ProfileView> {
                         children: [
                           SizedBox(height: 100),
                           if (user != null)
-                          AvatarWidget(uid: widget.user != null ? widget.user!.uid : user.uid, size: 150),
+                          Stack(
+                            children: [
+                              AvatarWidget(uid: widget.user != null ? widget.user!.uid : user.uid, size: 150, onTap: widget.user == null ? () => onPickAvatar(user) : null)
+                            ],
+                          ),
                           SizedBox(height: 10),
                           if (user != null)
                           Text(widget.user != null ? widget.user!.username : user.username, style: theme.textTheme.headlineLarge, textAlign: TextAlign.center)
@@ -281,16 +311,13 @@ class _ProfileViewState extends State<ProfileView> {
                           } else if (widget.user == null && user?.favouriteGame != null) {
                             game = user!.favouriteGame!;
                           }
-
-                          if (game != null) {
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Любимая игра', style: theme.textTheme.titleLarge),
-                                GameWidget(game: game),
-                              ],
-                            );
-                          }
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Любимая игра', style: theme.textTheme.titleLarge),
+                              GameWidget(game: game, onTap: widget.user == null ? () => onChooseGame(user!) : null),
+                            ],
+                          );
                         }
                         return SizedBox.shrink();
                       }

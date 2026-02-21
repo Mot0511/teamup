@@ -3,8 +3,11 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:teamup/features/home/home.dart';
 import 'package:teamup/features/teams/teams.dart';
+import 'package:teamup/features/teams/widgets/box_button_widget.dart';
 import 'package:teamup/features/user/user.dart';
+import 'package:teamup/models/game.dart';
 import 'package:teamup/widgets/widgets.dart';
 
 class CreateTeamView extends StatefulWidget {
@@ -26,6 +29,8 @@ class _CreateTeamViewState extends State<CreateTeamView> {
 
   Uint8List? choosenIconBytes;
   bool isUploadingIcon = false;
+  bool isPublic = false;
+  Game? teamGame;
 
   final teamsRepository = GetIt.I<TeamsRepository>();
 
@@ -44,6 +49,8 @@ class _CreateTeamViewState extends State<CreateTeamView> {
       } else {
         nameController.text = widget.team!.name;
         members = widget.team!.users;
+        isPublic = widget.team!.isPublic;
+        teamGame = widget.team!.game;
       }
       setState(() {});
     }
@@ -54,6 +61,7 @@ class _CreateTeamViewState extends State<CreateTeamView> {
       dialogTitle: 'Выбор логотипа команды',
       type: FileType.custom,
       allowedExtensions: ['png', 'jpg'],
+      withData: true
     );
 
     if (result != null) {
@@ -74,7 +82,7 @@ class _CreateTeamViewState extends State<CreateTeamView> {
       setState(() {});
       return;
     }
-    final team = Team(id: id, users: members, name: name);
+    final team = Team(id: id, users: members, name: name, isPublic: isPublic, game: teamGame);
     teamsBloc.add(AddTeam(team: team, choosenIconBytes: choosenIconBytes));
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => TeamView(team: team)));
   }
@@ -88,8 +96,10 @@ class _CreateTeamViewState extends State<CreateTeamView> {
     }
     widget.team!.name = name;
     widget.team!.users = members;
+    widget.team!.isPublic = isPublic;
+    widget.team!.game = teamGame;
     teamsBloc.add(EditTeam(
-      team: (widget.team as Team),
+      team: widget.team!,
       addedMembers: addedMembers,
       removedMembers: removedMembers,
     ));
@@ -101,6 +111,14 @@ class _CreateTeamViewState extends State<CreateTeamView> {
     if (choosenMembers == null) return;
     members += choosenMembers.where((member) => !members.contains(member)).toList();
     addedMembers += choosenMembers.where((member) => !addedMembers.contains(member)).toList();
+    setState(() {});
+  }
+
+  Future<void> chooseGame() async {
+    final Game? game = await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChooseGameView()));
+
+    if (game == null) return;
+    teamGame = game;
     setState(() {});
   }
 
@@ -132,11 +150,11 @@ class _CreateTeamViewState extends State<CreateTeamView> {
               )
             ),
             SizedBox(height: 20),
-            Field(title: 'Название команды', controller: nameController, error: nameError),
+            Field(title: 'Название', controller: nameController, error: nameError),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Участники команды', style: theme.textTheme.titleLarge),
+                Text('Участники', style: theme.textTheme.titleLarge),
                 IconButton(
                   onPressed: chooseMembers,
                   icon: Icon(Icons.add)
@@ -147,7 +165,7 @@ class _CreateTeamViewState extends State<CreateTeamView> {
               children: members.map((member) => 
                 UserWidget(
                   user: member,
-                  trailing: member.uid != (userBloc.state as UserStateLoaded).user.uid
+                  trailing: member.uid != (userBloc.state as UserStateLoaded).user.uid && (widget.team == null || !widget.team!.isPublic)
                     ? IconButton(
                       onPressed: () {
                         members.remove(member);
@@ -160,7 +178,34 @@ class _CreateTeamViewState extends State<CreateTeamView> {
                 )
               ).toList()
             ),
-            SizedBox(height: 50),
+            SizedBox(height: 20),
+            if (widget.team == null || !widget.team!.isPublic)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Главная игра команды', style: theme.textTheme.titleLarge),
+                SizedBox(height: 10),
+                GameWidget(game: teamGame, onTap: chooseGame),
+                SizedBox(height: 20),
+              ],
+            ),
+            if (widget.team == null)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Приватность', style: theme.textTheme.titleLarge),
+                SizedBox(height: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    BoxButton(title: 'Публичная команда', body: 'В нее сможет вcтупить кто угодно', isActive: isPublic, onTap: () => setState(() => isPublic = true)),
+                    SizedBox(height: 10),
+                    BoxButton(title: 'Приватная команда', body: 'Только участники команды смогут добавлять новых игроков', isActive: !isPublic, onTap: () => setState(() => isPublic = false))
+                  ],
+                ),
+                SizedBox(height: 50),
+              ],
+            ),
             Align(
               alignment: Alignment.centerRight,
               child: widget.team == null
