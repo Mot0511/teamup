@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:teamup/features/chats/chats.dart';
+import 'package:teamup/features/teams/teams.dart';
 import 'package:teamup/widgets/shimmer_widget.dart';
 import 'package:teamup/features/user/user.dart';
 
@@ -21,6 +22,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
   final supabase = GetIt.I<SupabaseClient>();
   final userBloc = GetIt.I<UserBloc>();
   final chatsRepository = GetIt.I<ChatsRepository>();
+  final teamsRepository = GetIt.I<TeamsRepository>();
 
   final messageController = TextEditingController();
   final focusNode = FocusNode();
@@ -34,12 +36,22 @@ class _MessengerWidgetState extends State<MessengerWidget> {
   String tmpMessage = '';
   Uint8List? attachmentBytes;
 
+  bool isMember = false;
+
 
   @override
   void initState() {
     super.initState();
+    checkIsMember();
     loadMessages();
     listenMessages();
+  }
+
+  void checkIsMember() {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) return;
+    isMember = widget.chat.users.map((user) => user.uid).toList().contains(uid);
+    setState(() {});
   }
 
   Future<void> loadMessages() async {
@@ -222,6 +234,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
       dialogTitle: 'Выбор изображения',
       type: FileType.custom,
       allowedExtensions: ['png', 'jpg'],
+      withData: true
     );
 
     if (result != null) {
@@ -242,11 +255,13 @@ class _MessengerWidgetState extends State<MessengerWidget> {
     if (scrollController.hasClients) {
       if (messages!.isNotEmpty && scrollController.position.pixels == scrollController.position.maxScrollExtent) {
         Future.delayed(Duration(milliseconds: 30)).then((val) {
-          scrollController.animateTo(
-            scrollController.position.maxScrollExtent,
-            duration: Duration(milliseconds: 250),
-            curve: Curves.ease,
-          );
+          if (mounted) {
+            scrollController.animateTo(
+              scrollController.position.maxScrollExtent,
+              duration: Duration(milliseconds: 250),
+              curve: Curves.ease,
+            );
+          }
         });
       }
     }
@@ -267,6 +282,14 @@ class _MessengerWidgetState extends State<MessengerWidget> {
       }
       setState(() {});
     }
+  }
+
+  Future<void> onJoin() async {
+    await teamsRepository.join(widget.chat.id);
+    isMember = true;
+    final user = (userBloc.state as UserStateLoaded).user;
+    widget.chat.users.add(user);
+    setState(() {});
   }
 
   @override
@@ -444,6 +467,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                           ],
                         ),
                       ),
+                    if (isMember)
                     Container(
                       color: theme.canvasColor,
                       child: Padding(
@@ -491,6 +515,13 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                               ),
                           ],
                         ),
+                      )
+                    )
+                    else
+                    Center(
+                      child: Padding(
+                        padding: EdgeInsets.only(bottom: 10),
+                        child: ElevatedButton(onPressed: onJoin, child: Text('Присоединиться к чату', style: theme.textTheme.labelMedium)),
                       )
                     )
                   ],

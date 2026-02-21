@@ -31,7 +31,6 @@ class VoiceService {
           noiseSuppression: true,
           autoGainControl: true,
           highPassFilter: true,
-          
         ),
       ),
     );

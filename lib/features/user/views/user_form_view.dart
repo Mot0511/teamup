@@ -88,9 +88,11 @@ class _UserFormViewState extends State<UserFormView> {
     await userRepository.setOnline(widget.userdata.id);
     if (mounted) {
       await analyticsRepository.logSignup(user, context);
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) =>
-        NavScreen()
-      ));
+      if (mounted) {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) =>
+          NavScreen()
+        ));
+      }
     }
   }
 
@@ -102,7 +104,9 @@ class _UserFormViewState extends State<UserFormView> {
 
   Future<void> exit() async {
     await userRepository.signout();
-    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => SigninView()));
+    if (mounted) {
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => SigninView()));
+    }
   }
 
   @override
@@ -136,8 +140,8 @@ class _UserFormViewState extends State<UserFormView> {
                       DropdownButton(
                         value: gender,
                         items: [
-                          DropdownMenuItem(child: Text('Мужской'), value: 'male'),
-                          DropdownMenuItem(child: Text('Женский'), value: 'female')
+                          DropdownMenuItem(value: 'male', child: Text('Мужской')),
+                          DropdownMenuItem(value: 'female', child: Text('Женский'))
                         ], 
                         onChanged: (value) => setState(() => gender = (value as String))
                       ),
@@ -147,10 +151,8 @@ class _UserFormViewState extends State<UserFormView> {
                         builder: (context, homeProvider, child) {
                           if (homeProvider.games == null) {
                             return ShimmerWidget(height: 80);
-                          } else if (choosenGame == null) {
-                            return ElevatedButton(onPressed: () => chooseGame(), child: Text('Выбрать любимую игру', style: theme.textTheme.labelMedium));
                           } else {
-                            return GameWidget(game: choosenGame!, onTap: chooseGame);
+                            return GameWidget(game: choosenGame, onTap: chooseGame);
                           }
                         }
                       )

@@ -1,6 +1,5 @@
 
 import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -12,6 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:teamup/features/analytics/analytics.dart';
 import 'package:teamup/features/home/home.dart';
 import 'package:teamup/features/teams/teams.dart';
+import 'package:teamup/features/teams/views/public_teams_view.dart';
 import 'package:teamup/features/user/user.dart';
 import 'package:teamup/models/game.dart';
 import 'package:teamup/services/notifications_service.dart';
@@ -213,10 +213,20 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                                 ],
                               );
                             }
-                            return SearchBtn(
-                              onStartSearching: onStartSearching,
-                              onStopSearching: onStopSearching,
-                              state: state as SearchState
+                            return Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SearchBtn(
+                                  onStartSearching: onStartSearching,
+                                  onStopSearching: onStopSearching,
+                                  state: state as SearchState
+                                ),
+                                SizedBox(height: 10),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PublicTeamsView())),
+                                  child: Text('Публичные команды', style: theme.textTheme.labelMedium)
+                                )
+                              ],
                             );
                           }
                         )

@@ -58,7 +58,7 @@ class _TeamWidgetState extends State<TeamWidget> {
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TeamView(team: widget.team))),
           leading: TeamIconWidget(id: widget.team.id, size: 50),
           title: Text(widget.team.name, style: theme.textTheme.labelMedium),
-          subtitle: Text('${widget.team.users.length} участников', style: theme.textTheme.labelSmall),
+          subtitle: widget.team.game != null ? Text(widget.team.game!.name, style: theme.textTheme.labelSmall) : null,
         ),
       )
     );

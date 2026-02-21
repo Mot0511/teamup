@@ -5,8 +5,8 @@ import 'package:teamup/models/game.dart';
 import 'package:teamup/widgets/shimmer_widget.dart';
 
 class GameWidget extends StatefulWidget {
-  GameWidget({super.key, required this.game, this.onTap});
-  final Game game;
+  const GameWidget({super.key, this.game, this.onTap});
+  final Game? game;
   final GestureTapCallback? onTap;
 
   @override
@@ -32,7 +32,8 @@ class _GameWidgetState extends State<GameWidget> {
   }
 
   Future<void> loadCover() async {
-    cover = await searchRepository.getGameCover(widget.game.id);
+    if (widget.game == null) return;
+    cover = await searchRepository.getGameCover(widget.game!.id);
     if (mounted) {
       setState(() {});
     }
@@ -53,40 +54,45 @@ class _GameWidgetState extends State<GameWidget> {
         child: InkWell(
           onTap: widget.onTap,
           borderRadius: BorderRadius.circular(10),
-          child: Row(
-            children: [
-              Expanded(
-                flex: 3,
-                child: cover != null
-                  ? Container(
-                    height: 80,
-                    decoration: BoxDecoration(
-                      image: DecorationImage(image: cover!, fit: BoxFit.cover),
-                      borderRadius: BorderRadius.only(topLeft: Radius.circular(10), bottomLeft: Radius.circular(10))
+          child: widget.game == null
+            ? Align(
+              alignment: Alignment.center,
+              child: Text('Нажмите, чтобы выбрать игру', style: theme.textTheme.labelMedium),
+            )
+            : Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: cover != null
+                      ? Container(
+                        height: 80,
+                        decoration: BoxDecoration(
+                          image: DecorationImage(image: cover!, fit: BoxFit.cover),
+                          borderRadius: BorderRadius.only(topLeft: Radius.circular(10), bottomLeft: Radius.circular(10))
+                        ),
+                      )
+                      : ShimmerWidget(width: 150, height: 80),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    flex: 4,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(widget.game!.name, style: theme.textTheme.labelMedium),
+                        if (widget.onTap != null)
+                        Text(
+                          'Нажмите, чтобы выбрать игру', 
+                          style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                          maxLines: 2,
+                          softWrap: true,
+                        ),
+                      ],
                     ),
                   )
-                  : ShimmerWidget(width: 150, height: 80),
+                ],
               ),
-              SizedBox(width: 10),
-              Expanded(
-                flex: 4,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(widget.game.name, style: theme.textTheme.labelMedium),
-                    if (widget.onTap != null)
-                    Text(
-                      'Нажмите, чтобы выбрать игру', 
-                      style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
-                      maxLines: 2,
-                      softWrap: true,
-                    ),
-                  ],
-                ),
-              )
-            ],
-          ),
         ),
       )
     );

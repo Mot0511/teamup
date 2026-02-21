@@ -51,21 +51,6 @@ class _EditProfileViewState extends State<EditProfileView> {
     setState(() {});
   }
 
-  void pickAvatarHandler() async {
-    final FilePickerResult? result = await FilePicker.platform.pickFiles(
-      dialogTitle: 'Выбор аватарки',
-      type: FileType.custom,
-      allowedExtensions: ['png', 'jpg'],
-    );
-
-    if (result != null) {
-      choosenAvatarBytes = Uint8List.fromList(result.files.first.bytes!);
-      setState(() {});
-      userRepository.updateAvatarCache(widget.user.uid, MemoryImage(choosenAvatarBytes!));
-      userRepository.uploadAvatar(choosenAvatarBytes!, widget.user.uid);
-    }
-  }
-
   void saveChangesHandler(context) async {
     final username = usernameController.text.trim();
     final age = ageController.text.trim();
@@ -122,13 +107,7 @@ class _EditProfileViewState extends State<EditProfileView> {
                     uid: widget.user.uid, 
                     image: choosenAvatarBytes != null ? MemoryImage(choosenAvatarBytes!) : null
                   ),
-                  OutlinedButton(
-                    onPressed: pickAvatarHandler,
-                    child: Text('Изменить аватарку'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white
-                    ),
-                  ),
+                  
                 ],
               )
             ),
