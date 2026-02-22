@@ -36,24 +36,18 @@ class _ChatViewState extends State<ChatView> {
     final user1 = widget.chat.users[0];
     final user2 = widget.chat.users[1];
 
-    isOnline = await userRepository.getIsOnline(user1.uid == user.uid ? user2.uid : user1.uid);
+    final companionID = user1.uid == user.uid ? user2.uid : user1.uid;
+    isOnline = await userRepository.getIsOnline(companionID);
     setState(() {});
     
-    isOnlineChannel = supabase.channel('is-online-channel');
-    isOnlineChannel.onPostgresChanges(
-      table: 'users',
-      event: PostgresChangeEvent.update,
-      filter: PostgresChangeFilter(
-        type: PostgresChangeFilterType.eq,
-        column: 'uid',
-        value: user1.uid == user.uid ? user2.uid : user1.uid
-      ),
-      callback: (payload) {
-        if (payload.newRecord['uid'] != user.uid) {
-          isOnline = payload.newRecord['isOnline'];
-          setState(() {});
-        }
-      }
+    isOnlineChannel = supabase.channel('isOnline-$companionID');
+    isOnlineChannel.onBroadcast(
+      event: 'online',
+      callback: (payload) => setState(() => isOnline = true)
+    );
+    isOnlineChannel.onBroadcast(
+      event: 'offline',
+      callback: (payload) => setState(() => isOnline = false)
     );
 
     isOnlineChannel.subscribe();

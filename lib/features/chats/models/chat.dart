@@ -2,7 +2,7 @@ import 'package:teamup/features/user/user.dart';
 
 class Chat {
   final int id;
-  List<User> users;
+  List users;
 
   Chat({required this.id, required this.users});
 

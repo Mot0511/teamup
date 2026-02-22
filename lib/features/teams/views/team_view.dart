@@ -48,12 +48,12 @@ class _TeamViewState extends State<TeamView> {
   Future<void> join(bool isVoiceOn, bool isSoundOn) async {
     final uid = supabase.auth.currentUser!.id;
     voiceService.onPeersChanged = (List<String> peers) => setState(() => this.peers = peers);
-    // await voiceService.connect(
-    //   uid,
-    //   widget.team.id,
-    //   isVoiceOn,
-    //   isSoundOn,
-    // );
+    await voiceService.connect(
+      uid,
+      widget.team.id,
+      isVoiceOn,
+      isSoundOn,
+    );
   }
 
   @override

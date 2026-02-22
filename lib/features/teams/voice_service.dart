@@ -75,15 +75,15 @@ class VoiceService {
   }
 
   Future<void> setIsSoundOn(bool value) async {
-    // for (RemoteParticipant participant in room!.remoteParticipants.values) {
-    //   for (RemoteTrackPublication track in participant.audioTrackPublications) {
-    //     if (value) {
-    //       track.enable();
-    //     } else {
-    //       track.disable();
-    //     }
-    //   }
-    // }
+    for (RemoteParticipant participant in room!.remoteParticipants.values) {
+      for (RemoteTrackPublication track in participant.audioTrackPublications) {
+        if (value) {
+          track.enable();
+        } else {
+          track.disable();
+        }
+      }
+    }
   }
 
   Future<void> disconnect() async {

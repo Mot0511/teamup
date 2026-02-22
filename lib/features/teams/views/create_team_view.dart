@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:teamup/features/home/home.dart';
 import 'package:teamup/features/teams/teams.dart';
 import 'package:teamup/features/teams/widgets/box_button_widget.dart';
@@ -23,7 +24,7 @@ class _CreateTeamViewState extends State<CreateTeamView> {
   late int id;
 
   final nameController = TextEditingController();
-  List<User> members = [];
+  List members = [];
   List<User> addedMembers = [];
   List<User> removedMembers = [];
 
@@ -33,9 +34,9 @@ class _CreateTeamViewState extends State<CreateTeamView> {
   Game? teamGame;
 
   final teamsRepository = GetIt.I<TeamsRepository>();
-
   final userBloc = GetIt.I<UserBloc>();
   final teamsBloc = GetIt.I<TeamsBloc>();
+  final supabase = GetIt.I<SupabaseClient>();
 
   String? nameError;
 
@@ -65,11 +66,11 @@ class _CreateTeamViewState extends State<CreateTeamView> {
     );
 
     if (result != null) {
-      final choosenAvatarBytes = Uint8List.fromList(result.files.first.bytes!);
+      choosenIconBytes = Uint8List.fromList(result.files.first.bytes!);
       setState(() {});
       if (widget.team != null) {
-        teamsRepository.updateIconCache(widget.team!.id, MemoryImage(choosenAvatarBytes));
-        await teamsRepository.uploadIcon(widget.team!.id, choosenAvatarBytes);
+        teamsRepository.updateIconCache(widget.team!.id, MemoryImage(choosenIconBytes!));
+        await teamsRepository.uploadIcon(widget.team!.id, choosenIconBytes!);
       }
     }
 
@@ -122,6 +123,13 @@ class _CreateTeamViewState extends State<CreateTeamView> {
     setState(() {});
   }
 
+  void leaveTeam() {
+    final uid = supabase.auth.currentUser!.id;
+    teamsBloc.add(RemoveTeam(team: widget.team!, uid: uid));
+    Navigator.of(context).pop();
+    Navigator.of(context).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -136,7 +144,7 @@ class _CreateTeamViewState extends State<CreateTeamView> {
                 children: [
                   TeamIconWidget(
                     id: widget.team != null ? widget.team!.id : id,
-                    image: choosenIconBytes != null ? FileImage((choosenIconBytes as File)) : null
+                    image: choosenIconBytes != null ? MemoryImage(choosenIconBytes!) : null
                   ),
                   SizedBox(height: 20),
                   OutlinedButton(
@@ -179,13 +187,13 @@ class _CreateTeamViewState extends State<CreateTeamView> {
               ).toList()
             ),
             SizedBox(height: 20),
-            if (widget.team == null || !widget.team!.isPublic)
+            if (widget.team == null || !widget.team!.isPublic || widget.team!.game != null)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Главная игра команды', style: theme.textTheme.titleLarge),
                 SizedBox(height: 10),
-                GameWidget(game: teamGame, onTap: chooseGame),
+                GameWidget(game: teamGame, onTap: widget.team == null || !widget.team!.isPublic ? chooseGame : null),
                 SizedBox(height: 20),
               ],
             ),
@@ -206,17 +214,29 @@ class _CreateTeamViewState extends State<CreateTeamView> {
                 SizedBox(height: 50),
               ],
             ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: widget.team == null
-                ? ElevatedButton(
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (widget.team != null && widget.team!.isPublic && widget.team!.users.where((user) => user.uid == supabase.auth.currentUser?.id).toList().isNotEmpty)
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:  theme.colorScheme.error
+                  ),
+                  onPressed: () => leaveTeam(),
+                  child: Text('Выйти из команды', style: theme.textTheme.labelMedium)
+                ),
+                SizedBox(width: 5),
+                if (widget.team == null)
+                ElevatedButton(
                   onPressed: () => createTeamHandler(context),
                   child: Text('Создать команду', style: theme.textTheme.labelMedium)
                 )
-                : ElevatedButton(
+                else
+                ElevatedButton(
                   onPressed: () => editTeamHandler(context),
                   child: Text('Сохранить', style: theme.textTheme.labelMedium)
                 )
+              ],
             )
           ],
         ),

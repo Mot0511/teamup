@@ -30,19 +30,20 @@ class Message {
       text: data['text'],
       repliedMesssageID: data['repliedMessage'],
       attachment: data['attachment'],
-      time: DateTime.parse(data['created_at']).toLocal(),
+      time: DateTime.parse(data['time']).toLocal(),
       isReaded: isReaded
     );
   }
 
-  Map toJSON() {
+  Map<String, dynamic> toJSON() {
     return {
       'id': id,
       'chat': chatId,
       'sender': user.uid,
       'text': text,
       'repliedMessage': repliedMesssageID,
-      'attachment': attachment != null ? id : null
+      'attachment': attachment != null ? id : null,
+      'time': time.toString()
     };
   }
 }
