@@ -305,12 +305,17 @@ class _ProfileViewState extends State<ProfileView> {
                     Consumer<HomeProvider>(
                       builder: (context, homeProvider, child) {
                         if (homeProvider.games != null) {
+                          if (widget.user != null && widget.user?.favouriteGame == null) {
+                            return SizedBox.shrink();
+                          }
+
                           Game? game;
                           if (widget.user?.favouriteGame != null) {
                             game = widget.user!.favouriteGame!;
-                          } else if (widget.user == null && user?.favouriteGame != null) {
+                          } else if (user?.favouriteGame != null) {
                             game = user!.favouriteGame!;
                           }
+
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [

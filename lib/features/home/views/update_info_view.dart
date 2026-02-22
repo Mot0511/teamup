@@ -31,27 +31,37 @@ class _UpdateInfoViewState extends State<UpdateInfoView> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        title: Text('Обновление ${widget.updateInfo.currentVersion}'),
+      ),
       body: Center(
         child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Expanded(
-            flex: 1,
+            flex: 9,
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                Text('Обновление ${widget.updateInfo.currentVersion}', style: theme.textTheme.displayMedium),
                 SizedBox(height: 30),
-                Column(
-                  children: [
-                    Text('Что нового:', style: theme.textTheme.titleLarge),
-                    SizedBox(height: 5),
-                    Column(
-                      children: widget.updateInfo.newFeatures.map((feature) => Text(feature, style: theme.textTheme.bodyMedium)).toList()
-                    )
-                  ],
-                ),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text('Что нового:', style: theme.textTheme.headlineMedium),
+                      SizedBox(height: 10),
+                      Expanded(
+                        child: ListView(
+                          children: widget.updateInfo.newFeatures.map((feature) => 
+                            Padding(
+                              padding: EdgeInsets.only(left: 20, bottom: 10),
+                              child: Text(feature, style: theme.textTheme.bodyLarge),
+                            )
+                          ).toList()
+                        ),
+                      )
+                    ],
+                  ),
+                )
               ]
             )
           ),

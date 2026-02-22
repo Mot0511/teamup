@@ -28,9 +28,11 @@ class TeamsRepository {
     }
     
     final List<Team> teams = [];
+    final List<int> added = [];
     for (Map row in data) {
       final team = row['chat'];
       if (team == null) continue;
+      if (added.contains(team['id'])) continue;
       final members = await supabase.from('members').select('member(*, favouriteGame(*))').eq('chat', team['id']);
       teams.add(Team(
         id: team['id'],
@@ -39,6 +41,7 @@ class TeamsRepository {
         isPublic: team['is_public'],
         game: team['game'] != null ? Game.fromJSON(team['game']) : null
       ));
+      added.add(team['id']);
     }
     return teams;
   }
@@ -76,10 +79,10 @@ class TeamsRepository {
   }
 
   Future<void> removeTeam(Team team, String uid) async {
-    await supabase.from('members').delete().eq('member', uid).eq('chat', team.id);
     if (team.users.length == 1) {
       await supabase.from('chats').delete().eq('id', team.id);
     }
+    await supabase.from('members').delete().eq('member', uid).eq('chat', team.id);
     await supabase.from('messages').delete().eq('chat', team.id);
   }
 

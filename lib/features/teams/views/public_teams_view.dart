@@ -20,6 +20,8 @@ class PublicTeamsView extends StatefulWidget {
 class _PublicTeamsViewState extends State<PublicTeamsView> {
 
   final teamsRepository = GetIt.I<TeamsRepository>();
+  final userBloc = GetIt.I<UserBloc>();
+  final teamsBloc = GetIt.I<TeamsBloc>();
   List<Team>? teams;
   bool isError = false;
 
@@ -27,10 +29,20 @@ class _PublicTeamsViewState extends State<PublicTeamsView> {
   void initState() {
     super.initState();
 
+    loadPublicTeams();
     loadTeams();
+    userBloc.stream.listen((state) {
+      loadTeams();
+    });
   }
 
-  Future<void> loadTeams([Completer? completer]) async {
+  void loadTeams({Completer? completer}) {
+    if ((teamsBloc.state is TeamsStateInitial || completer != null) && userBloc.state is UserStateLoaded) {
+      teamsBloc.add(LoadTeams(uid: (userBloc.state as UserStateLoaded).user.uid, completer: completer));
+    }
+  }
+
+  Future<void> loadPublicTeams([Completer? completer]) async {
     teams = null;
     setState(() {});
 
@@ -55,7 +67,7 @@ class _PublicTeamsViewState extends State<PublicTeamsView> {
         actions: [
           if (kIsWeb || !Platform.isAndroid)
           IconButton(onPressed: () {
-            loadTeams();
+            loadPublicTeams();
           }, icon: Icon(Icons.refresh))
         ],
       ),
@@ -65,7 +77,7 @@ class _PublicTeamsViewState extends State<PublicTeamsView> {
             child: RefreshIndicator(
               onRefresh: () async {
                 final completer = Completer();
-                loadTeams(completer);
+                loadPublicTeams(completer);
                 return completer.future;
               },
               child: teams != null

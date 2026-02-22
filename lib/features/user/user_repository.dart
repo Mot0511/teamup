@@ -135,6 +135,16 @@ class UserRepository {
     return User.fromJSON(userdata);
   }
 
+  Future<List<User>> getUsersByChat(int teamID) async {
+    final data = await supabase
+      .from('members')
+      .select('member(*, favouriteGame(*))')
+      .eq('chat', teamID);
+    
+    final List<User> users = data.map((userdata) => User.fromJSON(userdata)).toList();
+    return users;
+  }
+
   Future<bool> isUsernameExists(String username) async {
     final String? uid = supabase.auth.currentUser?.id;
     final users = await supabase.from('users').select('uid, username').eq('username', username);

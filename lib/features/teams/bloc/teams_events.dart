@@ -17,7 +17,7 @@ class LoadTeams extends TeamsEvent {
 
 class AddTeam extends TeamsEvent {
   final Team team;
-  final Uint8List? choosenIconBytes; 
+  final Uint8List? choosenIconBytes;
 
   AddTeam({required this.team, required this.choosenIconBytes});
 

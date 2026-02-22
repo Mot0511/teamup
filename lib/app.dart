@@ -89,10 +89,11 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
    @override
   Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
     super.didChangeAppLifecycleState(state);
-
     final uid = supabase.auth.currentUser?.id;
+    final channel = supabase.channel('isOnline-$uid');
     if (state == AppLifecycleState.resumed && uid != null) {
       await userRepository.setOnline(uid);
+      channel.sendBroadcastMessage(event: 'online', payload: {});
       notificationsService.isOnline = true;
       final pendingTeamID = await searchRepository.getPendingTeamID(uid);
       if (pendingTeamID == null && userBloc.state is UserStateLoaded) {
@@ -104,6 +105,7 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
       state == AppLifecycleState.detached) && uid != null
     ) {
       await userRepository.setOffline(uid);
+      channel.sendBroadcastMessage(event: 'offline', payload: {});
       notificationsService.isOnline = false;
     }
   }

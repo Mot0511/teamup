@@ -11,6 +11,8 @@ class SearchRepository {
   final supabase = GetIt.I<sb.SupabaseClient>();
   final teamsRepository = GetIt.I<TeamsRepository>();
   final analyticsRepository = GetIt.I<AnalyticsRepository>();
+  final userBloc = GetIt.I<UserBloc>();
+  final userRepository = GetIt.I<UserRepository>();
 
   sb.RealtimeChannel? channel;
   int? currentPendingTeamID;
@@ -68,8 +70,8 @@ class SearchRepository {
   Future<SearchParams> restoreSearching(int pendingTeamID) async {
     final pendingTeam = await supabase.from('pending_teams').select().eq('id', pendingTeamID).single();
     currentPendingTeamID = pendingTeamID;
-    channel = supabase.channel('searching:$pendingTeamID');
-    listenTeams(pendingTeamID);
+    channel = supabase.channel('searching-$pendingTeamID');
+    listenTeams();
     final pendingUsers = await supabase.from('pending_users').select('pending_user(*)').eq('pending_team', pendingTeamID);
     onTeamFound!(pendingUsers.map((user) => User.fromJSON(user['pending_user'])).toList());
     return SearchParams(
@@ -106,12 +108,11 @@ class SearchRepository {
         .gte('max_age', params.age);
     }
 
-    // Creating a channel to listen new teams;
-    channel = supabase.channel('teams-channel');
-
     // If there are suitable pending teams, I add myself to the first one
     if (pendingTeams.isNotEmpty) {
       final pendingTeam = pendingTeams[0];
+      channel = supabase.channel('searching-${pendingTeam['id']}');
+      channel!.sendBroadcastMessage(event: 'new-member', payload: {'user': user.toJSON()});
       // If I am the last necessery member, I create a team
       if (pendingTeam['size'] - pendingTeam['users_count'] == 1) {
         final teamName = TeamNameGenerator.createTeamName();
@@ -140,7 +141,9 @@ class SearchRepository {
         // delete pending team
         await supabase.from('pending_teams').delete().eq('id', pendingTeam['id']);
         await supabase.from('pending_users').delete().eq('pending_team', pendingTeam['id']);
-        onTeamFormed!(Team(id: pendingTeam['id'], users: members, name: teamName, isPublic: pendingTeam['is_public']));
+        final team = Team(id: pendingTeam['id'], users: members, name: teamName, isPublic: false);
+        channel!.sendBroadcastMessage(event: 'team-formed', payload: {'team': team.toJSONWithMembers()});
+        onTeamFormed!(team);
         return;
       }
 
@@ -158,7 +161,7 @@ class SearchRepository {
         .eq('id', pendingTeam['id']);
 
       // Subscribing on creating new team
-      listenTeams(pendingTeam['id']);
+      listenTeams();
       final pending_users = await supabase.from('pending_users').select('pending_user(*, favouriteGame(*))').eq('pending_team', pendingTeam['id']);
       onTeamFound!(pending_users.map((user) => User.fromJSON(user['pending_user'])).toList());
       return;
@@ -166,6 +169,7 @@ class SearchRepository {
 
     // If there isn't any suitable team, I create my one
     final teamID = DateTime.now().millisecondsSinceEpoch;
+    channel = supabase.channel('searching-$teamID');
     await supabase.from('pending_teams').insert([{
       'id': teamID,
       'size': params.teamSize,
@@ -184,53 +188,29 @@ class SearchRepository {
 
     currentPendingTeamID = teamID;
     // Listening creating a new team
-    listenTeams(teamID);
+    listenTeams();
     onTeamFound!([user]);
   }
 
-  void listenTeams(int teamID) {
-    channel!.onPostgresChanges(
-      table: 'pending_teams',
-      filter: sb.PostgresChangeFilter(
-        type: sb.PostgresChangeFilterType.eq,
-        column: 'id', 
-        value: teamID
-      ),
-      event: sb.PostgresChangeEvent.delete, 
+  void listenTeams() {
+    channel!.onBroadcast(
+      event: 'new-member',
       callback: (payload) async {
-        final Team team = await teamsRepository.getTeam(payload.oldRecord['id']);
-        supabase.removeChannel(channel!);
-        currentPendingTeamID = null;
-        onTeamFormed!(team);
+        onNewPendingUser!(User.fromJSON(payload['payload']['user']));
       }
     );
 
-    channel!.onPostgresChanges(
-      table: 'pending_users',
-      filter: sb.PostgresChangeFilter(
-        type: sb.PostgresChangeFilterType.eq,
-        column: 'pending_team',
-        value: teamID
-      ),
-      event: sb.PostgresChangeEvent.insert,
+    channel!.onBroadcast(
+      event: 'left-member',
       callback: (payload) async {
-        if (currentPendingTeamID != payload.newRecord['pending_team']) return;
-        final Map userdata = (await supabase.from('users').select('*, favouriteGame(*)').eq('uid', payload.newRecord['pending_user']))[0];
-        onNewPendingUser!(User.fromJSON(userdata));
+        onRemovePendingUser!(payload['payload']['userID']);
       }
     );
 
-    channel!.onPostgresChanges(
-      table: 'pending_users',
-      filter: sb.PostgresChangeFilter(
-        type: sb.PostgresChangeFilterType.eq,
-        column: 'pending_team',
-        value: teamID
-      ),
-      event: sb.PostgresChangeEvent.delete,
+    channel!.onBroadcast(
+      event: 'team-formed',
       callback: (payload) async {
-        final users = await supabase.from('pending_users').select('pending_user(*, favouriteGame(*))').eq('pending_team', teamID);
-        onTeamFound!(users.map((user) => User.fromJSON(user['pending_user'])).toList());
+        onTeamFormed!(Team.fromJSON(payload['payload']['team']));
       }
     );
 
@@ -239,6 +219,7 @@ class SearchRepository {
 
   Future<void> stopSearching(User user) async {
     if (currentPendingTeamID != null) {
+      channel!.sendBroadcastMessage(event: 'left-member', payload: {'userID': user.uid});
       supabase.removeChannel(channel!);
       await supabase.from('pending_users').delete().eq('pending_user', user.uid);
       final pendingTeams = (await supabase

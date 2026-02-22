@@ -62,11 +62,11 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     loadGames();
 
     searchRepository.onTeamFormed = (Team team) async {
-      analyticsRepository.logEvent('finish_searching', properties: getParams()!.toJSON());
       if (!kIsWeb && Platform.isWindows && !notificationsService.isOnline) notificationsService.showNotification(DateTime.now().millisecondsSinceEpoch.toString(), 'Команда сформирована', '');
-      await AudioPlayer().play(AssetSource('audio/team_formed.mp3'));
-      Navigator.push(context, MaterialPageRoute(builder: (_) => TeamView(team: team)));
       searchBloc.add(StopSearching(user: (userBloc.state as UserStateLoaded).user));
+      await AudioPlayer().play(AssetSource('audio/team_formed.mp3'));
+      analyticsRepository.logEvent('finish_searching', properties: getParams()!.toJSON());
+      Navigator.push(context, MaterialPageRoute(builder: (_) => TeamView(team: team)));
     };
     searchRepository.onTeamFound = (List<User> users) {
       pendingUsers = users;

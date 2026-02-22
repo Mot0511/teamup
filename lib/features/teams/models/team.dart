@@ -12,7 +12,7 @@ class Team extends Chat {
   factory Team.fromJSON(Map data) {
     return Team(
       id: data['id'],
-      users: data['users'].map((user) => User.fromJSON(user)).toList(),
+      users: data['users'].map((data) => User.fromJSON(data)).toList(),
       name: data['name'],
       isPublic: data['is_public'],
       game: data['game'] != null ? Game.fromJSON(data['game']) : null
@@ -28,5 +28,11 @@ class Team extends Chat {
       'is_public': isPublic,
       'game': game?.id
     };
+  }
+
+  Map toJSONWithMembers() {
+    final data = toJSON();
+    data['users'] = users.map((user) => user.toJSON()).toList();
+    return data;
   }
 }

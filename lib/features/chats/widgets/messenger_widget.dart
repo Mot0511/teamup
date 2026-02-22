@@ -69,82 +69,68 @@ class _MessengerWidgetState extends State<MessengerWidget> {
     for (Message message in messages!) {
       if (message.user.uid != uid && !message.isReaded) {
         await chatsRepository.setReaded(uid, message.id, widget.chat.id);
+        channel.sendBroadcastMessage(event: 'readed-message', payload: {'messageID': message.id});
       }
     }
   }
 
   void listenMessages() {
-    channel = supabase.channel('new-messages-channel');
-    final filter = PostgresChangeFilter(
-      type: PostgresChangeFilterType.eq,
-      column: 'chat',
-      value: widget.chat.id,
-    );
-
-    channel.onPostgresChanges(
-      schema: 'public',
-      event: PostgresChangeEvent.insert,
+    channel = supabase.channel('chat-${widget.chat.id}');
+    
+    channel.onBroadcast(
+      event: 'new-message',
       callback: (payload) async {
         final uid = supabase.auth.currentUser!.id;
-        if (payload.newRecord['sender'] == uid) return;
+        if (payload['sender'] == uid) return;
         final sender = widget.chat.users
-            .where((user) => user.uid == payload.newRecord['sender'])
+            .where((user) => user.uid == payload['sender'])
             .toList()[0];
-        payload.newRecord['sender'] = sender.toJSON();
-        if (payload.newRecord['attachmentBytes'] != null) {
-          payload.newRecord['attachmentBytes'] = await chatsRepository.getAttachment(payload.newRecord['attachmentBytes']);
+        payload['sender'] = sender.toJSON();
+        if (payload['attachmentBytes'] != null) {
+          payload['attachmentBytes'] = await chatsRepository.getAttachment(payload['attachmentBytes']);
         }
-        await chatsRepository.setReaded(uid, payload.newRecord['id'], widget.chat.id);
-        messages?.add(Message.fromJSON(payload.newRecord, true));
+        await chatsRepository.setReaded(uid, payload['id'], widget.chat.id);
+        messages?.add(Message.fromJSON(payload, true));
         setState(() {});
         scrollToBottomAnimated();
         sortMessages();
       },
     );
 
-    channel.onPostgresChanges(
-      table: 'messages',
-      filter: filter,
-      event: PostgresChangeEvent.update,
+    channel.onBroadcast(
+      event: 'edit-message',
       callback: (payload) async {
-        for (int i = 0; i < messages!.length; i++) {
-          if (messages![i].id == payload.newRecord['id']) {
-            final sender = widget.chat.users
-                .where((user) => user.uid == payload.newRecord['sender'])
-                .toList()[0];
-            if (payload.newRecord['attachmentBytes'] != null) {
-              payload.newRecord['attachmentBytes'] = await chatsRepository.getAttachment(payload.newRecord['attachmentBytes']);
+        if (messages != null) {
+          for (int i = messages!.length - 1; i >= 0; i--) {
+            final message = messages![i];
+            if (message.id == payload['messageID']) {
+              message.text = payload['text'];
+              break;
             }
-            payload.newRecord['sender'] = sender.toJSON();
-            messages![i] = Message.fromJSON(payload.newRecord, true);
           }
+          setState(() {});
         }
-        setState(() {});
       },
     );
 
-    channel.onPostgresChanges(
-      table: 'messages',
-      filter: filter,
-      event: PostgresChangeEvent.delete,
+    channel.onBroadcast(
+      event: 'delete-message', 
       callback: (payload) {
         messages = messages
-            ?.where((message) => message.id != payload.oldRecord['id'])
+            ?.where((message) => message.id != payload['messageID'])
             .toList();
         setState(() {});
         sortMessages();
       },
     );
 
-    channel.onPostgresChanges(
-      table: 'readed_messages',
-      filter: filter,
-      event: PostgresChangeEvent.insert,
+    channel.onBroadcast(
+      event: 'readed-message',
       callback: (payload) {
         if (messages == null) return;
         for (int i = messages!.length - 1; i >= 0; i--) {
           final Message message = messages![i];
-          if (message.id == payload.newRecord['message']) {
+          if (message.id == payload['messageID']) {
             message.isReaded = true;
             setState(() {});
             break;
@@ -160,6 +146,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
   void onSendMessage() {
     final text = messageController.text.trim();
     if (text == '' && attachmentBytes == null) return;
+
     final message = Message(
       id: DateTime.now().millisecondsSinceEpoch,
       chatId: widget.chat.id,
@@ -171,8 +158,12 @@ class _MessengerWidgetState extends State<MessengerWidget> {
       isReaded: false
     );
     chatsRepository.sendMessage(message, attachmentBytes);
-    message.time = message.time.toLocal();
     messages?.add(message);
+    channel.sendBroadcastMessage(
+      event: 'new-message', 
+      payload: message.toJSON()
+    );
+
     attachmentBytes = null;
     setState(() {});
     messageController.text = '';
@@ -190,6 +181,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
       break;
     }
     chatsRepository.editMessage(editingMessage!.id, text);
+    channel.sendBroadcastMessage(event: 'edit-message', payload: {'messageID': editingMessage!.id, 'text': text});
     editingMessage = null;
     messageController.text = tmpMessage;
     setState(() {});
@@ -226,6 +218,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
     setState(() {});
     sortMessages();
     chatsRepository.deleteMessage(message);
+    channel.sendBroadcastMessage(event: 'delete-message', payload: {'messageID': message.id});
   }
 
   void onAttachImage() async {
