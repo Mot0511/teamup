@@ -30,13 +30,16 @@ void main() async {
       setWindowMaxSize(const Size(540, 810));
     }
 
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    if (Platform.isAndroid) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
+    
 
     await Supabase.initialize(
       url: env.SUPABASE_URL,
-      anonKey: env.SUPABASE_SERVICE_ROLE_KEY,
+      anonKey: env.SUPABASE_ANON_KEY,
     );
 
     
