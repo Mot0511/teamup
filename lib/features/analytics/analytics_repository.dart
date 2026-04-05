@@ -27,11 +27,11 @@ class AnalyticsRepository {
     }
     return AnalyticsResults(
       usersCount: await supabase.from('users').count(),
-      signUpCount: await supabase.from('stats').count().eq('event', 'sign_up'), 
-      openAppCount: await supabase.from('stats').count().eq('event', 'open_app'), 
-      openTeamScreen: await supabase.from('stats').count().eq('event', 'open_team_screen'), 
-      openChatScreen: await supabase.from('stats').count().eq('event', 'open_chat_screen'), 
-      startSearchingCount: await supabase.from('stats').count().eq('event', 'start_searching'), 
+      signUpCount: await supabase.from('stats').count().eq('event', 'sign_up'),
+      openAppCount: await supabase.from('stats').count().eq('event', 'open_app'),
+      openTeamScreen: await supabase.from('stats').count().eq('event', 'open_team_screen'),
+      openChatScreen: await supabase.from('stats').count().eq('event', 'open_chat_screen'),
+      startSearchingCount: await supabase.from('stats').count().eq('event', 'start_searching'),
       finishSearchingCount: await supabase.from('stats').count().eq('event', 'finish_searching')
     );
   }

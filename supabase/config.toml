@@ -275,6 +275,18 @@ skip_nonce_check = false
 
 # Allow Solana wallet holders to sign in to your project via the Sign in with Solana (SIWS, EIP-4361) standard.
 # You can configure "web3" rate limit in the [auth.rate_limit] section and set up [auth.captcha] if self-hosting.
+[auth.external.google]
+enabled = true
+client_id = "677191252450-s6a7kuf9dek6arhufeot9i968a8bhloh.apps.googleusercontent.com"
+# DO NOT commit your OAuth provider secret to git. Use environment variable substitution instead:
+secret = "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"
+# Overrides the default auth redirectUrl.
+redirect_uri = "https://178.141.247.121:8000/auth/v1/callback"
+# Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure,
+# or any other third-party OIDC providers.
+url = ""
+# If enabled, the nonce check will be skipped. Required for local sign in with Google auth.
+skip_nonce_check = true
 [auth.web3.solana]
 enabled = false
 

@@ -37,6 +37,20 @@ class SearchRepository {
     
   }
 
+  /// Постраничная выборка для списка пользователей (стабильный порядок — по `username`).
+  Future<List<User>> getUsersPage({
+    String? request,
+    required int offset,
+    int limit = 15,
+  }) async {
+    dynamic query = supabase.from('users').select('*, favouriteGame(*)');
+    if (request != null && request.isNotEmpty) {
+      query = query.like('username', '%$request%');
+    }
+    final res = await query.order('username', ascending: true).range(offset, offset + limit - 1);
+    return (res as List).map((user) => User.fromJSON(user as Map)).toList();
+  }
+
 
   Future<List<Game>> getGames() async {
     final res = await supabase.from('games').select();

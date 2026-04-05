@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:teamup/features/chats/chats.dart';
 import 'package:teamup/features/teams/teams.dart';
+import 'package:teamup/features/teams/widgets/connect_status_widget.dart';
 import 'package:teamup/features/user/user.dart';
 import 'package:teamup/features/analytics/analytics.dart';
+import 'package:global_shortcuts/global_shortcuts.dart';
 
 class TeamView extends StatefulWidget {
   const TeamView({super.key, required this.team});
@@ -19,6 +22,7 @@ class _TeamViewState extends State<TeamView> {
 
   bool isVoiceOn = false;
   bool isSoundOn = true;
+  ConnectStatus? connectStatus;
 
   final userBloc = GetIt.I<UserBloc>();
   final supabase = GetIt.I<SupabaseClient>();
@@ -36,16 +40,20 @@ class _TeamViewState extends State<TeamView> {
       if (voiceService.roomID == widget.team.id) {
         isVoiceOn = voiceService.isVoiceOn;
         isSoundOn = voiceService.isSoundOn;
+
+        connectStatus = isVoiceOn ? ConnectStatus.connected : ConnectStatus.connectedWithoutMicro;
       } else {
         isSoundOn = false;
       }
-      setState(() {});
     } else {
+      connectStatus = ConnectStatus.notConnected;
       join(false, true);
     }
   }
  
   Future<void> join(bool isVoiceOn, bool isSoundOn) async {
+    connectStatus = ConnectStatus.connecting;
+    setState(() {});
     final uid = supabase.auth.currentUser!.id;
     voiceService.onPeersChanged = (List<String> peers) => setState(() => this.peers = peers);
     await voiceService.connect(
@@ -54,6 +62,8 @@ class _TeamViewState extends State<TeamView> {
       isVoiceOn,
       isSoundOn,
     );
+    connectStatus = ConnectStatus.connectedWithoutMicro;
+    setState(() {});
   }
 
   @override
@@ -64,6 +74,7 @@ class _TeamViewState extends State<TeamView> {
   }
 
   void onToggleVoice() async {
+    print(1);
     if (voiceService.room == null || voiceService.roomID != widget.team.id) {
       await voiceService.disconnect();
       await join(true, false);
@@ -71,6 +82,14 @@ class _TeamViewState extends State<TeamView> {
       await voiceService.setIsVoiceOn(!isVoiceOn);
     }
     isVoiceOn = !isVoiceOn;
+    if (!isVoiceOn && !isSoundOn) {
+      connectStatus = null;
+    }
+    else if (isVoiceOn) {
+      connectStatus = ConnectStatus.connected;
+    } else if (!isVoiceOn) {
+      connectStatus = ConnectStatus.connectedWithoutMicro;
+    }
     setState(() {});
   }
 
@@ -82,6 +101,9 @@ class _TeamViewState extends State<TeamView> {
       await voiceService.setIsSoundOn(!isSoundOn);
     }
     isSoundOn = !isSoundOn;
+    if (!isVoiceOn && !isSoundOn) {
+      connectStatus = null;
+    }
     setState(() {});
   }
 
@@ -147,7 +169,15 @@ class _TeamViewState extends State<TeamView> {
                 ),
               ],
             ),
-            body: MessengerWidget(chat: widget.team)
+            body: Column(
+              children: [
+                if (connectStatus != null)
+                ConnectStatusWidget(status: connectStatus!),
+                Expanded(
+                  child: MessengerWidget(chat: widget.team),
+                )
+              ],
+            ),
           );
         } else if (state is UserStateError) {
           return Center(child: Text('Ошибка при загурзке данных пользователя'));

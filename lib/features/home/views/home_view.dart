@@ -139,6 +139,7 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
   Future<void> onStartSearching() async {
     final params = getParams();
     if (params != null) {
+
       await animationController.reverse();
       searchBloc.add(StartSearching(
         user: (userBloc.state as UserStateLoaded).user,

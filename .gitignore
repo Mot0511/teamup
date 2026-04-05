@@ -48,6 +48,7 @@ app.*.map.json
 /android/debug.keystore
 /android/key.properties
 /supabase/functions/service-account.json
+/supabase/config.toml
 /lib/firebase_options.dart
 sentry.properties
 sentry-wizard.exe

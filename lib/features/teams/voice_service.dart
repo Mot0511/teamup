@@ -56,7 +56,7 @@ class VoiceService {
       }
     });
 
-    final ip = await getServerIP(uid, roomID);
+    final ip = await getServerIP();
     await room!.connect(
       'ws://$ip:7880',
       token,
@@ -72,6 +72,7 @@ class VoiceService {
 
   Future<void> setIsVoiceOn(bool value) async {
     await room?.localParticipant?.setMicrophoneEnabled(value);
+    isVoiceOn = value;
   }
 
   Future<void> setIsSoundOn(bool value) async {
@@ -82,6 +83,7 @@ class VoiceService {
         } else {
           track.disable();
         }
+        isSoundOn = value;
       }
     }
   }

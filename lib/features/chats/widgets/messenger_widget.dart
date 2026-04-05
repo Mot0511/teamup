@@ -58,10 +58,10 @@ class _MessengerWidgetState extends State<MessengerWidget> {
     final uid = supabase.auth.currentUser?.id;
     if (uid == null) return;
     messages = await chatsRepository.getMessages(uid, widget.chat.id);
+    _sortMessagesInPlace();
     setMessagesReaded(uid);
     setState(() {});
     scrollToBottom();
-    sortMessages();
   }
 
   Future<void> setMessagesReaded(String uid) async {
@@ -235,43 +235,68 @@ class _MessengerWidgetState extends State<MessengerWidget> {
     }
   }
 
+  /// Прокрутка вниз после того, как [ListView] отрисовал элементы и посчитал высоту.
   void scrollToBottom() {
-    if (scrollController.hasClients) {
-      Future.delayed(Duration(milliseconds: 20)).then((_) => scrollController.jumpTo(scrollController.position.maxScrollExtent));
-      return;
+    void jumpToEnd() {
+      if (!mounted || !scrollController.hasClients) return;
+      final max = scrollController.position.maxScrollExtent;
+      scrollController.jumpTo(max);
     }
-    Future.delayed(Duration(milliseconds: 1)).then((val) => scrollToBottom());
+
+    void afterLayout() {
+      if (!mounted) return;
+      if (!scrollController.hasClients) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => afterLayout());
+        return;
+      }
+      jumpToEnd();
+      // Второй кадр: у сообщений переменная высота (текст, картинки) — maxScrollExtent
+      // может увеличиться после первого layout.
+      WidgetsBinding.instance.addPostFrameCallback((_) => jumpToEnd());
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => afterLayout());
   }
 
   void scrollToBottomAnimated() {
-    if (scrollController.hasClients) {
-      if (messages!.isNotEmpty && scrollController.position.pixels == scrollController.position.maxScrollExtent) {
-        Future.delayed(Duration(milliseconds: 30)).then((val) {
-          if (mounted) {
-            scrollController.animateTo(
-              scrollController.position.maxScrollExtent,
-              duration: Duration(milliseconds: 250),
-              curve: Curves.ease,
-            );
-          }
-        });
+    void animate() {
+      if (!mounted || !scrollController.hasClients || messages == null || messages!.isEmpty) {
+        return;
       }
+      final max = scrollController.position.maxScrollExtent;
+      scrollController.animateTo(
+        max,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.ease,
+      );
     }
 
-    Future.delayed(Duration(milliseconds: 1)).then((val) => scrollToBottomAnimated());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (!scrollController.hasClients) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => animate());
+      } else {
+        animate();
+      }
+    });
+  }
+
+  void _sortMessagesInPlace() {
+    if (messages == null) return;
+    for (int i = 0; i < messages!.length - 1; i++) {
+      for (int j = 0; j < messages!.length - i - 1; j++) {
+        if (messages![j].time.millisecondsSinceEpoch > messages![j + 1].time.millisecondsSinceEpoch) {
+          final Message tmp = messages![j];
+          messages![j] = messages![j + 1];
+          messages![j + 1] = tmp;
+        }
+      }
+    }
   }
 
   void sortMessages() {
     if (messages != null) {
-      for (int i = 0; i < messages!.length - 1; i++) {
-        for (int j = 0; j < messages!.length - i - 1; j++) {
-          if (messages![j].time.millisecondsSinceEpoch > messages![j + 1].time.millisecondsSinceEpoch) {
-            Message tmp = messages![j];
-            messages![j] = messages![j + 1];
-            messages![j + 1] = tmp;
-          }
-        }
-      }
+      _sortMessagesInPlace();
       setState(() {});
     }
   }
@@ -309,10 +334,10 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                       itemBuilder: (context, i) {
                         return Column(
                           children: [
-                            if (i > 0 && (messages![i].time.day != messages![i - 1].time.day ||
-                              messages![i].time.month != messages![i - 1].time.month ||
-                              messages![i].time.year != messages![i - 1].time.year)
-                            )
+                            if (i == 0 || i > 0 && 
+                              (messages![i].time.day != messages![i - 1].time.day || 
+                              messages![i].time.month != messages![i - 1].time.month || 
+                              messages![i].time.year != messages![i - 1].time.year))
                             Center(
                               child: Text(
                                 '${messages![i].time.day.toString().padLeft(2, '0')}.${messages![i].time.month.toString().padLeft(2, '0')}.${messages![i].time.year}',

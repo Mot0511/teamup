@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
@@ -26,22 +27,22 @@ void main() async {
     WidgetsFlutterBinding.ensureInitialized();
     if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
       setWindowTitle('Teamup');
-      setWindowMinSize(const Size(540, 810));
-      setWindowMaxSize(const Size(540, 810));
+      setWindowMinSize(const Size(540, 910));
+      setWindowMaxSize(const Size(540, 910));
     }
 
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-
+    if (Platform.isAndroid) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
+    
     await Supabase.initialize(
       url: env.SUPABASE_URL,
-      anonKey: env.SUPABASE_SERVICE_ROLE_KEY,
+      anonKey: env.SUPABASE_ANON_KEY,
     );
-
     
     GetIt.I.registerSingleton(Supabase.instance.client);
-
     GetIt.I.registerSingleton(UserRepository());
     GetIt.I.registerSingleton(TeamsRepository());
     GetIt.I.registerSingleton(AnalyticsRepository());
@@ -53,7 +54,6 @@ void main() async {
     GetIt.I.registerSingleton(TeamsBloc(teamsRepository: GetIt.I<TeamsRepository>()));
     GetIt.I.registerSingleton(SearchBloc(searchRepository: GetIt.I<SearchRepository>()));
     GetIt.I.registerSingleton(await SharedPreferences.getInstance());
-
     final notificationsService = NotificationsService();
     // if (!kIsWeb && Platform.isAndroid) {
     //   await notificationService.init();
@@ -79,7 +79,7 @@ void main() async {
             ChangeNotifierProvider<NotificationsProvider>(create: (context) => NotificationsProvider()),
             ChangeNotifierProvider<HomeProvider>(create: (context) => HomeProvider()),
           ],
-          child: Teamup(),
+          child: Teamup()
         )
       ),
     ),

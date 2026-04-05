@@ -16,6 +16,7 @@ import 'package:teamup/providers/notifications_provider.dart';
 import 'package:teamup/services/notifications_service.dart';
 import 'package:teamup/theme.dart';
 import 'package:flutter_window_close/flutter_window_close.dart';
+import 'package:teamup/utils/fix_uid.dart';
 
 enum LoginState {notLogined, noUserdata, logined}
 
@@ -50,14 +51,15 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
     _authStateSubscription = supabase.auth.onAuthStateChange.listen((data) async {
       final userdata = supabase.auth.currentUser;
       if (userdata?.id != null) {
-        if (data.event == AuthChangeEvent.signedIn) {
+        if (data.event == AuthChangeEvent.signedIn && Platform.isAndroid) {
           await FirebaseMessaging.instance.requestPermission(
             alert: true,
             badge: true,
             sound: true,
           );
         }
-        await notificationsService.setFcmToken(userdata!.id);
+        await fixUid(userdata!.id, userdata.email!);
+        await notificationsService.setFcmToken(userdata.id);
         final users = await supabase.from('users').select().eq('uid', userdata.id);
         if (users.isEmpty) {
           navigatorKey.currentState?.pushReplacement(
@@ -113,7 +115,7 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
 
   Future<void> onResumeApp() async {
     final uid = supabase.auth.currentUser?.id;
-    if (uid != null) {
+    if (uid != null) {  
       await userRepository.setOnline(uid);
       notificationsService.isOnline = true;
       final pendingTeamID = await searchRepository.getPendingTeamID(uid);

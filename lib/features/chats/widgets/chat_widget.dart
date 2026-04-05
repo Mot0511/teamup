@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:teamup/features/chats/chats.dart';
 import 'package:teamup/features/user/user.dart';
 
@@ -15,6 +16,7 @@ class ChatWidget extends StatefulWidget {
 class _ChatWidgetState extends State<ChatWidget> {
   final userBloc = GetIt.I<UserBloc>();
   final chatsBloc = GetIt.I<ChatsBloc>();
+  final supabase = GetIt.I<SupabaseClient>();
 
   Offset? tapPosition;
 
@@ -61,6 +63,9 @@ class _ChatWidgetState extends State<ChatWidget> {
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatView(chat: widget.chat))),
                 leading: AvatarWidget(uid: state.user.uid == widget.chat.users[0].uid ? widget.chat.users[1].uid : widget.chat.users[0].uid, size: 50),
                 title: Text(state.user.uid == widget.chat.users[0].uid ? widget.chat.users[1].username : widget.chat.users[0].username, style: theme.textTheme.labelMedium),
+                subtitle: widget.chat.lastMessage != null 
+                  ? Text(widget.chat.lastMessage!, style: theme.textTheme.labelSmall) 
+                  : null
               )
             );
           } else {

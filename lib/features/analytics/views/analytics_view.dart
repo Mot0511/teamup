@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get_it/get_it.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:teamup/features/analytics/analytics.dart';
 
 class AnalyticsView extends StatefulWidget {
@@ -14,21 +15,30 @@ class _AnalyticsViewState extends State<AnalyticsView> {
 
   AnalyticsResults? analytics;
   final analytcsRepository = GetIt.I<AnalyticsRepository>();
+  final prefs = GetIt.I<SharedPreferences>();
   int? period;
+
+  int? newUsersDelta;
 
   Future<void> loadAnalytics({int? period}) async {
     analytics = null;
     this.period = period;
     setState(() {});
     analytics = await analytcsRepository.getAnalytics(period);
-    print(analytics);
+    analytics!.usersCount += 1;
+    final lastSeenUsersCount = prefs.getInt('lastSeenUsersCount');
+    if (lastSeenUsersCount != null && lastSeenUsersCount != analytics!.usersCount) {
+      newUsersDelta = analytics!.usersCount - lastSeenUsersCount;
+      await prefs.setInt('lastSeenUsersCount', analytics!.usersCount);
+    }
+
     setState(() {});
   }
 
   void initState() {
     super.initState();
 
-    loadAnalytics();
+    loadAnalytics(period: 604800000);
   }
 
   @override
@@ -53,7 +63,15 @@ class _AnalyticsViewState extends State<AnalyticsView> {
                   ], 
                   onChanged: (value) => loadAnalytics(period: value)
                 ),
-                Text(analytics!.usersCount.toString(), style: theme.textTheme.displayMedium),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(analytics!.usersCount.toString(), style: theme.textTheme.displayMedium),
+                    if (newUsersDelta != null)
+                    Text('+$newUsersDelta', style: theme.textTheme.titleLarge?.copyWith(color: theme.primaryColor)),
+                  ],
+                ),
                 Text('пользователей в приложении', style: theme.textTheme.titleMedium),
                 SizedBox(height: 30),
                 Text(analytics!.signUpCount.toString(), style: theme.textTheme.displayMedium),

@@ -1,5 +1,5 @@
 class AnalyticsResults {
-  final int usersCount;
+  int usersCount;
   final int signUpCount;
   final int openAppCount;
   final int openTeamScreen;

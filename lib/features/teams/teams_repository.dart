@@ -84,6 +84,7 @@ class TeamsRepository {
     }
     await supabase.from('members').delete().eq('member', uid).eq('chat', team.id);
     await supabase.from('messages').delete().eq('chat', team.id);
+    await supabase.storage.from('main').remove(['team_icons/${team.id}.png']);
   }
 
   Future<void> join(int teamId) async {

@@ -22,9 +22,11 @@ class ChatsRepository {
       final chat = row['chat'];
       if (chat == null) continue;
       final members = await supabase.from('members').select('member(*, favouriteGame(*))').eq('chat', chat['id']);
+      final lastMessage = await supabase.from('messages').select('text').eq('chat', chat['id']).order('id', ascending: false).limit(1);
       chats.add(Chat(
         id: chat['id'],
         users: members.map((member) => models.User.fromJSON(member['member'])).toList(),
+        lastMessage: lastMessage.isNotEmpty ? lastMessage[0]['text'] : null
       ));
     }
     return chats;
