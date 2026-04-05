@@ -2,9 +2,10 @@ import 'package:teamup/features/user/user.dart';
 
 class Chat {
   final int id;
-  List<User> users;
+  List users;
+  String? lastMessage;
 
-  Chat({required this.id, required this.users});
+  Chat({required this.id, required this.users, this.lastMessage});
 
   factory Chat.fromJSON(Map data) {
     return Chat(

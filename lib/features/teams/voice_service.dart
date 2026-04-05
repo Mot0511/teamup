@@ -31,7 +31,6 @@ class VoiceService {
           noiseSuppression: true,
           autoGainControl: true,
           highPassFilter: true,
-          
         ),
       ),
     );
@@ -57,7 +56,7 @@ class VoiceService {
       }
     });
 
-    final ip = await getServerIP(uid, roomID);
+    final ip = await getServerIP();
     await room!.connect(
       'ws://$ip:7880',
       token,
@@ -73,18 +72,20 @@ class VoiceService {
 
   Future<void> setIsVoiceOn(bool value) async {
     await room?.localParticipant?.setMicrophoneEnabled(value);
+    isVoiceOn = value;
   }
 
   Future<void> setIsSoundOn(bool value) async {
-    // for (RemoteParticipant participant in room!.remoteParticipants.values) {
-    //   for (RemoteTrackPublication track in participant.audioTrackPublications) {
-    //     if (value) {
-    //       track.enable();
-    //     } else {
-    //       track.disable();
-    //     }
-    //   }
-    // }
+    for (RemoteParticipant participant in room!.remoteParticipants.values) {
+      for (RemoteTrackPublication track in participant.audioTrackPublications) {
+        if (value) {
+          track.enable();
+        } else {
+          track.disable();
+        }
+        isSoundOn = value;
+      }
+    }
   }
 
   Future<void> disconnect() async {

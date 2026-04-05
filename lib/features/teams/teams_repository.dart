@@ -4,30 +4,44 @@ import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:teamup/features/teams/teams.dart';
 import 'package:teamup/features/user/models/models.dart' as models;
+import 'package:teamup/models/game.dart';
 
 class TeamsRepository {
   final supabase = GetIt.I<SupabaseClient>();
 
   final Map<int, ImageProvider> iconProviders = {};
 
-  Future<List<Team>> getTeams(String uid) async {
-    final data = await supabase
-      .from('members')
-      .select('chat(*)')
-      .eq('member', uid)
-      .eq('chat.is_team', true);
-
-      
+  Future<List<Team>> getTeams([String? uid]) async {
+    var data;
+    if (uid != null) {
+      data = await supabase
+        .from('members')
+        .select('chat(*, game(*))')
+        .eq('member', uid)
+        .eq('chat.is_team', true);
+    } else {
+      data = await supabase
+        .from('members')
+        .select('chat(*, game(*))')
+        .eq('chat.is_public', true)
+        .eq('chat.is_team', true);
+    }
+    
     final List<Team> teams = [];
+    final List<int> added = [];
     for (Map row in data) {
       final team = row['chat'];
       if (team == null) continue;
+      if (added.contains(team['id'])) continue;
       final members = await supabase.from('members').select('member(*, favouriteGame(*))').eq('chat', team['id']);
       teams.add(Team(
         id: team['id'],
         users: members.map((member) => models.User.fromJSON(member['member'])).toList(),
-        name: team['name']
+        name: team['name'],
+        isPublic: team['is_public'],
+        game: team['game'] != null ? Game.fromJSON(team['game']) : null
       ));
+      added.add(team['id']);
     }
     return teams;
   }
@@ -38,7 +52,8 @@ class TeamsRepository {
     return Team(
       id: id,
       users: members.map((member) => models.User.fromJSON(member['member'])).toList(),
-      name: teams_data['name']
+      name: teams_data['name'],
+      isPublic: teams_data['is_public']
     );
   }
 
@@ -64,11 +79,21 @@ class TeamsRepository {
   }
 
   Future<void> removeTeam(Team team, String uid) async {
-    await supabase.from('members').delete().eq('member', uid).eq('chat', team.id);
     if (team.users.length == 1) {
       await supabase.from('chats').delete().eq('id', team.id);
     }
+    await supabase.from('members').delete().eq('member', uid).eq('chat', team.id);
     await supabase.from('messages').delete().eq('chat', team.id);
+    await supabase.storage.from('main').remove(['team_icons/${team.id}.png']);
+  }
+
+  Future<void> join(int teamId) async {
+    final String? uid = supabase.auth.currentUser?.id;
+    if (uid == null) return;
+    await supabase.from('members').insert([{
+      'member': uid,
+      'chat': teamId
+    }]);
   }
 
   Future<ImageProvider> getIcon(int id) async {

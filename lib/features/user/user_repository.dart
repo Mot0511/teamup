@@ -58,7 +58,7 @@ class UserRepository {
       } else  {
         final loginUrl = (await supabase.auth.getOAuthSignInUrl(
           provider: sb.OAuthProvider.google,
-          redirectTo: "https://flvcuqostwctdicmncrb.supabase.co/auth/v1/callback"
+          redirectTo: "https://api.teamupp.ru/auth/v1/callback"
         )).url;
 
         final result = await FlutterWebAuth2.authenticate(
@@ -87,13 +87,13 @@ class UserRepository {
     } else {
       final loginUrl = (await supabase.auth.getOAuthSignInUrl(
         provider: sb.OAuthProvider.discord,
-        redirectTo: "https://flvcuqostwctdicmncrb.supabase.co/auth/v1/callback"
+        redirectTo: "https://api.teamupp.ru/auth/v1/callback"
       )).url;
 
       try {
         final result = await FlutterWebAuth2.authenticate(
           url: loginUrl,
-          callbackUrlScheme: "http://localhost:3000",
+          callbackUrlScheme: "http://localhost:3000", 
           options: FlutterWebAuth2Options(useWebview: false)
         );
         await supabase.auth.getSessionFromUrl(Uri.parse(result));
@@ -133,6 +133,16 @@ class UserRepository {
   Future<User> getUserdata(String uid) async {
     final userdata = await supabase.from('users').select('*, favouriteGame(*)').eq('uid', uid).single();
     return User.fromJSON(userdata);
+  }
+
+  Future<List<User>> getUsersByChat(int teamID) async {
+    final data = await supabase
+      .from('members')
+      .select('member(*, favouriteGame(*))')
+      .eq('chat', teamID);
+    
+    final List<User> users = data.map((userdata) => User.fromJSON(userdata)).toList();
+    return users;
   }
 
   Future<bool> isUsernameExists(String username) async {

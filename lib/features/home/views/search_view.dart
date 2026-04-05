@@ -13,20 +13,90 @@ class AllUsersView extends StatefulWidget {
 }
 
 class _AllUsersViewState extends State<AllUsersView> {
+  static const int _pageSize = 15;
 
   List<User>? users;
-  final searchRepository = GetIt.I<SearchRepository>();
+  bool _hasMore = true;
+  bool _isLoadingMore = false;
+  int _listGeneration = 0;
+  String _searchText = '';
 
-  Future<void> getUsers([String? request]) async {
-    users = await searchRepository.getUsers(request);
-    setState(() {});
+  final searchRepository = GetIt.I<SearchRepository>();
+  final ScrollController _scrollController = ScrollController();
+
+  Future<void> _loadUsers({String? request, bool append = false}) async {
+    if (append) {
+      if (_isLoadingMore || !_hasMore || users == null) return;
+      final gen = _listGeneration;
+      final offset = users!.length;
+      _isLoadingMore = true;
+      setState(() {});
+
+      try {
+        final next = await searchRepository.getUsersPage(
+          request: _searchText.isEmpty ? null : _searchText,
+          offset: offset,
+          limit: _pageSize,
+        );
+        if (!mounted || gen != _listGeneration) return;
+        if (next.isEmpty) {
+          _hasMore = false;
+        } else {
+          users!.addAll(next);
+          if (next.length < _pageSize) _hasMore = false;
+        }
+      } finally {
+        _isLoadingMore = false;
+        if (mounted) setState(() {});
+      }
+      return;
+    }
+
+    _listGeneration++;
+    final gen = _listGeneration;
+    final q = request ?? '';
+    _searchText = q;
+
+    setState(() {
+      users = null;
+      _hasMore = true;
+    });
+
+    final first = await searchRepository.getUsersPage(
+      request: q.isEmpty ? null : q,
+      offset: 0,
+      limit: _pageSize,
+    );
+    if (!mounted || gen != _listGeneration) return;
+
+    setState(() {
+      users = first;
+      _hasMore = first.length >= _pageSize;
+    });
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients || _isLoadingMore || !_hasMore || users == null) {
+      return;
+    }
+    final pos = _scrollController.position;
+    if (pos.pixels >= pos.maxScrollExtent - 280) {
+      _loadUsers(append: true);
+    }
   }
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
+    _loadUsers(request: '');
+  }
 
-    getUsers();
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -46,14 +116,30 @@ class _AllUsersViewState extends State<AllUsersView> {
               ),
               style: theme.textTheme.labelMedium,
               maxLines: 1,
-              onChanged: getUsers,
+              onChanged: (value) => _loadUsers(request: value),
             ),
             SizedBox(height: 20),
             Expanded(
               child: users != null
-                ? ListView(
-                  children: users!.map((user) => UserWidget(user: user)).toList()
-                )
+                ? ListView.builder(
+                    controller: _scrollController,
+                    itemCount: users!.length + (_isLoadingMore && _hasMore ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == users!.length) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Center(
+                            child: SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                        );
+                      }
+                      return UserWidget(user: users![index]);
+                    },
+                  )
                 : ListView.builder(
                     itemCount: 3 + Random().nextInt(5),
                     itemBuilder: (context, state) => 

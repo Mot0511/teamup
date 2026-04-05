@@ -51,21 +51,6 @@ class _EditProfileViewState extends State<EditProfileView> {
     setState(() {});
   }
 
-  void pickAvatarHandler() async {
-    final FilePickerResult? result = await FilePicker.platform.pickFiles(
-      dialogTitle: 'Выбор аватарки',
-      type: FileType.custom,
-      allowedExtensions: ['png', 'jpg'],
-    );
-
-    if (result != null) {
-      choosenAvatarBytes = Uint8List.fromList(result.files.first.bytes!);
-      setState(() {});
-      userRepository.updateAvatarCache(widget.user.uid, MemoryImage(choosenAvatarBytes!));
-      userRepository.uploadAvatar(choosenAvatarBytes!, widget.user.uid);
-    }
-  }
-
   void saveChangesHandler(context) async {
     final username = usernameController.text.trim();
     final age = ageController.text.trim();
@@ -113,58 +98,46 @@ class _EditProfileViewState extends State<EditProfileView> {
       appBar: AppBar(title: Text('Изменение профиля')),
       body: Padding(
         padding: EdgeInsets.all(20),
-        child: ListView(
+        child: Column(
           children: [
-            Center(
-              child: Column(
-                children: [
-                  AvatarWidget(
-                    uid: widget.user.uid, 
-                    image: choosenAvatarBytes != null ? MemoryImage(choosenAvatarBytes!) : null
-                  ),
-                  OutlinedButton(
-                    onPressed: pickAvatarHandler,
-                    child: Text('Изменить аватарку'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white
-                    ),
-                  ),
-                ],
-              )
-            ),
-            SizedBox(height: 20),
-            Field(title: 'Имя пользователя', controller: usernameController, error: usernameError),
-            Field(title: 'Описание профиля', controller: descriptionController, maxLines: 5),
-            Field(title: 'Возраст', controller: ageController, error: ageError),
-            Text('Пол:', style: theme.textTheme.labelLarge),
-            DropdownButton(
-              isExpanded: true,
-              value: gender,
-              items: [
-                DropdownMenuItem(child: Text('Мужской'), value: 'male'),
-                DropdownMenuItem(child: Text('Женский'), value: 'female')
-              ], 
-              onChanged: (value) => setState(() => gender = (value as String))
-            ),
-            SizedBox(height: 20),
-            games != null
-              ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Любимая игра:', style: theme.textTheme.labelLarge),
-                  GameWidget(game: games!.firstWhere((game) => game.id == choosenGame), onTap: onChooseGame)
-                ],
-              )
-              : ShimmerWidget(height: 30),
-              Align(
-                alignment: Alignment.centerRight,
-                child: ElevatedButton(
-                  onPressed: () => saveChangesHandler(context), 
-                  child: Text('Сохранить', style: theme.textTheme.labelMedium)
+            Expanded(
+              child: ListView(
+              children: [
+                Field(title: 'Имя пользователя', controller: usernameController, error: usernameError),
+                Field(title: 'Описание профиля', controller: descriptionController, maxLines: 5),
+                Field(title: 'Возраст', controller: ageController, error: ageError),
+                Text('Пол:', style: theme.textTheme.labelLarge),
+                DropdownButton(
+                  isExpanded: true,
+                  value: gender,
+                  items: [
+                    DropdownMenuItem(child: Text('Мужской'), value: 'male'),
+                    DropdownMenuItem(child: Text('Женский'), value: 'female')
+                  ], 
+                  onChanged: (value) => setState(() => gender = (value as String))
                 ),
-              )
+                SizedBox(height: 20),
+                games != null
+                  ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Любимая игра:', style: theme.textTheme.labelLarge),
+                      GameWidget(game: games!.firstWhere((game) => game.id == choosenGame), onTap: onChooseGame)
+                    ],
+                  )
+                  : ShimmerWidget(height: 30),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: ElevatedButton(
+                      onPressed: () => saveChangesHandler(context), 
+                      child: Text('Сохранить', style: theme.textTheme.labelMedium)
+                    ),
+                  )
+              ],
+            ),
+            )
           ],
-        ),
+        )
       )
     );
   }

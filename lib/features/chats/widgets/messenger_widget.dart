@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:teamup/features/chats/chats.dart';
+import 'package:teamup/features/teams/teams.dart';
 import 'package:teamup/widgets/shimmer_widget.dart';
 import 'package:teamup/features/user/user.dart';
 
@@ -21,6 +22,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
   final supabase = GetIt.I<SupabaseClient>();
   final userBloc = GetIt.I<UserBloc>();
   final chatsRepository = GetIt.I<ChatsRepository>();
+  final teamsRepository = GetIt.I<TeamsRepository>();
 
   final messageController = TextEditingController();
   final focusNode = FocusNode();
@@ -34,22 +36,32 @@ class _MessengerWidgetState extends State<MessengerWidget> {
   String tmpMessage = '';
   Uint8List? attachmentBytes;
 
+  bool isMember = false;
+
 
   @override
   void initState() {
     super.initState();
+    checkIsMember();
     loadMessages();
     listenMessages();
+  }
+
+  void checkIsMember() {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) return;
+    isMember = widget.chat.users.map((user) => user.uid).toList().contains(uid);
+    setState(() {});
   }
 
   Future<void> loadMessages() async {
     final uid = supabase.auth.currentUser?.id;
     if (uid == null) return;
     messages = await chatsRepository.getMessages(uid, widget.chat.id);
+    _sortMessagesInPlace();
     setMessagesReaded(uid);
     setState(() {});
     scrollToBottom();
-    sortMessages();
   }
 
   Future<void> setMessagesReaded(String uid) async {
@@ -57,83 +69,68 @@ class _MessengerWidgetState extends State<MessengerWidget> {
     for (Message message in messages!) {
       if (message.user.uid != uid && !message.isReaded) {
         await chatsRepository.setReaded(uid, message.id, widget.chat.id);
+        channel.sendBroadcastMessage(event: 'readed-message', payload: {'messageID': message.id});
       }
     }
   }
 
   void listenMessages() {
-    channel = supabase.channel('new-messages-channel');
-    final filter = PostgresChangeFilter(
-      type: PostgresChangeFilterType.eq,
-      column: 'chat',
-      value: widget.chat.id,
-    );
-
-    channel.onPostgresChanges(
-      table: 'messages',
-      filter: filter,
-      event: PostgresChangeEvent.insert,
+    channel = supabase.channel('chat-${widget.chat.id}');
+    
+    channel.onBroadcast(
+      event: 'new-message',
       callback: (payload) async {
         final uid = supabase.auth.currentUser!.id;
-        if (payload.newRecord['sender'] == uid) return;
+        if (payload['sender'] == uid) return;
         final sender = widget.chat.users
-            .where((user) => user.uid == payload.newRecord['sender'])
+            .where((user) => user.uid == payload['sender'])
             .toList()[0];
-        payload.newRecord['sender'] = sender.toJSON();
-        if (payload.newRecord['attachmentBytes'] != null) {
-          payload.newRecord['attachmentBytes'] = await chatsRepository.getAttachment(payload.newRecord['attachmentBytes']);
+        payload['sender'] = sender.toJSON();
+        if (payload['attachment'] != null) {
+          payload['attachment'] = await chatsRepository.getAttachment(payload['attachment']);
         }
-        await chatsRepository.setReaded(uid, payload.newRecord['id'], widget.chat.id);
-        messages?.add(Message.fromJSON(payload.newRecord, true));
+        await chatsRepository.setReaded(uid, payload['id'], widget.chat.id);
+        messages?.add(Message.fromJSON(payload, true));
         setState(() {});
         scrollToBottomAnimated();
         sortMessages();
       },
     );
 
-    channel.onPostgresChanges(
-      table: 'messages',
-      filter: filter,
-      event: PostgresChangeEvent.update,
+    channel.onBroadcast(
+      event: 'edit-message',
       callback: (payload) async {
-        for (int i = 0; i < messages!.length; i++) {
-          if (messages![i].id == payload.newRecord['id']) {
-            final sender = widget.chat.users
-                .where((user) => user.uid == payload.newRecord['sender'])
-                .toList()[0];
-            if (payload.newRecord['attachmentBytes'] != null) {
-              payload.newRecord['attachmentBytes'] = await chatsRepository.getAttachment(payload.newRecord['attachmentBytes']);
+        if (messages != null) {
+          for (int i = messages!.length - 1; i >= 0; i--) {
+            final message = messages![i];
+            if (message.id == payload['messageID']) {
+              message.text = payload['text'];
+              break;
             }
-            payload.newRecord['sender'] = sender.toJSON();
-            messages![i] = Message.fromJSON(payload.newRecord, true);
           }
+          setState(() {});
         }
-        setState(() {});
       },
     );
 
-    channel.onPostgresChanges(
-      table: 'messages',
-      filter: filter,
-      event: PostgresChangeEvent.delete,
+    channel.onBroadcast(
+      event: 'delete-message', 
       callback: (payload) {
         messages = messages
-            ?.where((message) => message.id != payload.oldRecord['id'])
+            ?.where((message) => message.id != payload['messageID'])
             .toList();
         setState(() {});
         sortMessages();
       },
     );
 
-    channel.onPostgresChanges(
-      table: 'readed_messages',
-      filter: filter,
-      event: PostgresChangeEvent.insert,
+    channel.onBroadcast(
+      event: 'readed-message',
       callback: (payload) {
         if (messages == null) return;
         for (int i = messages!.length - 1; i >= 0; i--) {
           final Message message = messages![i];
-          if (message.id == payload.newRecord['message']) {
+          if (message.id == payload['messageID']) {
             message.isReaded = true;
             setState(() {});
             break;
@@ -149,6 +146,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
   void onSendMessage() {
     final text = messageController.text.trim();
     if (text == '' && attachmentBytes == null) return;
+
     final message = Message(
       id: DateTime.now().millisecondsSinceEpoch,
       chatId: widget.chat.id,
@@ -160,8 +158,12 @@ class _MessengerWidgetState extends State<MessengerWidget> {
       isReaded: false
     );
     chatsRepository.sendMessage(message, attachmentBytes);
-    message.time = message.time.toLocal();
     messages?.add(message);
+    channel.sendBroadcastMessage(
+      event: 'new-message', 
+      payload: message.toJSON()
+    );
+
     attachmentBytes = null;
     setState(() {});
     messageController.text = '';
@@ -179,6 +181,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
       break;
     }
     chatsRepository.editMessage(editingMessage!.id, text);
+    channel.sendBroadcastMessage(event: 'edit-message', payload: {'messageID': editingMessage!.id, 'text': text});
     editingMessage = null;
     messageController.text = tmpMessage;
     setState(() {});
@@ -215,6 +218,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
     setState(() {});
     sortMessages();
     chatsRepository.deleteMessage(message);
+    channel.sendBroadcastMessage(event: 'delete-message', payload: {'messageID': message.id});
   }
 
   void onAttachImage() async {
@@ -222,6 +226,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
       dialogTitle: 'Выбор изображения',
       type: FileType.custom,
       allowedExtensions: ['png', 'jpg'],
+      withData: true
     );
 
     if (result != null) {
@@ -230,43 +235,78 @@ class _MessengerWidgetState extends State<MessengerWidget> {
     }
   }
 
+  /// Прокрутка вниз после того, как [ListView] отрисовал элементы и посчитал высоту.
   void scrollToBottom() {
-    if (scrollController.hasClients) {
-      Future.delayed(Duration(milliseconds: 20)).then((_) => scrollController.jumpTo(scrollController.position.maxScrollExtent));
-      return;
+    void jumpToEnd() {
+      if (!mounted || !scrollController.hasClients) return;
+      final max = scrollController.position.maxScrollExtent;
+      scrollController.jumpTo(max);
     }
-    Future.delayed(Duration(milliseconds: 1)).then((val) => scrollToBottom());
+
+    void afterLayout() {
+      if (!mounted) return;
+      if (!scrollController.hasClients) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => afterLayout());
+        return;
+      }
+      jumpToEnd();
+      // Второй кадр: у сообщений переменная высота (текст, картинки) — maxScrollExtent
+      // может увеличиться после первого layout.
+      WidgetsBinding.instance.addPostFrameCallback((_) => jumpToEnd());
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => afterLayout());
   }
 
   void scrollToBottomAnimated() {
-    if (scrollController.hasClients) {
-      if (messages!.isNotEmpty && scrollController.position.pixels == scrollController.position.maxScrollExtent) {
-        Future.delayed(Duration(milliseconds: 30)).then((val) {
-          scrollController.animateTo(
-            scrollController.position.maxScrollExtent,
-            duration: Duration(milliseconds: 250),
-            curve: Curves.ease,
-          );
-        });
+    void animate() {
+      if (!mounted || !scrollController.hasClients || messages == null || messages!.isEmpty) {
+        return;
       }
+      final max = scrollController.position.maxScrollExtent;
+      scrollController.animateTo(
+        max,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.ease,
+      );
     }
 
-    Future.delayed(Duration(milliseconds: 1)).then((val) => scrollToBottomAnimated());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (!scrollController.hasClients) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => animate());
+      } else {
+        animate();
+      }
+    });
+  }
+
+  void _sortMessagesInPlace() {
+    if (messages == null) return;
+    for (int i = 0; i < messages!.length - 1; i++) {
+      for (int j = 0; j < messages!.length - i - 1; j++) {
+        if (messages![j].time.millisecondsSinceEpoch > messages![j + 1].time.millisecondsSinceEpoch) {
+          final Message tmp = messages![j];
+          messages![j] = messages![j + 1];
+          messages![j + 1] = tmp;
+        }
+      }
+    }
   }
 
   void sortMessages() {
     if (messages != null) {
-      for (int i = 0; i < messages!.length - 1; i++) {
-        for (int j = 0; j < messages!.length - i - 1; j++) {
-          if (messages![j].time.millisecondsSinceEpoch > messages![j + 1].time.millisecondsSinceEpoch) {
-            Message tmp = messages![j];
-            messages![j] = messages![j + 1];
-            messages![j + 1] = tmp;
-          }
-        }
-      }
+      _sortMessagesInPlace();
       setState(() {});
     }
+  }
+
+  Future<void> onJoin() async {
+    await teamsRepository.join(widget.chat.id);
+    isMember = true;
+    final user = (userBloc.state as UserStateLoaded).user;
+    widget.chat.users.add(user);
+    setState(() {});
   }
 
   @override
@@ -294,10 +334,10 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                       itemBuilder: (context, i) {
                         return Column(
                           children: [
-                            if (i > 0 && (messages![i].time.day != messages![i - 1].time.day ||
-                              messages![i].time.month != messages![i - 1].time.month ||
-                              messages![i].time.year != messages![i - 1].time.year)
-                            )
+                            if (i == 0 || i > 0 && 
+                              (messages![i].time.day != messages![i - 1].time.day || 
+                              messages![i].time.month != messages![i - 1].time.month || 
+                              messages![i].time.year != messages![i - 1].time.year))
                             Center(
                               child: Text(
                                 '${messages![i].time.day.toString().padLeft(2, '0')}.${messages![i].time.month.toString().padLeft(2, '0')}.${messages![i].time.year}',
@@ -444,6 +484,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                           ],
                         ),
                       ),
+                    if (isMember)
                     Container(
                       color: theme.canvasColor,
                       child: Padding(
@@ -491,6 +532,13 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                               ),
                           ],
                         ),
+                      )
+                    )
+                    else
+                    Center(
+                      child: Padding(
+                        padding: EdgeInsets.only(bottom: 10),
+                        child: ElevatedButton(onPressed: onJoin, child: Text('Присоединиться к чату', style: theme.textTheme.labelMedium)),
                       )
                     )
                   ],

@@ -53,10 +53,10 @@ class TeamsBloc extends Bloc<TeamsEvent, TeamsState> {
     on<RemoveTeam>((event, emit) async {
       if (state is TeamsStateLoaded) {
         try {
-          final List<Team> chats = (state as TeamsStateLoaded).teams;
+          List<Team> chats = (state as TeamsStateLoaded).teams;
           await teamsRepository.removeTeam(event.team, event.uid);
           emit(TeamsStateInitial());
-          chats.remove(event.team);
+          chats = chats.where((chat) => chat.id != event.team.id).toList();
           emit(TeamsStateLoaded(teams: chats));
         } on Exception catch (e) {
           emit(TeamsStateError(e: e));
