@@ -26,7 +26,7 @@ class ChatsRepository {
       chats.add(Chat(
         id: chat['id'],
         users: members.map((member) => models.User.fromJSON(member['member'])).toList(),
-        lastMessage: lastMessage.isNotEmpty ? lastMessage[0]['text'] : null
+        lastMessage: lastMessage.isNotEmpty ? lastMessage[0]['text'] != '' ? lastMessage[0]['text'] : 'Картинка' : null
       ));
     }
     return chats;

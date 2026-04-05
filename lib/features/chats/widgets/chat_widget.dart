@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:teamup/features/chats/chats.dart';
 import 'package:teamup/features/user/user.dart';
 
@@ -47,31 +47,28 @@ class _ChatWidgetState extends State<ChatWidget> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    late User other;
+    if (widget.chat.users.isNotEmpty) {
+      other = supabase.auth.currentUser?.id == widget.chat.users[0] ? widget.chat.users[1] : widget.chat.users[0];
+    }
+    
     return Dismissible(
       key: Key(widget.chat.id.toString()),
       direction: DismissDirection.endToStart,
       background: Container(color: theme.colorScheme.error),
       onDismissed: (direction) => removeChat(),
-      child: BlocBuilder<UserBloc, UserState>(
-        bloc: userBloc,
-        builder: (context, state) {
-          if (state is UserStateLoaded) {
-            return GestureDetector(
-              onTapDown: (details) => setState(() => tapPosition = details.globalPosition),
-              onLongPress: () => showContextMenu(context),
-              child: ListTile(
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatView(chat: widget.chat))),
-                leading: AvatarWidget(uid: state.user.uid == widget.chat.users[0].uid ? widget.chat.users[1].uid : widget.chat.users[0].uid, size: 50),
-                title: Text(state.user.uid == widget.chat.users[0].uid ? widget.chat.users[1].username : widget.chat.users[0].username, style: theme.textTheme.labelMedium),
-                subtitle: widget.chat.lastMessage != null 
-                  ? Text(widget.chat.lastMessage!, style: theme.textTheme.labelSmall) 
-                  : null
-              )
-            );
-          } else {
-            return SizedBox.shrink();
-          }
-        }
+      child: GestureDetector(
+        onTapDown: (details) => setState(() => tapPosition = details.globalPosition),
+        onLongPress: () => showContextMenu(context),
+        child: ListTile(
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatView(chat: widget.chat))),
+          leading: AvatarWidget(uid: other.uid, size: 50),
+          title: Text(other.username, style: theme.textTheme.labelMedium),
+          subtitle: widget.chat.lastMessage != null 
+            ? Text(widget.chat.lastMessage!, style: theme.textTheme.labelSmall)
+            : null
+        )
       )
     );
   }

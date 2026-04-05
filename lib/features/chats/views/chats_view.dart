@@ -53,52 +53,58 @@ class _ChatsViewState extends State<ChatsView> {
           }, icon: Icon(Icons.refresh))
         ],
        ),
-      body: RefreshIndicator(
-        onRefresh: () {
-          final completer = Completer();
-          loadChats(completer: completer);
-          return completer.future;
-        },
-        child: BlocBuilder<UserBloc, UserState>(
-          bloc: userBloc,
-          builder: (context, userState) {
-            return BlocBuilder<ChatsBloc, ChatsState>(
-              bloc: chatsBloc,
-              builder: (context, chatsState) {
-                if (userState is UserStateLoaded && chatsState is ChatsStateLoaded) {
-                  if (chatsState.chats.isNotEmpty) {
-                    return ListView(
-                      children: chatsState.chats.map((Chat chat) => ChatWidget(chat: chat)).toList()
-                    );
-                  } else {
-                    return CustomScrollView(
-                      shrinkWrap: true,
-                      slivers: [
-                        SliverFillRemaining(
-                        hasScrollBody: false,
-                        child: Center(
-                          child: Text('У тебя нет личных чатов', style: theme.textTheme.titleMedium),
-                        ),
-                      ),
-                      ],
-                    );
-                  }
-                } else if (userState is UserStateError || chatsState is ChatsStateError) {
-                  return Center(child: Text('Произошла ошибка при загрузке чатов', style: theme.textTheme.titleMedium));
-                } else {
-                  return ListView.builder(
-                    itemCount: 3 + Random().nextInt(5),
-                    itemBuilder: (context, state) => 
-                      Padding(
-                        padding: EdgeInsets.all(8),
-                        child: ShimmerWidget(),
-                      )
+      body: Column(
+        children: [
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () {
+                final completer = Completer();
+                loadChats(completer: completer);
+                return completer.future;
+              },
+              child: BlocBuilder<UserBloc, UserState>(
+                bloc: userBloc,
+                builder: (context, userState) {
+                  return BlocBuilder<ChatsBloc, ChatsState>(
+                    bloc: chatsBloc,
+                    builder: (context, chatsState) {
+                      if (userState is UserStateLoaded && chatsState is ChatsStateLoaded) {
+                        if (chatsState.chats.isNotEmpty) {
+                          return ListView(
+                            children: chatsState.chats.map((Chat chat) => ChatWidget(chat: chat)).toList()
+                          );
+                        } else {
+                          return CustomScrollView(
+                            shrinkWrap: true,
+                            slivers: [
+                              SliverFillRemaining(
+                              hasScrollBody: false,
+                              child: Center(
+                                child: Text('У тебя нет личных чатов', style: theme.textTheme.titleMedium),
+                              ),
+                            ),
+                            ],
+                          );
+                        }
+                      } else if (userState is UserStateError || chatsState is ChatsStateError) {
+                        return Center(child: Text('Произошла ошибка при загрузке чатов', style: theme.textTheme.titleMedium));
+                      } else {
+                        return ListView.builder(
+                          itemCount: 3 + Random().nextInt(5),
+                          itemBuilder: (context, state) => 
+                            Padding(
+                              padding: EdgeInsets.all(8),
+                              child: ShimmerWidget(),
+                            )
+                        );
+                      }
+                    }
                   );
-                }
-              }
-            );
-          },
-        )
+                },
+              )
+            ),
+          )
+        ],
       )
     );
   }

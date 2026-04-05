@@ -86,8 +86,8 @@ class _MessengerWidgetState extends State<MessengerWidget> {
             .where((user) => user.uid == payload['sender'])
             .toList()[0];
         payload['sender'] = sender.toJSON();
-        if (payload['attachmentBytes'] != null) {
-          payload['attachmentBytes'] = await chatsRepository.getAttachment(payload['attachmentBytes']);
+        if (payload['attachment'] != null) {
+          payload['attachment'] = await chatsRepository.getAttachment(payload['attachment']);
         }
         await chatsRepository.setReaded(uid, payload['id'], widget.chat.id);
         messages?.add(Message.fromJSON(payload, true));
