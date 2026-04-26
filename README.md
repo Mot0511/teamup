@@ -21,4 +21,3 @@
 Сайт Teamup - https://teamup-site.vercel.app/
 Teamup в Rustore - 
 Видео про Teamup на ютубе - 
->>>>>>> dev

@@ -3,9 +3,9 @@
 ; Non-commercial use only
 
 #define MyAppName "Teamup"
-#define MyAppVersion "1.2.0"
+#define MyAppVersion "1.2.2"
 #define MyAppPublisher "Ballisty"
-#define MyAppURL "https://teamup-site.vercel.app"
+#define MyAppURL "https://teamupp.ru"
 #define MyAppExeName "teamup.exe"
 
 [Setup]

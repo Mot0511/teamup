@@ -1,24 +1,3 @@
-<<<<<<< HEAD
-import "jsr:@supabase/functions-js/edge-runtime.d.ts"
-
-Deno.serve(async (req) => {
-  return new Response(
-    JSON.stringify({
-      currentVersion: "1.1.0",
-      newFeatures: [
-        "Возможность регистрироваться через почту и пароль.",
-        "Звуковые сигналы после завершения формирования команды и при подключении к войсу.",
-        "Шумоподавление в войсе.",
-        "Выбор игры на отдельном экране и поиск игры из списка.",
-        "Обложки у игр.",
-        "Отображение любимой игры в профиле, если пользователь выбрал такую.",
-        'Исправлен баг с переключением статуса "в сети".',
-        'Галочки "отправлено/прочитано" на сообщениях.',
-      ]
-    }),
-    { headers: { "Content-Type": "application/json" } },
-  )
-=======
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 
 Deno.serve(async (req) => {
@@ -35,5 +14,4 @@ Deno.serve(async (req) => {
     }),
     { headers: { "Content-Type": "application/json" } },
   )
->>>>>>> dev
 })

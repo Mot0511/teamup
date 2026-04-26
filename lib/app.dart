@@ -58,8 +58,7 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
             sound: true,
           );
         }
-        await fixUid(userdata!.id, userdata.email!);
-        await notificationsService.setFcmToken(userdata.id);
+        await notificationsService.setFcmToken(userdata!.id);
         final users = await supabase.from('users').select().eq('uid', userdata.id);
         if (users.isEmpty) {
           navigatorKey.currentState?.pushReplacement(

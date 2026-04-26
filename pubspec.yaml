@@ -3,7 +3,7 @@ description: "A new Flutter project."
 
 publish_to: 'none'
 
-version: 1.2.0+3
+version: 1.2.2+5
 
 environment:
   sdk: ^3.8.1
@@ -72,4 +72,3 @@ sentry:
   upload_source_maps: true
   project: teamup
   org: ballisty
->>>>>>> dev

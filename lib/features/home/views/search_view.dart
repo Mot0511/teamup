@@ -13,7 +13,7 @@ class AllUsersView extends StatefulWidget {
 }
 
 class _AllUsersViewState extends State<AllUsersView> {
-  static const int _pageSize = 15;
+  static const int _pageSize = 20;
 
   List<User>? users;
   bool _hasMore = true;

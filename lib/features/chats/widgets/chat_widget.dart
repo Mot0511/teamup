@@ -48,9 +48,10 @@ class _ChatWidgetState extends State<ChatWidget> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    final user = (userBloc.state as UserStateLoaded).user;
     late User other;
     if (widget.chat.users.isNotEmpty) {
-      other = supabase.auth.currentUser?.id == widget.chat.users[0] ? widget.chat.users[1] : widget.chat.users[0];
+      other = user.uid == widget.chat.users[0].uid ? widget.chat.users[1] : widget.chat.users[0];
     }
     
     return Dismissible(

@@ -65,7 +65,7 @@ class VoiceService {
       ),
     );
     
-    await player.play(AssetSource('audio/connect_voice.mp3'));
+    // await player.play(AssetSource('audio/connect_voice.mp3'));
 
     await room!.localParticipant?.setMicrophoneEnabled(isVoiceOn);
   }

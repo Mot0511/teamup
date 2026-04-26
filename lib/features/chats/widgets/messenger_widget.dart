@@ -143,9 +143,10 @@ class _MessengerWidgetState extends State<MessengerWidget> {
   }
   
 
-  void onSendMessage() {
+  Future<void> onSendMessage() async {
     final text = messageController.text.trim();
     if (text == '' && attachmentBytes == null) return;
+    final Uint8List? bytesToSend = attachmentBytes;
 
     final message = Message(
       id: DateTime.now().millisecondsSinceEpoch,
@@ -153,16 +154,12 @@ class _MessengerWidgetState extends State<MessengerWidget> {
       user: (userBloc.state as UserStateLoaded).user,
       text: text,
       repliedMesssageID: replyMessage?.id,
-      attachment: attachmentBytes != null ? MemoryImage(attachmentBytes!) : null,
+      attachment: bytesToSend != null ? MemoryImage(bytesToSend) : null,
       time: DateTime.now().toUtc(),
       isReaded: false
     );
-    chatsRepository.sendMessage(message, attachmentBytes);
+
     messages?.add(message);
-    channel.sendBroadcastMessage(
-      event: 'new-message', 
-      payload: message.toJSON()
-    );
 
     attachmentBytes = null;
     setState(() {});
@@ -171,6 +168,14 @@ class _MessengerWidgetState extends State<MessengerWidget> {
     replyMessage = null;  
     scrollToBottomAnimated();
     sortMessages();
+
+    // Важно: дождаться загрузки вложения в Storage и записи в БД,
+    // иначе получатель может попытаться скачать файл до появления.
+    await chatsRepository.sendMessage(message, bytesToSend);
+    await channel.sendBroadcastMessage(
+      event: 'new-message',
+      payload: message.toJSON(),
+    );
   }
 
   void onEditMessage() {
@@ -503,9 +508,9 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                                   keyboardType: TextInputType.multiline,
                                   controller: messageController,
                                   focusNode: focusNode,
-                                  onFieldSubmitted: (_) {
+                                  onFieldSubmitted: (_) async {
                                     if (editingMessage != null) onEditMessage();
-                                    else onSendMessage();
+                                    else await onSendMessage();
                                   },
                                   textInputAction: TextInputAction.search,
                                   minLines: 1,
@@ -527,7 +532,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                             else
                               IconButton(
                                 color: theme.colorScheme.secondary,
-                                onPressed: onSendMessage,
+                                onPressed: () async => await onSendMessage(),
                                 icon: Icon(Icons.send, size: 28),
                               ),
                           ],

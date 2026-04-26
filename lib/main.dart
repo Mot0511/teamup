@@ -27,8 +27,8 @@ void main() async {
     WidgetsFlutterBinding.ensureInitialized();
     if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
       setWindowTitle('Teamup');
-      setWindowMinSize(const Size(540, 910));
-      setWindowMaxSize(const Size(540, 910));
+      setWindowMinSize(const Size(440, 810));
+      setWindowMaxSize(const Size(440, 810));
     }
 
     if (Platform.isAndroid) {
