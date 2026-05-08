@@ -226,7 +226,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
     channel.sendBroadcastMessage(event: 'delete-message', payload: {'messageID': message.id});
   }
 
-  void onAttachImage() async {
+  Future<void> onAttachImage() async {
     final FilePickerResult? result = await FilePicker.platform.pickFiles(
       dialogTitle: 'Выбор изображения',
       type: FileType.custom,

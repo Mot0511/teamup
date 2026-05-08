@@ -1,0 +1,361 @@
+PODS:
+  - app_links (6.4.1):
+    - FlutterMacOS
+  - AppAuth (1.7.6):
+    - AppAuth/Core (= 1.7.6)
+    - AppAuth/ExternalUserAgent (= 1.7.6)
+  - AppAuth/Core (1.7.6)
+  - AppAuth/ExternalUserAgent (1.7.6):
+    - AppAuth/Core
+  - AppCheckCore (11.2.0):
+    - GoogleUtilities/Environment (~> 8.0)
+    - GoogleUtilities/UserDefaults (~> 8.0)
+    - PromisesObjC (~> 2.4)
+  - audio_session (0.0.1):
+    - FlutterMacOS
+  - audioplayers_darwin (0.0.1):
+    - Flutter
+    - FlutterMacOS
+  - awesome_notifications (0.0.1):
+    - FlutterMacOS
+  - connectivity_plus (0.0.1):
+    - FlutterMacOS
+  - desktop_webview_window (0.0.1):
+    - FlutterMacOS
+  - device_info_plus (0.0.1):
+    - FlutterMacOS
+  - file_picker (0.0.1):
+    - FlutterMacOS
+  - file_selector_macos (0.0.1):
+    - FlutterMacOS
+  - Firebase/CoreOnly (12.9.0):
+    - FirebaseCore (~> 12.9.0)
+  - Firebase/Messaging (12.9.0):
+    - Firebase/CoreOnly
+    - FirebaseMessaging (~> 12.9.0)
+  - firebase_analytics (12.2.0):
+    - firebase_core
+    - FirebaseAnalytics (= 12.9.0)
+    - FlutterMacOS
+  - firebase_core (4.6.0):
+    - Firebase/CoreOnly (~> 12.9.0)
+    - FlutterMacOS
+  - firebase_messaging (16.1.3):
+    - Firebase/CoreOnly (~> 12.9.0)
+    - Firebase/Messaging (~> 12.9.0)
+    - firebase_core
+    - FlutterMacOS
+  - FirebaseAnalytics (12.9.0):
+    - FirebaseAnalytics/Default (= 12.9.0)
+    - FirebaseCore (~> 12.9.0)
+    - FirebaseInstallations (~> 12.9.0)
+    - GoogleUtilities/AppDelegateSwizzler (~> 8.1)
+    - GoogleUtilities/MethodSwizzler (~> 8.1)
+    - GoogleUtilities/Network (~> 8.1)
+    - "GoogleUtilities/NSData+zlib (~> 8.1)"
+    - nanopb (~> 3.30910.0)
+  - FirebaseAnalytics/Default (12.9.0):
+    - FirebaseCore (~> 12.9.0)
+    - FirebaseInstallations (~> 12.9.0)
+    - GoogleAppMeasurement/Default (= 12.9.0)
+    - GoogleUtilities/AppDelegateSwizzler (~> 8.1)
+    - GoogleUtilities/MethodSwizzler (~> 8.1)
+    - GoogleUtilities/Network (~> 8.1)
+    - "GoogleUtilities/NSData+zlib (~> 8.1)"
+    - nanopb (~> 3.30910.0)
+  - FirebaseCore (12.9.0):
+    - FirebaseCoreInternal (~> 12.9.0)
+    - GoogleUtilities/Environment (~> 8.1)
+    - GoogleUtilities/Logger (~> 8.1)
+  - FirebaseCoreInternal (12.9.0):
+    - "GoogleUtilities/NSData+zlib (~> 8.1)"
+  - FirebaseInstallations (12.9.0):
+    - FirebaseCore (~> 12.9.0)
+    - GoogleUtilities/Environment (~> 8.1)
+    - GoogleUtilities/UserDefaults (~> 8.1)
+    - PromisesObjC (~> 2.4)
+  - FirebaseMessaging (12.9.0):
+    - FirebaseCore (~> 12.9.0)
+    - FirebaseInstallations (~> 12.9.0)
+    - GoogleDataTransport (~> 10.1)
+    - GoogleUtilities/AppDelegateSwizzler (~> 8.1)
+    - GoogleUtilities/Environment (~> 8.1)
+    - GoogleUtilities/Reachability (~> 8.1)
+    - GoogleUtilities/UserDefaults (~> 8.1)
+    - nanopb (~> 3.30910.0)
+  - flutter_local_notifications (0.0.1):
+    - FlutterMacOS
+  - flutter_web_auth_2 (3.0.0):
+    - FlutterMacOS
+  - flutter_webrtc (1.4.0):
+    - FlutterMacOS
+    - WebRTC-SDK (= 144.7559.01)
+  - flutter_window_close (0.0.1):
+    - FlutterMacOS
+  - FlutterMacOS (1.0.0)
+  - global_shortcuts (0.0.1):
+    - global_shortcuts/Core (= 0.0.1)
+  - global_shortcuts/Core (0.0.1):
+    - FlutterMacOS
+    - HotKey
+  - google_sign_in_ios (0.0.1):
+    - AppAuth (>= 1.7.4)
+    - Flutter
+    - FlutterMacOS
+    - GoogleSignIn (~> 8.0)
+    - GTMSessionFetcher (>= 3.4.0)
+  - GoogleAppMeasurement/Core (12.9.0):
+    - GoogleUtilities/AppDelegateSwizzler (~> 8.1)
+    - GoogleUtilities/MethodSwizzler (~> 8.1)
+    - GoogleUtilities/Network (~> 8.1)
+    - "GoogleUtilities/NSData+zlib (~> 8.1)"
+    - nanopb (~> 3.30910.0)
+  - GoogleAppMeasurement/Default (12.9.0):
+    - GoogleAdsOnDeviceConversion (~> 3.2.0)
+    - GoogleAppMeasurement/Core (= 12.9.0)
+    - GoogleAppMeasurement/IdentitySupport (= 12.9.0)
+    - GoogleUtilities/AppDelegateSwizzler (~> 8.1)
+    - GoogleUtilities/MethodSwizzler (~> 8.1)
+    - GoogleUtilities/Network (~> 8.1)
+    - "GoogleUtilities/NSData+zlib (~> 8.1)"
+    - nanopb (~> 3.30910.0)
+  - GoogleAppMeasurement/IdentitySupport (12.9.0):
+    - GoogleAppMeasurement/Core (= 12.9.0)
+    - GoogleUtilities/AppDelegateSwizzler (~> 8.1)
+    - GoogleUtilities/MethodSwizzler (~> 8.1)
+    - GoogleUtilities/Network (~> 8.1)
+    - "GoogleUtilities/NSData+zlib (~> 8.1)"
+    - nanopb (~> 3.30910.0)
+  - GoogleDataTransport (10.1.0):
+    - nanopb (~> 3.30910.0)
+    - PromisesObjC (~> 2.4)
+  - GoogleSignIn (8.0.0):
+    - AppAuth (< 2.0, >= 1.7.3)
+    - AppCheckCore (~> 11.0)
+    - GTMAppAuth (< 5.0, >= 4.1.1)
+    - GTMSessionFetcher/Core (~> 3.3)
+  - GoogleUtilities/AppDelegateSwizzler (8.1.0):
+    - GoogleUtilities/Environment
+    - GoogleUtilities/Logger
+    - GoogleUtilities/Network
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/Environment (8.1.0):
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/Logger (8.1.0):
+    - GoogleUtilities/Environment
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/MethodSwizzler (8.1.0):
+    - GoogleUtilities/Logger
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/Network (8.1.0):
+    - GoogleUtilities/Logger
+    - "GoogleUtilities/NSData+zlib"
+    - GoogleUtilities/Privacy
+    - GoogleUtilities/Reachability
+  - "GoogleUtilities/NSData+zlib (8.1.0)":
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/Privacy (8.1.0)
+  - GoogleUtilities/Reachability (8.1.0):
+    - GoogleUtilities/Logger
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/UserDefaults (8.1.0):
+    - GoogleUtilities/Logger
+    - GoogleUtilities/Privacy
+  - GTMAppAuth (4.1.1):
+    - AppAuth/Core (~> 1.7)
+    - GTMSessionFetcher/Core (< 4.0, >= 3.3)
+  - GTMSessionFetcher (3.5.0):
+    - GTMSessionFetcher/Full (= 3.5.0)
+  - GTMSessionFetcher/Core (3.5.0)
+  - GTMSessionFetcher/Full (3.5.0):
+    - GTMSessionFetcher/Core
+  - HotKey (0.2.1)
+  - just_audio (0.0.1):
+    - Flutter
+    - FlutterMacOS
+  - livekit_client (2.7.0):
+    - flutter_webrtc
+    - FlutterMacOS
+    - WebRTC-SDK (= 144.7559.01)
+  - nanopb (3.30910.0):
+    - nanopb/decode (= 3.30910.0)
+    - nanopb/encode (= 3.30910.0)
+  - nanopb/decode (3.30910.0)
+  - nanopb/encode (3.30910.0)
+  - package_info_plus (0.0.1):
+    - FlutterMacOS
+  - PromisesObjC (2.4.0)
+  - Sentry/HybridSDK (8.58.0)
+  - sentry_flutter (9.16.0):
+    - Flutter
+    - FlutterMacOS
+    - Sentry/HybridSDK (= 8.58.0)
+  - shared_preferences_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
+  - url_launcher_macos (0.0.1):
+    - FlutterMacOS
+  - WebRTC-SDK (144.7559.01)
+  - window_size (0.0.2):
+    - FlutterMacOS
+  - window_to_front (0.0.1):
+    - FlutterMacOS
+
+DEPENDENCIES:
+  - app_links (from `Flutter/ephemeral/.symlinks/plugins/app_links/macos`)
+  - audio_session (from `Flutter/ephemeral/.symlinks/plugins/audio_session/macos`)
+  - audioplayers_darwin (from `Flutter/ephemeral/.symlinks/plugins/audioplayers_darwin/darwin`)
+  - awesome_notifications (from `Flutter/ephemeral/.symlinks/plugins/awesome_notifications/macos`)
+  - connectivity_plus (from `Flutter/ephemeral/.symlinks/plugins/connectivity_plus/macos`)
+  - desktop_webview_window (from `Flutter/ephemeral/.symlinks/plugins/desktop_webview_window/macos`)
+  - device_info_plus (from `Flutter/ephemeral/.symlinks/plugins/device_info_plus/macos`)
+  - file_picker (from `Flutter/ephemeral/.symlinks/plugins/file_picker/macos`)
+  - file_selector_macos (from `Flutter/ephemeral/.symlinks/plugins/file_selector_macos/macos`)
+  - firebase_analytics (from `Flutter/ephemeral/.symlinks/plugins/firebase_analytics/macos`)
+  - firebase_core (from `Flutter/ephemeral/.symlinks/plugins/firebase_core/macos`)
+  - firebase_messaging (from `Flutter/ephemeral/.symlinks/plugins/firebase_messaging/macos`)
+  - flutter_local_notifications (from `Flutter/ephemeral/.symlinks/plugins/flutter_local_notifications/macos`)
+  - flutter_web_auth_2 (from `Flutter/ephemeral/.symlinks/plugins/flutter_web_auth_2/macos`)
+  - flutter_webrtc (from `Flutter/ephemeral/.symlinks/plugins/flutter_webrtc/macos`)
+  - flutter_window_close (from `Flutter/ephemeral/.symlinks/plugins/flutter_window_close/macos`)
+  - FlutterMacOS (from `Flutter/ephemeral`)
+  - global_shortcuts (from `Flutter/ephemeral/.symlinks/plugins/global_shortcuts/macos`)
+  - google_sign_in_ios (from `Flutter/ephemeral/.symlinks/plugins/google_sign_in_ios/darwin`)
+  - just_audio (from `Flutter/ephemeral/.symlinks/plugins/just_audio/darwin`)
+  - livekit_client (from `Flutter/ephemeral/.symlinks/plugins/livekit_client/macos`)
+  - package_info_plus (from `Flutter/ephemeral/.symlinks/plugins/package_info_plus/macos`)
+  - sentry_flutter (from `Flutter/ephemeral/.symlinks/plugins/sentry_flutter/macos`)
+  - shared_preferences_foundation (from `Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/darwin`)
+  - url_launcher_macos (from `Flutter/ephemeral/.symlinks/plugins/url_launcher_macos/macos`)
+  - window_size (from `Flutter/ephemeral/.symlinks/plugins/window_size/macos`)
+  - window_to_front (from `Flutter/ephemeral/.symlinks/plugins/window_to_front/macos`)
+
+SPEC REPOS:
+  trunk:
+    - AppAuth
+    - AppCheckCore
+    - Firebase
+    - FirebaseAnalytics
+    - FirebaseCore
+    - FirebaseCoreInternal
+    - FirebaseInstallations
+    - FirebaseMessaging
+    - GoogleAppMeasurement
+    - GoogleDataTransport
+    - GoogleSignIn
+    - GoogleUtilities
+    - GTMAppAuth
+    - GTMSessionFetcher
+    - HotKey
+    - nanopb
+    - PromisesObjC
+    - Sentry
+    - WebRTC-SDK
+
+EXTERNAL SOURCES:
+  app_links:
+    :path: Flutter/ephemeral/.symlinks/plugins/app_links/macos
+  audio_session:
+    :path: Flutter/ephemeral/.symlinks/plugins/audio_session/macos
+  audioplayers_darwin:
+    :path: Flutter/ephemeral/.symlinks/plugins/audioplayers_darwin/darwin
+  awesome_notifications:
+    :path: Flutter/ephemeral/.symlinks/plugins/awesome_notifications/macos
+  connectivity_plus:
+    :path: Flutter/ephemeral/.symlinks/plugins/connectivity_plus/macos
+  desktop_webview_window:
+    :path: Flutter/ephemeral/.symlinks/plugins/desktop_webview_window/macos
+  device_info_plus:
+    :path: Flutter/ephemeral/.symlinks/plugins/device_info_plus/macos
+  file_picker:
+    :path: Flutter/ephemeral/.symlinks/plugins/file_picker/macos
+  file_selector_macos:
+    :path: Flutter/ephemeral/.symlinks/plugins/file_selector_macos/macos
+  firebase_analytics:
+    :path: Flutter/ephemeral/.symlinks/plugins/firebase_analytics/macos
+  firebase_core:
+    :path: Flutter/ephemeral/.symlinks/plugins/firebase_core/macos
+  firebase_messaging:
+    :path: Flutter/ephemeral/.symlinks/plugins/firebase_messaging/macos
+  flutter_local_notifications:
+    :path: Flutter/ephemeral/.symlinks/plugins/flutter_local_notifications/macos
+  flutter_web_auth_2:
+    :path: Flutter/ephemeral/.symlinks/plugins/flutter_web_auth_2/macos
+  flutter_webrtc:
+    :path: Flutter/ephemeral/.symlinks/plugins/flutter_webrtc/macos
+  flutter_window_close:
+    :path: Flutter/ephemeral/.symlinks/plugins/flutter_window_close/macos
+  FlutterMacOS:
+    :path: Flutter/ephemeral
+  global_shortcuts:
+    :path: Flutter/ephemeral/.symlinks/plugins/global_shortcuts/macos
+  google_sign_in_ios:
+    :path: Flutter/ephemeral/.symlinks/plugins/google_sign_in_ios/darwin
+  just_audio:
+    :path: Flutter/ephemeral/.symlinks/plugins/just_audio/darwin
+  livekit_client:
+    :path: Flutter/ephemeral/.symlinks/plugins/livekit_client/macos
+  package_info_plus:
+    :path: Flutter/ephemeral/.symlinks/plugins/package_info_plus/macos
+  sentry_flutter:
+    :path: Flutter/ephemeral/.symlinks/plugins/sentry_flutter/macos
+  shared_preferences_foundation:
+    :path: Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/darwin
+  url_launcher_macos:
+    :path: Flutter/ephemeral/.symlinks/plugins/url_launcher_macos/macos
+  window_size:
+    :path: Flutter/ephemeral/.symlinks/plugins/window_size/macos
+  window_to_front:
+    :path: Flutter/ephemeral/.symlinks/plugins/window_to_front/macos
+
+SPEC CHECKSUMS:
+  app_links: 05a6ec2341985eb05e9f97dc63f5837c39895c3f
+  AppAuth: d4f13a8fe0baf391b2108511793e4b479691fb73
+  AppCheckCore: cc8fd0a3a230ddd401f326489c99990b013f0c4f
+  audio_session: eaca2512cf2b39212d724f35d11f46180ad3a33e
+  audioplayers_darwin: 835ced6edd4c9fc8ebb0a7cc9e294a91d99917d5
+  awesome_notifications: 7818a3dbad4836238a68df439c06981d9f0b276c
+  connectivity_plus: 4adf20a405e25b42b9c9f87feff8f4b6fde18a4e
+  desktop_webview_window: 7e37af677d6d19294cb433d9b1d878ef78dffa4d
+  device_info_plus: 4fb280989f669696856f8b129e4a5e3cd6c48f76
+  file_picker: 7584aae6fa07a041af2b36a2655122d42f578c1a
+  file_selector_macos: 9e9e068e90ebee155097d00e89ae91edb2374db7
+  Firebase: 065f2bb395062046623036d8e6dc857bc2521d56
+  firebase_analytics: c87b65da9e1e5edaa7f4821e3a6efcc036a717ee
+  firebase_core: 82d678e9e10fc0b515ea1872dd446eee4722f144
+  firebase_messaging: 6e004f3c45170db52669653200c4bf7e7758c699
+  FirebaseAnalytics: cd7d01d352f3c237c9a0e31552c257cd0b0c0352
+  FirebaseCore: 428912f751178b06bef0a1793effeb4a5e09a9b8
+  FirebaseCoreInternal: b321eafae5362113bc182956fafc9922cfc77b72
+  FirebaseInstallations: 7b64ffd006032b2b019a59b803858df5112d9eaa
+  FirebaseMessaging: 7d6cdbff969127c4151c824fe432f0e301210f15
+  flutter_local_notifications: 4bf37a31afde695b56091b4ae3e4d9c7a7e6cda0
+  flutter_web_auth_2: 62b08da29f15a20fa63f144234622a1488d45b65
+  flutter_webrtc: f1fb1a00c6080461bb2bc6caa5b93d07ddb68466
+  flutter_window_close: bd408414cbbf0d39f0d3076c4da0cdbf1c527168
+  FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
+  global_shortcuts: 645df540e4abc09a8f1349556481610da286cd25
+  google_sign_in_ios: b48bb9af78576358a168361173155596c845f0b9
+  GoogleAppMeasurement: fce7c1c90640d2f9f5c56771f71deacb2ba3f98c
+  GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
+  GoogleSignIn: ce8c89bb9b37fb624b92e7514cc67335d1e277e4
+  GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
+  GTMAppAuth: f69bd07d68cd3b766125f7e072c45d7340dea0de
+  GTMSessionFetcher: 5aea5ba6bd522a239e236100971f10cb71b96ab6
+  HotKey: 400beb7caa29054ea8d864c96f5ba7e5b4852277
+  just_audio: 4e391f57b79cad2b0674030a00453ca5ce817eed
+  livekit_client: 3e024a31e364d4a2e0deda1b3908e93933dbf6dc
+  nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
+  package_info_plus: f0052d280d17aa382b932f399edf32507174e870
+  PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
+  Sentry: d587a8fe91ca13503ecd69a1905f3e8a0fcf61be
+  sentry_flutter: 31101687061fb85211ebab09ce6eb8db4e9ba74f
+  shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
+  url_launcher_macos: f87a979182d112f911de6820aefddaf56ee9fbfd
+  WebRTC-SDK: ab9b5319e458c2bfebdc92b3600740da35d5630d
+  window_size: 4bd15034e6e3d0720fd77928a7c42e5492cfece9
+  window_to_front: 9e76fd432e36700a197dac86a0011e49c89abe0a
+
+PODFILE CHECKSUM: 54d867c82ac51cbd61b565781b9fada492027009
+
+COCOAPODS: 1.16.2
