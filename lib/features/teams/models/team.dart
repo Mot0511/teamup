@@ -15,7 +15,7 @@ class Team extends Chat {
       users: data['users'].map((data) => User.fromJSON(data)).toList(),
       name: data['name'],
       isPublic: data['is_public'],
-      game: data['game'] != null ? Game.fromJSON(data['game']) : null
+      game: data['game'] != null ? Game.fromJSON(data['game']) : null,
     );
   }
 

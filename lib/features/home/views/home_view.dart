@@ -1,4 +1,5 @@
 
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -10,8 +11,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:teamup/features/analytics/analytics.dart';
 import 'package:teamup/features/home/home.dart';
+import 'package:teamup/features/home/widgets/bottom_buttons_widget.dart';
+import 'package:teamup/features/teams/widgets/public_team_widget.dart';
 import 'package:teamup/features/teams/teams.dart';
-import 'package:teamup/features/teams/views/public_teams_view.dart';
 import 'package:teamup/features/user/user.dart';
 import 'package:teamup/models/game.dart';
 import 'package:teamup/services/notifications_service.dart';
@@ -37,6 +39,7 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
   final searchBloc = GetIt.I<SearchBloc>();
   final supabase = GetIt.I<SupabaseClient>();
   final searchRepository = GetIt.I<SearchRepository>();
+  final teamsRepository = GetIt.I<TeamsRepository>();
   final analyticsRepository = GetIt.I<AnalyticsRepository>();
   final notificationsService = GetIt.I<NotificationsService>();
   final prefs = GetIt.I<SharedPreferences>();
@@ -50,6 +53,8 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
   UpdateInfo? updateInfo;
   String? appVersion;
 
+  List<Team>? publicTeams;
+
   @override
   void initState() {
     super.initState();
@@ -60,6 +65,7 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     currentGender = prefs.getString('currentGender') ?? 'male';
 
     loadGames();
+    loadPublicTeams();
 
     searchRepository.onTeamFormed = (Team team) async {
       if (!kIsWeb && Platform.isWindows && !notificationsService.isOnline) notificationsService.showNotification(DateTime.now().millisecondsSinceEpoch.toString(), 'Команда сформирована', '');
@@ -86,6 +92,12 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) => checkVersion());
+  }
+
+  Future<void> loadPublicTeams({Completer? completer}) async {
+    publicTeams = await teamsRepository.getTeams();
+    completer?.complete();
+    if (mounted) setState(() {});
   }
 
   Future<void> loadGames() async {
@@ -191,79 +203,45 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                     ),
                   ],
                 ),
-                body: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      flex: 6, 
-                      child: Center(
-                        child: BlocBuilder(
-                          bloc: searchBloc,
-                          builder: (context, state) {
-                            if (state is SearchStateInitial) {
-                              return ShimmerWidget(
-                                width: 180,
-                                height: 180,
-                                radius: 100,
-                              ); 
-                            } else if (state is SearchStateError) {
-                              return Column(
-                                children: [
-                                  Text('Ошибка при инициализации поиска', style: theme.textTheme.titleMedium),
-                                  Text(state.e.toString(), style: theme.textTheme.titleMedium)
-                                ],
-                              );
-                            }
-                            return Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SearchBtn(
-                                  onStartSearching: onStartSearching,
-                                  onStopSearching: onStopSearching,
-                                  state: state as SearchState
-                                ),
-                                SizedBox(height: 10),
-                                ElevatedButton(
-                                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PublicTeamsView())),
-                                  child: Text('Публичные команды', style: theme.textTheme.labelMedium)
+                body: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  child: publicTeams != null
+                    ? RefreshIndicator(
+                      onRefresh: () async {
+                        final completer = Completer();
+                        await loadPublicTeams(completer: completer);
+                        return completer.future;
+                      },
+                      child: ClipRRect(
+                        borderRadius: BorderRadiusGeometry.circular(10),
+                        child: Stack(
+                          alignment: AlignmentDirectional.bottomCenter,
+                          children: [
+                            ListView(
+                              padding: EdgeInsets.only(bottom: 70),
+                              children: publicTeams!.map((team) => 
+                                Padding(
+                                  padding: EdgeInsets.only(bottom: 10),
+                                  child: PublicTeamWidget(team: team),
                                 )
-                              ],
-                            );
-                          }
+                              ).toList()
+                            ),
+                            Padding(
+                              padding: EdgeInsets.all(10),
+                              child: BottomButtonsWidget(),
+                            ),
+                          ],
+                        ),
+                      )
+                    )
+                    : Column(
+                      children: List.generate(3, (i) => 
+                        Padding(
+                          padding: EdgeInsets.only(bottom: 10),
+                          child: ShimmerWidget(height: 100)
                         )
-                      )
-                    ),
-                      Expanded(
-                        flex: 7,
-                        child: currentGame != null
-                          ? Padding(
-                              padding: EdgeInsetsGeometry.symmetric(horizontal: 18),
-                              child: InfoWidget(
-                                currentGame: currentGame!,
-                                onSetGame: (Game game) async {
-                                  await prefs.setString('currentGame', game.id.toString());
-                                  setState(() => currentGame = game);
-                                },
-                                currentGender: currentGender, 
-                                onSetGender: (value) async {
-                                  await prefs.setString('currentGender', value);
-                                  setState(() => currentGender = value);
-                                },
-                                currentTeamSize: currentTeamSize, 
-                                onSetTeamSize: (value) async {
-                                  await prefs.setString('currentTeamSize', value);
-                                  setState(() => currentTeamSize = value);
-                                },
-                                animationController: animationController,
-                                pendingUsers: pendingUsers
-                              )
-                            )
-                          : Padding(
-                              padding: EdgeInsets.all(16),
-                              child: ShimmerWidget(width: double.infinity, height: double.infinity),
-                            )
-                      )
-                  ],
+                      ),
+                  ),
                 )
               );
             } else if (state is UserStateLoaded) {
@@ -277,3 +255,24 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     );
   }
 }
+
+
+// InfoWidget(
+//   currentGame: currentGame!,
+//   onSetGame: (Game game) async {
+//     await prefs.setString('currentGame', game.id.toString());
+//     setState(() => currentGame = game);
+//   },
+//   currentGender: currentGender, 
+//   onSetGender: (value) async {
+//     await prefs.setString('currentGender', value);
+//     setState(() => currentGender = value);
+//   },
+//   currentTeamSize: currentTeamSize, 
+//   onSetTeamSize: (value) async {
+//     await prefs.setString('currentTeamSize', value);
+//     setState(() => currentTeamSize = value);
+//   },
+//   animationController: animationController,
+//   pendingUsers: pendingUsers
+// )
