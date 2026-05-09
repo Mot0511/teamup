@@ -203,45 +203,59 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                     ),
                   ],
                 ),
-                body: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10),
-                  child: publicTeams != null
-                    ? RefreshIndicator(
-                      onRefresh: () async {
-                        final completer = Completer();
-                        await loadPublicTeams(completer: completer);
-                        return completer.future;
-                      },
-                      child: ClipRRect(
+                body: RefreshIndicator(
+                  onRefresh: () async {
+                    final completer = Completer();
+                    await loadPublicTeams(completer: completer);
+                    return completer.future;
+                  },
+                  child: Expanded(
+                    child: ListView(
+                    children: [
+                      if (currentGame != null)
+                      InfoWidget(
+                        currentGame: currentGame!,
+                        onSetGame: (Game game) async {
+                          await prefs.setString('currentGame', game.id.toString());
+                          setState(() => currentGame = game);
+                        },
+                        currentGender: currentGender, 
+                        onSetGender: (value) async {
+                          await prefs.setString('currentGender', value);
+                          setState(() => currentGender = value);
+                        },
+                        currentTeamSize: currentTeamSize,
+                        onSetTeamSize: (value) async {
+                          await prefs.setString('currentTeamSize', value);
+                          setState(() => currentTeamSize = value);
+                        },
+                        animationController: animationController,
+                        pendingUsers: pendingUsers
+                      ),
+                      if (publicTeams != null)
+                      ClipRRect(
                         borderRadius: BorderRadiusGeometry.circular(10),
-                        child: Stack(
-                          alignment: AlignmentDirectional.bottomCenter,
-                          children: [
-                            ListView(
-                              padding: EdgeInsets.only(bottom: 70),
-                              children: publicTeams!.map((team) => 
-                                Padding(
-                                  padding: EdgeInsets.only(bottom: 10),
-                                  child: PublicTeamWidget(team: team),
-                                )
-                              ).toList()
-                            ),
+                        child: Column(
+                          children: publicTeams!.map((team) => 
                             Padding(
-                              padding: EdgeInsets.all(10),
-                              child: BottomButtonsWidget(),
-                            ),
-                          ],
+                              padding: EdgeInsets.only(bottom: 10),
+                              child: PublicTeamWidget(team: team),
+                            )
+                          ).toList()
                         ),
                       )
-                    )
-                    : Column(
-                      children: List.generate(3, (i) => 
-                        Padding(
-                          padding: EdgeInsets.only(bottom: 10),
-                          child: ShimmerWidget(height: 100)
-                        )
+                      else
+                      Column(
+                        children: List.generate(3, (i) => 
+                          Padding(
+                            padding: EdgeInsets.only(bottom: 10),
+                            child: ShimmerWidget(height: 100)
+                          )
+                        ),
                       ),
+                    ]
                   ),
+                  )
                 )
               );
             } else if (state is UserStateLoaded) {
@@ -257,22 +271,3 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
 }
 
 
-// InfoWidget(
-//   currentGame: currentGame!,
-//   onSetGame: (Game game) async {
-//     await prefs.setString('currentGame', game.id.toString());
-//     setState(() => currentGame = game);
-//   },
-//   currentGender: currentGender, 
-//   onSetGender: (value) async {
-//     await prefs.setString('currentGender', value);
-//     setState(() => currentGender = value);
-//   },
-//   currentTeamSize: currentTeamSize, 
-//   onSetTeamSize: (value) async {
-//     await prefs.setString('currentTeamSize', value);
-//     setState(() => currentTeamSize = value);
-//   },
-//   animationController: animationController,
-//   pendingUsers: pendingUsers
-// )
