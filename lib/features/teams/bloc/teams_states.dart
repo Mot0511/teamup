@@ -14,16 +14,17 @@ class TeamsStateLoading extends TeamsState {
 }
 
 class TeamsStateLoaded extends TeamsState {
-  final List<Team> teams;
+  final List<Team> publicTeams;
+  final List<Team> privateTeams;
 
-  TeamsStateLoaded({required this.teams});
+  TeamsStateLoaded({required this.publicTeams, required this.privateTeams});
 
   @override
-  List get props => [teams];
+  List get props => [publicTeams, privateTeams];
 }
 
 class TeamsStateError extends TeamsState {
-  final Object e;
+  final Exception e;
 
   TeamsStateError({required this.e});
 

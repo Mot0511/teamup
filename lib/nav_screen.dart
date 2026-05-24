@@ -1,12 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:teamup/features/chats/chats.dart';
 import 'package:teamup/features/home/home.dart';
 import 'package:teamup/features/teams/teams.dart';
 import 'package:teamup/features/user/user.dart';
 import 'package:teamup/models/navitem.dart';
-import 'package:teamup/providers/notifications_provider.dart';
 import 'package:teamup/widgets/navbar_widget.dart';
 import 'package:teamup/widgets/web_navbar_widget.dart';
 
@@ -27,17 +25,9 @@ class _NavScreenState extends State<NavScreen> {
     Navitem(title: 'Профиль', icon: Icons.man, page: ProfileView()),
   ];
 
-  void insertOverlay(context) {
-    final provider = Provider.of<NotificationsProvider>(context);
-    if (provider.isNotificationVisible) {
-      
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    insertOverlay(context);
     return Container(
       color: theme.scaffoldBackgroundColor,
       child: kIsWeb

@@ -39,7 +39,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="teamup" android:host="home" />
+                <data android:scheme="teamup" />
             </intent-filter>
         </activity>
         <activity android:exported="true" android:name="com.linusu.flutter_web_auth_2.CallbackActivity" >

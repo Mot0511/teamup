@@ -6,6 +6,7 @@ import 'package:teamup/models/game.dart';
 class FiltersWidget extends StatelessWidget {
   const FiltersWidget({
     super.key, 
+    required this.onStartSearching,
     required this.currentGame,
     required this.onSetGame,
 
@@ -15,6 +16,7 @@ class FiltersWidget extends StatelessWidget {
     required this.currentTeamSize,
     required this.onSetTeamSize
   });
+  final VoidCallback onStartSearching;
   final Game currentGame;
   final Function onSetGame;
 
@@ -29,15 +31,9 @@ class FiltersWidget extends StatelessWidget {
     final theme = Theme.of(context);
     return ListView(
       children: [
-        Center(
-          child: Text(
-            "Фильтры поиска",
-            style: theme.textTheme.headlineMedium,
-            textAlign: TextAlign.center,
-          ),
-        ),
         Text("Игра", style: theme.textTheme.labelMedium),
         GameWidget(
+          color: Color(0xFF2E2D2D),
           game: currentGame, 
           onTap: () async {
             final game = await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChooseGameView()));
@@ -51,6 +47,7 @@ class FiltersWidget extends StatelessWidget {
           style: theme.textTheme.labelMedium,
         ),
         DropdowmWidget(
+          color: Color(0xFF2E2D2D),
           items: [
             DropdownItem(text: '2', value: '2'),
             DropdownItem(text: '3', value: '3'),
@@ -68,6 +65,7 @@ class FiltersWidget extends StatelessWidget {
         ),
         Text("Пол", style: theme.textTheme.labelMedium),
         DropdowmWidget(
+          color: Color(0xFF2E2D2D),
           items: [
             DropdownItem(text: "Не важно", value: "null"),
             DropdownItem(text: "Мужской", value: "male"),
@@ -77,6 +75,19 @@ class FiltersWidget extends StatelessWidget {
           onChange: (value) =>
               onSetGender(value)
         ),
+        SizedBox(height: 10),
+        SizedBox(
+          height: 40,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(5)
+              )
+            ),
+            onPressed: onStartSearching,
+            child: Text('НАЧАТЬ ПОИСК', style: theme.textTheme.labelMedium),
+          ),
+        )
       ],
     );
   }

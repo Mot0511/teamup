@@ -104,7 +104,7 @@ class _ProfileViewState extends State<ProfileView> {
 
   void goToChatHandler(userState, chatsState) async {
     for (Chat chat in chatsState.chats) {
-      if ((chat.users[0].uid == widget.user!.uid || chat.users[1].uid == widget.user!.uid)) {
+      if (chat.users.length > 1 && (chat.users[0].uid == widget.user!.uid || chat.users[1].uid == widget.user!.uid)) {
         if (mounted) {
           Navigator.push(context, MaterialPageRoute(builder: (_) => ChatView(chat: chat)));
         }

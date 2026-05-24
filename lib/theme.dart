@@ -13,10 +13,10 @@ final textTheme = TextTheme(
   headlineMedium: textBase.copyWith(fontSize: 28),
 );
 
-final ColorScheme colorScheme = const ColorScheme(
+final colorScheme = const ColorScheme(
   brightness: Brightness.dark,
   primary: Color(0xff016335),
-  onPrimary: Colors.black, 
+  onPrimary: Color.fromARGB(255, 255, 255, 255), 
   secondary: Color(0xFF00838F),
   onSecondary: Colors.white, 
   error: Color.fromARGB(255, 153, 10, 0), 
@@ -37,6 +37,15 @@ final theme = ThemeData(
   ),
   scaffoldBackgroundColor: Color(0xff1A1A1A),
   textTheme: textTheme,
-  cardColor: Color.fromARGB(255, 36, 35, 35),
+  cardColor: const Color(0xFF242323),
   canvasColor: const Color.fromARGB(255, 36, 35, 35),
+  elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        foregroundColor: Colors.white,
+        backgroundColor: colorScheme.primary,
+        elevation: 5,
+        iconColor: Colors.white,
+        overlayColor: Color.fromARGB(255, 255, 255, 255),
+      ),
+    ),
 );

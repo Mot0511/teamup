@@ -15,7 +15,6 @@ import 'package:teamup/features/teams/teams.dart';
 import 'package:teamup/features/user/user.dart';
 import 'package:teamup/firebase_options.dart';
 import 'package:teamup/providers/notifications_provider.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:teamup/features/analytics/analytics.dart';
 import 'package:teamup/services/notifications_service.dart';
 import 'package:window_size/window_size.dart';
@@ -76,7 +75,9 @@ void main() async {
       SentryWidget(
         child: MultiProvider(
           providers: [
-            ChangeNotifierProvider<NotificationsProvider>(create: (context) => NotificationsProvider()),
+            ChangeNotifierProvider<NotificationsProvider>(
+              create: (context) => NotificationsProvider()..setContext(context),
+            ),
             ChangeNotifierProvider<HomeProvider>(create: (context) => HomeProvider()),
           ],
           child: Teamup()
