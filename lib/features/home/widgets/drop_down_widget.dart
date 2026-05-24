@@ -8,10 +8,11 @@ class DropdownItem {
 }
 
 class DropdowmWidget extends StatelessWidget {
-  const DropdowmWidget({super.key, required this.items, required this.value, required this.onChange});
+  const DropdowmWidget({super.key, required this.items, required this.value, required this.onChange, this.color});
   final List<DropdownItem> items;
   final String value;
   final Function(String? value) onChange;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +22,7 @@ class DropdowmWidget extends StatelessWidget {
       height: 36,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
-        color: theme.cardColor,
+        color: color ?? theme.cardColor,
       ),
       padding: EdgeInsets.symmetric(horizontal: 10),
       width: MediaQuery.of(context).size.width,
@@ -36,7 +37,7 @@ class DropdowmWidget extends StatelessWidget {
         icon: Icon(Icons.keyboard_arrow_down, size: 40),
         underline: Container(),
         borderRadius: BorderRadius.circular(5),
-        dropdownColor: theme.cardColor,
+        dropdownColor: color ?? theme.cardColor,
         iconEnabledColor: Colors.white,
         iconDisabledColor: Color(0x00058c74),
       ),

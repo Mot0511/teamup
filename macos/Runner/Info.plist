@@ -41,5 +41,16 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>ru.ballisty.teamup</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>teamup</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

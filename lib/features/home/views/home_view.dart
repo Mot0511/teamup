@@ -1,24 +1,19 @@
 
 import 'dart:async';
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:teamup/features/analytics/analytics.dart';
 import 'package:teamup/features/home/home.dart';
-import 'package:teamup/features/home/widgets/bottom_buttons_widget.dart';
+import 'package:teamup/features/home/widgets/filters_button_widget.dart';
 import 'package:teamup/features/teams/widgets/public_team_widget.dart';
 import 'package:teamup/features/teams/teams.dart';
 import 'package:teamup/features/user/user.dart';
-import 'package:teamup/models/game.dart';
-import 'package:teamup/services/notifications_service.dart';
+import 'package:teamup/widgets/darkblur_button_widget.dart';
 import 'package:teamup/widgets/shimmer_widget.dart';
-import 'package:audioplayers/audioplayers.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -29,26 +24,16 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin {
 
-  late final AnimationController animationController = AnimationController(
-    duration: const Duration(milliseconds: 200),
-    vsync: this,
-    value: 1.0,
-  );
-
-  final userBloc = GetIt.I<UserBloc>();
-  final searchBloc = GetIt.I<SearchBloc>();
   final supabase = GetIt.I<SupabaseClient>();
-  final searchRepository = GetIt.I<SearchRepository>();
+  final userBloc = GetIt.I<UserBloc>();
+  final teamsBloc = GetIt.I<TeamsBloc>();
   final teamsRepository = GetIt.I<TeamsRepository>();
-  final analyticsRepository = GetIt.I<AnalyticsRepository>();
-  final notificationsService = GetIt.I<NotificationsService>();
-  final prefs = GetIt.I<SharedPreferences>();
 
-  Game? currentGame;
-  String currentTeamSize = '2';
-  String currentGender = 'male';
-
-  List<User> pendingUsers = [];
+  late AnimationController filtersAnimationController;
+  late Animation<double> filtersAnimation;
+  late Animatable filtersTweenWidth;
+  late Animatable filtersTweenHeight;
+  late Animatable addButtonTweenPosition;
 
   UpdateInfo? updateInfo;
   String? appVersion;
@@ -60,55 +45,30 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     super.initState();
 
     checkVersion();
-
-    currentTeamSize = prefs.getString('currentTeamSize') ?? '2';
-    currentGender = prefs.getString('currentGender') ?? 'male';
-
-    loadGames();
     loadPublicTeams();
+    setupAnimations();
 
-    searchRepository.onTeamFormed = (Team team) async {
-      if (!kIsWeb && Platform.isWindows && !notificationsService.isOnline) notificationsService.showNotification(DateTime.now().millisecondsSinceEpoch.toString(), 'Команда сформирована', '');
-      searchBloc.add(StopSearching(user: (userBloc.state as UserStateLoaded).user));
-      await AudioPlayer().play(AssetSource('audio/team_formed.mp3'));
-      analyticsRepository.logEvent('finish_searching', properties: getParams()!.toJSON());
-      Navigator.push(context, MaterialPageRoute(builder: (_) => TeamView(team: team)));
-    };
-    searchRepository.onTeamFound = (List<User> users) {
-      pendingUsers = users;
-      setState(() {});
-    };
-    searchRepository.onNewPendingUser = (User user) {
-      pendingUsers.add(user);
-      setState(() {});
-    };
-    searchRepository.onRemovePendingUser = (String userID) {
-      pendingUsers = pendingUsers.where((pendingUser) => pendingUser.uid != userID).toList();
-    };
-
-    checkSearching();
+    loadPublicTeams();
     userBloc.stream.listen((state) {
-      checkSearching();
+      loadPublicTeams();
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) => checkVersion());
   }
 
-  Future<void> loadPublicTeams({Completer? completer}) async {
-    publicTeams = await teamsRepository.getTeams();
-    completer?.complete();
-    if (mounted) setState(() {});
+  void setupAnimations() {
+    filtersAnimationController = AnimationController(duration: const Duration(milliseconds: 250), vsync: this);
+    filtersAnimationController.addListener(() => setState(() {}));
+    filtersAnimation = CurvedAnimation(parent: filtersAnimationController, curve: Curves.easeInOutQuad);
+
+    filtersTweenWidth = Tween<double>(begin: 0.83, end: 1.0);
+    filtersTweenHeight = Tween<double>(begin: 60, end: 410);
+    addButtonTweenPosition = Tween<double>(begin: 0, end: 60);
   }
 
-  Future<void> loadGames() async {
-    final homeProvider = Provider.of<HomeProvider>(context, listen: false);
-    if (homeProvider.games == null) {
-      await homeProvider.loadGames();
-    }
-    final currentGameID = prefs.getString('currentGame') ?? '206';
-    currentGame = homeProvider.games!.firstWhere((game) => game.id.toString() == currentGameID);
-    if (mounted) {
-      setState(() {});
+  Future<void> loadPublicTeams({Completer? completer}) async {
+    if (teamsBloc.state is TeamsStateInitial || completer != null) {
+      teamsBloc.add(LoadPublicTeams(completer: completer));
     }
   }
 
@@ -123,52 +83,6 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     if (mounted) {
       setState(() {});
     }
-  }
-
-  Future<void> checkSearching() async {
-    if (userBloc.state is UserStateLoaded) {
-      final int? pendingTeamID = await searchRepository.getPendingTeamID((userBloc.state as UserStateLoaded).user.uid);
-      if (pendingTeamID != null) {
-        searchBloc.add(RestoreSearching(pendingTeamID: pendingTeamID));
-        return;
-      }
-      searchBloc.add(GetReady());
-    }
-  }
-
-  SearchParams? getParams() {
-    if (currentGame != null) {
-      return SearchParams(
-        gameID: currentGame!.id,
-        age: (userBloc.state as UserStateLoaded).user.age, 
-        gender: currentGender, 
-        teamSize: int.parse(currentTeamSize)
-      );
-    }
-    return null;
-  }
-
-  Future<void> onStartSearching() async {
-    final params = getParams();
-    if (params != null) {
-
-      await animationController.reverse();
-      searchBloc.add(StartSearching(
-        user: (userBloc.state as UserStateLoaded).user,
-        params: params,
-      ));
-      await animationController.forward();
-    }
-  }
-
-  Future<void> onStopSearching() async {
-    await animationController.reverse();
-    searchBloc.add(StopSearching(
-      user: (userBloc.state as UserStateLoaded).user,
-    ));
-    pendingUsers.clear();
-    setState(() {});
-    await animationController.forward();
   }
 
   @override
@@ -205,43 +119,76 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                 ),
                 body: Padding(
                   padding: EdgeInsets.symmetric(horizontal: 10),
-                  child: publicTeams != null
-                    ? RefreshIndicator(
-                      onRefresh: () async {
-                        final completer = Completer();
-                        await loadPublicTeams(completer: completer);
-                        return completer.future;
-                      },
-                      child: ClipRRect(
-                        borderRadius: BorderRadiusGeometry.circular(10),
-                        child: Stack(
-                          alignment: AlignmentDirectional.bottomCenter,
-                          children: [
-                            ListView(
-                              padding: EdgeInsets.only(bottom: 70),
-                              children: publicTeams!.map((team) => 
-                                Padding(
-                                  padding: EdgeInsets.only(bottom: 10),
-                                  child: PublicTeamWidget(team: team),
+                  child: RefreshIndicator(
+                    onRefresh: () async {
+                      final completer = Completer();
+                      await loadPublicTeams(completer: completer);
+                      return completer.future;
+                    },
+                    child: ClipRRect(
+                      borderRadius: BorderRadiusGeometry.circular(10),
+                      child: Stack(
+                        alignment: AlignmentDirectional.bottomStart,
+                        children: [
+                          BlocBuilder(
+                            bloc: teamsBloc,
+                            builder: (context, state) {
+                              if (state is TeamsStateLoaded) {
+                                return ListView(
+                                  padding: EdgeInsets.only(bottom: 70),
+                                  children: state.publicTeams.map((team) => 
+                                    Padding(
+                                      padding: EdgeInsets.only(bottom: 10),
+                                      child: PublicTeamWidget(team: team),
+                                    )
+                                  ).toList()
+                                );
+                              } else if (state is TeamsStateError) {
+                                return Center(
+                                  child: Column(
+                                    children: [
+                                      Text('Произошла ошибка при загрузке команд', style: theme.textTheme.bodyMedium),
+                                      Text(state.e.toString(), style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey)),
+                                    ],
+                                  )
+                                );
+                              }
+                              return Column(
+                                children: List.generate(3, (i) => 
+                                  Padding(
+                                    padding: EdgeInsets.only(bottom: 10),
+                                    child: ShimmerWidget(height: 100)
+                                  )
+                                ),
+                              );
+                            }
+                          ),
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              return Padding(
+                                padding: EdgeInsets.only(bottom: 5, left: 5),
+                                child: FiltersButtonWidget(
+                                  width: constraints.maxWidth * filtersTweenWidth.evaluate(filtersAnimation),
+                                  height: filtersTweenHeight.evaluate(filtersAnimation) - 60.0,
+                                  filtersAnimationController: filtersAnimationController,
                                 )
-                              ).toList()
-                            ),
-                            Padding(
-                              padding: EdgeInsets.all(10),
-                              child: BottomButtonsWidget(),
-                            ),
-                          ],
-                        ),
-                      )
-                    )
-                    : Column(
-                      children: List.generate(3, (i) => 
-                        Padding(
-                          padding: EdgeInsets.only(bottom: 10),
-                          child: ShimmerWidget(height: 100)
-                        )
+                              );
+                            },
+                          ),
+                          Positioned(
+                            bottom: 5,
+                            right: -addButtonTweenPosition.evaluate(filtersAnimation)+3,
+                            child: DarkButtonWidget(
+                              width: 60,
+                              height: 60,
+                              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => CreateTeamView())), 
+                              child: Icon(Icons.add, size: 30)
+                            )
+                          )
+                      ],
                       ),
-                  ),
+                    )
+                  )
                 )
               );
             } else if (state is UserStateLoaded) {
@@ -255,24 +202,3 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     );
   }
 }
-
-
-// InfoWidget(
-//   currentGame: currentGame!,
-//   onSetGame: (Game game) async {
-//     await prefs.setString('currentGame', game.id.toString());
-//     setState(() => currentGame = game);
-//   },
-//   currentGender: currentGender, 
-//   onSetGender: (value) async {
-//     await prefs.setString('currentGender', value);
-//     setState(() => currentGender = value);
-//   },
-//   currentTeamSize: currentTeamSize, 
-//   onSetTeamSize: (value) async {
-//     await prefs.setString('currentTeamSize', value);
-//     setState(() => currentTeamSize = value);
-//   },
-//   animationController: animationController,
-//   pendingUsers: pendingUsers
-// )

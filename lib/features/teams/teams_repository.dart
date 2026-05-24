@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
@@ -5,6 +7,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:teamup/features/teams/teams.dart';
 import 'package:teamup/features/user/models/models.dart' as models;
 import 'package:teamup/models/game.dart';
+
+enum CapabilityToJoin {capable, notCapable, expiredInvite}
 
 class TeamsRepository {
   final supabase = GetIt.I<SupabaseClient>();
@@ -94,6 +98,34 @@ class TeamsRepository {
       'member': uid,
       'chat': teamId
     }]);
+  }
+
+  Future<String> getInviteLink(int teamID) async {
+    final invitations = await supabase.from('invitations').select('number, expiredAt').eq('teamID', teamID);
+    int number = Random.secure().nextInt(100000) + 1;
+    if (invitations.isNotEmpty) {
+      await supabase.from('invitations').update({
+        'number': number,
+        'expiredAt': DateTime.now().add(Duration(days: 5)).toIso8601String()
+      }).eq('teamID', teamID);
+    } else {
+      await supabase.from('invitations').insert([{
+        'number': number,
+        'teamID': teamID,
+        'expiredAt': DateTime.now().add(Duration(days: 5)).toIso8601String()
+      }]);
+    }
+
+    return 'https://teamupp.ru/invite/$teamID/$number';
+  }
+
+  Future<CapabilityToJoin> isCapableToJoin(int teamID, int number) async {
+    final invite = await supabase.from('invitations').select().eq('teamID', teamID);
+    if (invite.isEmpty) return CapabilityToJoin.notCapable;
+    final expiredAt = DateTime.parse(invite[0]['expiredAt']);
+    if (expiredAt.isBefore(DateTime.now())) return CapabilityToJoin.expiredInvite;
+    if (invite[0]['number'] == number) return CapabilityToJoin.capable;
+    return CapabilityToJoin.notCapable;
   }
 
   Future<ImageProvider> getIcon(int id) async {

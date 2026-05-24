@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:teamup/features/home/home.dart';
@@ -130,6 +131,13 @@ class _CreateTeamViewState extends State<CreateTeamView> {
     Navigator.of(context).pop();
   }
 
+  Future<void> copyLink() async {
+    final inviteLink = await teamsRepository.getInviteLink(widget.team!.id);
+    await Clipboard.setData(ClipboardData(text: inviteLink));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ссылка на приглашение в команду скопирована в буфер обмена')));
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -163,9 +171,18 @@ class _CreateTeamViewState extends State<CreateTeamView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Участники', style: theme.textTheme.titleLarge),
-                IconButton(
-                  onPressed: chooseMembers,
-                  icon: Icon(Icons.add)
+                Row(
+                  children: [
+                    if (widget.team != null)
+                    IconButton(
+                      onPressed: copyLink,
+                      icon: Icon(Icons.link)
+                    ),
+                    IconButton(
+                      onPressed: chooseMembers,
+                      icon: Icon(Icons.add)
+                    )
+                  ],
                 )
               ],
             ),

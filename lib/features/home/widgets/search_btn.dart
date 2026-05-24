@@ -17,8 +17,7 @@ class SearchBtn extends StatefulWidget {
   State<SearchBtn> createState() => _SearchBtnState();
 }
 
-class _SearchBtnState extends State<SearchBtn>
-    with SingleTickerProviderStateMixin {
+class _SearchBtnState extends State<SearchBtn> {
   late final AnimationController animationController;
   late final Animation colorAnimation;
 
@@ -26,12 +25,6 @@ class _SearchBtnState extends State<SearchBtn>
 
   void initState() {
     super.initState();
-
-    animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-      value: 1.0,
-    );
 
     searchBloc.stream.listen((state) {
       if (searchBloc.state is SearchStateSearching) {
