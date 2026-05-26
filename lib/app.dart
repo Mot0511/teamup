@@ -31,7 +31,7 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
 
   final supabase = GetIt.I<SupabaseClient>();
   late final StreamSubscription<AuthState> _authStateSubscription;
-  late final StreamSubscription? appLinksSub;
+  StreamSubscription? appLinksSub;
 
   final userBloc = GetIt.I<UserBloc>();
   final searchBloc = GetIt.I<SearchBloc>();
