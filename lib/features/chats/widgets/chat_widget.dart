@@ -50,7 +50,7 @@ class _ChatWidgetState extends State<ChatWidget> {
 
     final user = (userBloc.state as UserStateLoaded).user;
     late User other;
-    if (widget.chat.users.isNotEmpty) {
+    if (widget.chat.users.length > 1) {
       other = user.uid == widget.chat.users[0].uid ? widget.chat.users[1] : widget.chat.users[0];
     }
     
