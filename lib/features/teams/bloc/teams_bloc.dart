@@ -13,6 +13,7 @@ class TeamsBloc extends Bloc<TeamsEvent, TeamsState> {
       try {
         final List<Team> publicTeams = await teamsRepository.getTeams();
         emit(TeamsStateLoaded(publicTeams: publicTeams, privateTeams: privateTeams));
+        event.completer?.complete();
       } on Exception catch (e) {
         emit(TeamsStateError(e: e));
       }
@@ -27,6 +28,7 @@ class TeamsBloc extends Bloc<TeamsEvent, TeamsState> {
       try {
         final List<Team> privateTeams = await teamsRepository.getTeams(event.uid);
         emit(TeamsStateLoaded(publicTeams: publicTeams, privateTeams: privateTeams));
+        event.completer?.complete();
       } on Exception catch (e) {
         emit(TeamsStateError(e: e));
       }

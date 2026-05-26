@@ -82,11 +82,11 @@ class _TeamsViewState extends State<TeamsView> {
                         shrinkWrap: true,
                         slivers: [
                           SliverFillRemaining(
-                          hasScrollBody: false,
-                          child: Center(
-                            child: Text('Нет команд, в которых ты состоишь', style: theme.textTheme.titleMedium),
+                            hasScrollBody: false,
+                            child: Center(
+                              child: Text('Нет команд, в которых ты состоишь', style: theme.textTheme.titleMedium),
+                            ),
                           ),
-                        ),
                         ],
                       );
                     }
