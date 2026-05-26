@@ -13,10 +13,11 @@ import 'package:teamup/features/chats/chats.dart';
 import 'package:teamup/features/home/home.dart';
 import 'package:teamup/features/teams/teams.dart';
 import 'package:teamup/features/user/user.dart';
-import 'package:teamup/firebase_options.dart';
+// import 'package:teamup/firebase_options.dart';
 import 'package:teamup/providers/notifications_provider.dart';
 import 'package:teamup/features/analytics/analytics.dart';
 import 'package:teamup/services/notifications_service.dart';
+import 'package:teamup/utils/register_app_links.dart';
 import 'package:window_size/window_size.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:teamup/env.dart' as env;
@@ -29,11 +30,12 @@ void main() async {
       setWindowMinSize(const Size(440, 810));
       setWindowMaxSize(const Size(440, 810));
     }
+    await registerAppLinks('teamup');
 
     if (Platform.isAndroid) {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
+      // await Firebase.initializeApp(
+      //   options: DefaultFirebaseOptions.currentPlatform,
+      // );5
     }
     
     await Supabase.initialize(

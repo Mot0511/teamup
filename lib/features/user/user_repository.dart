@@ -68,17 +68,23 @@ class UserRepository {
           accessToken: accessToken,
         );
       } else  {
-        final loginUrl = (await supabase.auth.getOAuthSignInUrl(
-          provider: sb.OAuthProvider.google,
-          redirectTo: "https://api.teamupp.ru/auth/v1/callback"
-        )).url;
-
-        final result = await FlutterWebAuth2.authenticate(
-          url: loginUrl,
-          callbackUrlScheme: "http://localhost:3000/auth/v1/callback",
-          options: FlutterWebAuth2Options(useWebview: false)
+        final res = await supabase.auth.signInWithOAuth(
+          sb.OAuthProvider.google,
+          redirectTo: 'teamup://home',
+          authScreenLaunchMode: sb.LaunchMode.inAppWebView,
         );
-        await supabase.auth.getSessionFromUrl(Uri.parse(result));
+        
+        // final loginUrl = (await supabase.auth.getOAuthSignInUrl(
+        //   provider: sb.OAuthProvider.google,
+        //   redirectTo: "https://api.teamupp.ru/auth/v1/callback"
+        // )).url;
+
+        // final result = await FlutterWebAuth2.authenticate(
+        //   url: loginUrl,
+        //   callbackUrlScheme: "http://localhost:3000/auth/v1/callback",
+        //   options: FlutterWebAuth2Options(useWebview: false)
+        // );
+        // await supabase.auth.getSessionFromUrl(Uri.parse(result));
       }
   }
 
