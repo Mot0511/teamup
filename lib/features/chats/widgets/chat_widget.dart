@@ -32,7 +32,7 @@ class _ChatWidgetState extends State<ChatWidget> {
     final result = await showMenu(  
       color: theme.cardColor,
       position: RelativeRect.fromRect(
-        Rect.fromLTWH(tapPosition!.dx, tapPosition!.dy, 30, 30), 
+        Rect.fromLTWH(tapPosition!.dx, tapPosition!.dy, 30, 30),
         Rect.fromLTWH(0, 0, overlay!.paintBounds.size.width,
                 overlay.paintBounds.size.height)),
       context: context, 
@@ -49,11 +49,12 @@ class _ChatWidgetState extends State<ChatWidget> {
     final theme = Theme.of(context);
 
     final user = (userBloc.state as UserStateLoaded).user;
-    late User other;
-    if (widget.chat.users.isNotEmpty) {
+    User? other;
+    if (widget.chat.users.length > 1) {
       other = user.uid == widget.chat.users[0].uid ? widget.chat.users[1] : widget.chat.users[0];
     }
     
+    if (other == null) return SizedBox.shrink();
     return Dismissible(
       key: Key(widget.chat.id.toString()),
       direction: DismissDirection.endToStart,

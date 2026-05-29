@@ -16,7 +16,6 @@ class AuthResult {
 
   AuthResult({required this.userdata, required this.isNew});
 }
-
 class UserRepository {
 
   final supabase = GetIt.I<sb.SupabaseClient>();
@@ -24,18 +23,31 @@ class UserRepository {
   final Map<String, ImageProvider> avatarProviders = {};
 
   Future<void> googleSignIn() async {
-      const androidClientId = '677191252450-plq6hd0tkmh0befgpm2lrh06hpf7mj37.apps.googleusercontent.com';
-      const webClientId = '677191252450-s6a7kuf9dek6arhufeot9i968a8bhloh.apps.googleusercontent.com';
-      
+
+      final clientIDs = {
+        'android': '677191252450-plq6hd0tkmh0befgpm2lrh06hpf7mj37.apps.googleusercontent.com',
+        'ios': '677191252450-fuf25incf7lc9ccboqsrqt1rtpfqd592.apps.googleusercontent.com',
+        'macos': '677191252450-jmd0vvr6gqhv4lm255n2uf1l7iinb0s9.apps.googleusercontent.com',
+        'web': '677191252450-s6a7kuf9dek6arhufeot9i968a8bhloh.apps.googleusercontent.com'
+      };
+
       if (kIsWeb) {
         await supabase.auth.signInWithOAuth(
           sb.OAuthProvider.google,
           redirectTo: '${dotenv.env['WEB_CLIENT_URL']}',
         );
-      } else if (Platform.isAndroid) {
+      } else if (Platform.isIOS || Platform.isMacOS) {
+        // On Apple platforms, prefer the hosted OAuth flow to avoid id_token nonce
+        // mismatches seen with native sign-in providers.
+        await supabase.auth.signInWithOAuth(
+          sb.OAuthProvider.google,
+          redirectTo: 'teamup://home',
+          queryParams: {'redirectTo': 'teamup://home'},
+        );
+      } else if (!Platform.isWindows) {
         final googleSignIn = GoogleSignIn(
-          clientId: androidClientId,
-          serverClientId: webClientId,
+          clientId: clientIDs[Platform.operatingSystem],
+          serverClientId: Platform.isMacOS ? null : clientIDs['web'],
           scopes: ["profile", "email"],
         );
         final googleUser = await googleSignIn.signIn();
@@ -56,17 +68,23 @@ class UserRepository {
           accessToken: accessToken,
         );
       } else  {
-        final loginUrl = (await supabase.auth.getOAuthSignInUrl(
-          provider: sb.OAuthProvider.google,
-          redirectTo: "https://api.teamupp.ru/auth/v1/callback"
-        )).url;
-
-        final result = await FlutterWebAuth2.authenticate(
-          url: loginUrl,
-          callbackUrlScheme: "http://localhost:3000/auth/v1/callback",
-          options: FlutterWebAuth2Options(useWebview: false)
+        final res = await supabase.auth.signInWithOAuth(
+          sb.OAuthProvider.google,
+          redirectTo: 'teamup://home',
+          authScreenLaunchMode: sb.LaunchMode.inAppWebView,
         );
-        await supabase.auth.getSessionFromUrl(Uri.parse(result));
+        
+        // final loginUrl = (await supabase.auth.getOAuthSignInUrl(
+        //   provider: sb.OAuthProvider.google,
+        //   redirectTo: "https://api.teamupp.ru/auth/v1/callback"
+        // )).url;
+
+        // final result = await FlutterWebAuth2.authenticate(
+        //   url: loginUrl,
+        //   callbackUrlScheme: "http://localhost:3000/auth/v1/callback",
+        //   options: FlutterWebAuth2Options(useWebview: false)
+        // );
+        // await supabase.auth.getSessionFromUrl(Uri.parse(result));
       }
   }
 
@@ -76,7 +94,7 @@ class UserRepository {
         sb.OAuthProvider.discord,
         redirectTo: '${dotenv.env['WEB_CLIENT_URL']}',
       );
-    } else if (Platform.isAndroid) {
+    } else if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
       await supabase.auth.signInWithOAuth(
         sb.OAuthProvider.discord,
         redirectTo: 'teamup://home',
@@ -107,7 +125,6 @@ class UserRepository {
       email: email,
       password: password
     );
-    
   }
 
   Future<void> emailSignUp(String email, String password) async {

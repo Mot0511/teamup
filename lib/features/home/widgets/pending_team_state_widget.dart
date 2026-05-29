@@ -4,9 +4,10 @@ import 'package:get_it/get_it.dart';
 import 'package:teamup/features/user/user.dart';
 
 class PendingTeamStateWidget extends StatelessWidget {
-  PendingTeamStateWidget({super.key, required this.currentTeamSize, required this.pendingUsers});
+  PendingTeamStateWidget({super.key, required this.currentTeamSize, required this.pendingUsers, required this.onStopSearching});
   final String currentTeamSize;
   final List<User> pendingUsers;
+  final VoidCallback onStopSearching;
   
   final userBloc = GetIt.I<UserBloc>();
 
@@ -14,19 +15,19 @@ class PendingTeamStateWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: EdgeInsetsGeometry.symmetric(horizontal: 10),
+      padding: EdgeInsetsGeometry.symmetric(horizontal: 0),
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Идет поиск...', 
-                style: theme.textTheme.titleLarge
+                'Набрано игроков', 
+                style: theme.textTheme.titleMedium
               ),
               Text(
                 '${pendingUsers.length}/$currentTeamSize', 
-                style: theme.textTheme.titleLarge
+                style: theme.textTheme.titleMedium
               ),
             ],
           ),
@@ -37,7 +38,22 @@ class PendingTeamStateWidget extends StatelessWidget {
                 UserWidget(user: user)
               ).toList()
             )
-          )
+          ),
+          SizedBox(
+            width: double.infinity,
+            height: 40,
+            child: ElevatedButton(
+              onPressed: onStopSearching,
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                backgroundColor: theme.colorScheme.error
+              ),
+              child: Text("ОСТАНОВИТЬ ПОИСК", style: theme.textTheme.labelMedium)
+            ),
+          ),
+          SizedBox(height: 15)
         ],
       ),
     );

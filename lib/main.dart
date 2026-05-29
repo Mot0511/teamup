@@ -15,9 +15,9 @@ import 'package:teamup/features/teams/teams.dart';
 import 'package:teamup/features/user/user.dart';
 import 'package:teamup/firebase_options.dart';
 import 'package:teamup/providers/notifications_provider.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:teamup/features/analytics/analytics.dart';
 import 'package:teamup/services/notifications_service.dart';
+import 'package:teamup/utils/register_app_links.dart';
 import 'package:window_size/window_size.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:teamup/env.dart' as env;
@@ -29,6 +29,9 @@ void main() async {
       setWindowTitle('Teamup');
       setWindowMinSize(const Size(440, 810));
       setWindowMaxSize(const Size(440, 810));
+    }
+    if (Platform.isWindows) {
+      await registerAppLinks('teamup');
     }
 
     if (Platform.isAndroid) {
@@ -76,7 +79,9 @@ void main() async {
       SentryWidget(
         child: MultiProvider(
           providers: [
-            ChangeNotifierProvider<NotificationsProvider>(create: (context) => NotificationsProvider()),
+            ChangeNotifierProvider<NotificationsProvider>(
+              create: (context) => NotificationsProvider()..setContext(context),
+            ),
             ChangeNotifierProvider<HomeProvider>(create: (context) => HomeProvider()),
           ],
           child: Teamup()

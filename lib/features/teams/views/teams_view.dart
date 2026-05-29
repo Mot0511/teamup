@@ -34,8 +34,12 @@ class _TeamsViewState extends State<TeamsView> {
   }
 
   void loadTeams({Completer? completer}) {
-    if ((teamsBloc.state is TeamsStateInitial || completer != null) && userBloc.state is UserStateLoaded) {
-      teamsBloc.add(LoadTeams(uid: (userBloc.state as UserStateLoaded).user.uid, completer: completer));
+    if (userBloc.state is UserStateLoaded) {
+      if (teamsBloc.state is TeamsStateInitial || 
+        teamsBloc.state is TeamsStateLoaded && (teamsBloc.state as TeamsStateLoaded).privateTeams.isEmpty || 
+        completer != null) {
+          teamsBloc.add(LoadPrivateTeams(uid: (userBloc.state as UserStateLoaded).user.uid, completer: completer));
+      }
     }
   }
 
@@ -47,10 +51,13 @@ class _TeamsViewState extends State<TeamsView> {
         title: Text('Команды'),
         actions: [
           if (kIsWeb || !Platform.isAndroid)
-          IconButton(onPressed: () {
-            final completer = Completer();
-            loadTeams(completer: completer);
-          }, icon: Icon(Icons.refresh))
+          IconButton(
+            onPressed: () {
+              final completer = Completer();
+              loadTeams(completer: completer);
+            }, 
+            icon: Icon(Icons.refresh)
+          )
         ],
       ),
       body: Column(
@@ -66,20 +73,20 @@ class _TeamsViewState extends State<TeamsView> {
                 bloc: teamsBloc,
                 builder: (context, state) {
                   if (state is TeamsStateLoaded) {
-                    if (state.teams.isNotEmpty) {
+                    if (state.privateTeams.isNotEmpty) {
                       return ListView(
-                        children: state.teams.map((team) => TeamWidget(team: team)).toList(),
+                        children: state.privateTeams.map((team) => TeamWidget(team: team)).toList(),
                       );
                     } else {
                       return CustomScrollView(
                         shrinkWrap: true,
                         slivers: [
                           SliverFillRemaining(
-                          hasScrollBody: false,
-                          child: Center(
-                            child: Text('Нет команд, в которых ты состоишь.', style: theme.textTheme.titleMedium),
+                            hasScrollBody: false,
+                            child: Center(
+                              child: Text('Нет команд, в которых ты состоишь', style: theme.textTheme.titleMedium),
+                            ),
                           ),
-                        ),
                         ],
                       );
                     }

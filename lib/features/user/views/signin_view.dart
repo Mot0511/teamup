@@ -3,7 +3,9 @@ import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:teamup/features/user/user.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:teamup/features/user/views/reset_password_view.dart';
 import 'package:teamup/widgets/outlined_field_widget.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SigninView extends StatefulWidget {
   SigninView({super.key});
@@ -51,6 +53,11 @@ class _SigninViewState extends State<SigninView> {
     }
   }
 
+  Future<void> onForgotPassword() async {
+    final Uri url = Uri.parse('https://teamupp.ru/password/forgot');
+    await launchUrl(url);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -76,14 +83,21 @@ class _SigninViewState extends State<SigninView> {
                         children: [
                           OutlinedField(controller: emailController, error: emailError, hint: 'Почта'),
                           OutlinedField(controller: passwordController, error: passwordError, hint: 'Пароль', obscureText: true),
-                          ElevatedButton(
-                            onPressed: onEmailSignIn, 
-                            child: Text('Войти', style: theme.textTheme.labelMedium)
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: onEmailSignIn, 
+                              child: Text('Войти', style: theme.textTheme.labelMedium)
+                            )
                           ),
                           SizedBox(height: 5),
                           TextButton(
                             onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => SignupView())), 
                             child: Text('Зарегистрироваться', style: theme.textTheme.labelMedium)
+                          ),
+                          TextButton(
+                            onPressed: onForgotPassword,
+                            child: Text('Забыли пароль?', style: theme.textTheme.labelSmall?.copyWith(color: Colors.grey[600])),
                           )
                         ],
                       ),

@@ -31,7 +31,7 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
 
   final supabase = GetIt.I<SupabaseClient>();
   late final StreamSubscription<AuthState> _authStateSubscription;
-  late final StreamSubscription<Uri> appLinksSubscription;
+  StreamSubscription? appLinksSub;
 
   final userBloc = GetIt.I<UserBloc>();
   final searchBloc = GetIt.I<SearchBloc>();
@@ -42,11 +42,13 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
   final notificationsService = GetIt.I<NotificationsService>();
 
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
   
   final appLinks = AppLinks();
 
   void initState() {
     super.initState();
+    
 
     _authStateSubscription = supabase.auth.onAuthStateChange.listen((data) async {
       final userdata = supabase.auth.currentUser;
@@ -77,6 +79,9 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
         await notificationsService.setListeners(navigatorKey, userdata, notificationsProvider, context);
         
         WidgetsBinding.instance.addObserver(this);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          initAppLinks();
+        });
         if (Platform.isWindows) {
           FlutterWindowClose.setWindowShouldCloseHandler(() async {
             await userRepository.setOffline(userdata.id);
@@ -87,7 +92,39 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
     });
   }
 
-   @override
+  Future<void> initAppLinks() async {
+    final link = await appLinks.getInitialLink();
+    if (link != null) {
+      handleAppLink(link);
+    }
+
+    appLinksSub = appLinks.uriLinkStream.listen((uri) {
+      handleAppLink(uri);
+    });
+  }
+
+  Future<void> handleAppLink(Uri uri) async {
+    final segments = uri.toString().split('/');
+    if (segments[2] == 'invite') {
+      final teamID = int.parse(segments[3]);
+      final CapabilityToJoin isCapableToJoin = await teamsRepository.isCapableToJoin(teamID, int.parse(segments[4]));
+      if (isCapableToJoin == CapabilityToJoin.notCapable && mounted) {
+        scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(content: Text('Неверная ссылка приглашения в команду')));
+        return;
+      }
+      if (isCapableToJoin == CapabilityToJoin.expiredInvite && mounted) {
+        scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(content: Text('Срок действия приглашения истек')));
+        return;
+      }
+      await teamsRepository.join(teamID);
+      final Team team = await teamsRepository.getTeam(teamID);
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(builder: (_) => TeamView(team: team)),
+      );
+    }
+  }
+
+  @override
   Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
     super.didChangeAppLifecycleState(state);
     final uid = supabase.auth.currentUser?.id;
@@ -144,6 +181,7 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
     return MaterialApp( 
       theme: theme,
       navigatorKey: navigatorKey,
+      scaffoldMessengerKey: scaffoldMessengerKey,
       home: StreamBuilder(
         stream: supabase.auth.onAuthStateChange,
         builder: (context, snap) {

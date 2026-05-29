@@ -8,7 +8,9 @@ import 'package:teamup/widgets/shimmer_widget.dart';
 
 class InfoWidget extends StatefulWidget {
   const InfoWidget({
-    super.key, 
+    super.key,
+    required this.onStartSearching,
+    required this.onStopSearching,
     required this.currentGame,
     required this.onSetGame,
 
@@ -21,7 +23,10 @@ class InfoWidget extends StatefulWidget {
     required this.animationController,
 
     required this.pendingUsers
+
   });
+  final VoidCallback onStartSearching;
+  final VoidCallback onStopSearching;
   final Game currentGame;
   final Function onSetGame;
 
@@ -59,6 +64,7 @@ class _InfoWidgetState extends State<InfoWidget> {
           return FadeTransition(
             opacity: opacity,
             child: FiltersWidget(
+              onStartSearching: widget.onStartSearching,
               currentGame: widget.currentGame,
               onSetGame: (value) => widget.onSetGame(value),
               currentGender: widget.currentGender, 
@@ -71,6 +77,7 @@ class _InfoWidgetState extends State<InfoWidget> {
           return FadeTransition(
             opacity: opacity,
             child: PendingTeamStateWidget(
+              onStopSearching: widget.onStopSearching,
               currentTeamSize: widget.currentTeamSize,
               pendingUsers: widget.pendingUsers
             ),

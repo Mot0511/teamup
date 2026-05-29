@@ -6,13 +6,22 @@ import 'package:teamup/features/user/user.dart';
 
 abstract class TeamsEvent extends Equatable {}
 
-class LoadTeams extends TeamsEvent {
-  final String uid;
+class LoadPublicTeams extends TeamsEvent {
   final Completer? completer;
-  LoadTeams({required this.uid, this.completer});
+  LoadPublicTeams({this.completer});
 
   @override
-  List get props => [uid];
+  List get props => [completer];
+}
+
+
+class LoadPrivateTeams extends TeamsEvent {
+  final String uid;
+  final Completer? completer;
+  LoadPrivateTeams({required this.uid, this.completer});
+
+  @override
+  List get props => [uid, completer];
 }
 
 class AddTeam extends TeamsEvent {
