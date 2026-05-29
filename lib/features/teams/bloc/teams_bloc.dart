@@ -103,7 +103,7 @@ class TeamsBloc extends Bloc<TeamsEvent, TeamsState> {
       }
     });
 
-    on<ClearTeams>((event, emit) async {
+    on<ClearTeams>((event, emit) {
       emit(TeamsStateInitial());
     });
 

@@ -95,11 +95,13 @@ class _ProfileViewState extends State<ProfileView> {
   }
 
   void singoutHandler() async {
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SigninView()));
     userBloc.add(Signout());
     chatsBloc.add(ClearChats());
     teamsBloc.add(ClearTeams());
     await userRepository.signout();
+    if (mounted) {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SigninView()));
+    }
   }
 
   void goToChatHandler(userState, chatsState) async {
