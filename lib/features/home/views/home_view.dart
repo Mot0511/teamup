@@ -67,7 +67,7 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
   }
 
   Future<void> loadPublicTeams({Completer? completer}) async {
-    if (teamsBloc.state is TeamsStateInitial || completer != null) {
+    if (teamsBloc.state is TeamsStateInitial && userBloc.state is UserStateLoaded || completer != null) {
       teamsBloc.add(LoadPublicTeams(completer: completer));
     }
   }
