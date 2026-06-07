@@ -89,7 +89,7 @@ class _ProfileViewState extends State<ProfileView> {
   }
   
   void removeFriendHandler(String uid) async {
-    await userRepository.removeFriend(uid);
+    await userRepository.removeFriend(uid, widget.user!.uid);
     friendState = FriendState.notFriend;
     setState(() {});
   }

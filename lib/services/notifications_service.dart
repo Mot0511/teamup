@@ -19,18 +19,24 @@ Future<void> notificationHandler(RemoteMessage message, navigatorKey) async {
   await Firebase.initializeApp();
   final chatsRepository = ChatsRepository();
   final teamsRepository = TeamsRepository();
-  final type = message.data['screen'].split('-')[0];
-  final id = message.data['screen'].split('-')[1];
+  final userRepository = UserRepository();
+  final type = message.data['screen'].split('/')[0];
+  final id = message.data['screen'].split('/')[1];
 
   if (type == 'chat') {
     final chat = await chatsRepository.getChat(int.parse(id));
     navigatorKey.currentState?.push(
       MaterialPageRoute(builder: (_) => ChatView(chat: chat))
     );
-  } else {
+  } else if (type == 'team') {
     final team = await teamsRepository.getTeam(int.parse(id));
     navigatorKey.currentState?.push(
       MaterialPageRoute(builder: (_) => TeamView(team: team))
+    );
+  } else if (type == 'friend') {
+    final user = await userRepository.getUserdata(id);
+    navigatorKey.currentState?.push(
+      MaterialPageRoute(builder: (_) => ProfileView(user: user))
     );
   }
 }

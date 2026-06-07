@@ -103,20 +103,10 @@ class UserRepository {
         }
       );
     } else {
-      final loginUrl = (await supabase.auth.getOAuthSignInUrl(
-        provider: sb.OAuthProvider.discord,
-        redirectTo: "https://api.teamupp.ru/auth/v1/callback"
-      )).url;
-
-      try {
-        final result = await FlutterWebAuth2.authenticate(
-          url: loginUrl,
-          callbackUrlScheme: "http://localhost:3000", 
-          options: FlutterWebAuth2Options(useWebview: false)
-        );
-        await supabase.auth.getSessionFromUrl(Uri.parse(result));
-      } on PlatformException catch (_) {}
-      
+      await supabase.auth.signInWithOAuth(
+        sb.OAuthProvider.discord,
+        redirectTo: 'teamup://home',
+      );
     }
   }
 
@@ -255,8 +245,10 @@ class UserRepository {
     return friends;
   }
 
-  Future<void> removeFriend(String uid) async {
-    await supabase.from('friends').delete().or('from_user.eq.$uid, to_user.eq.$uid');
+  Future<void> removeFriend(String user1, String user2) async {
+    await supabase.from('friends').delete().eq('from_user', user1).eq('to_user', user2);
+    await supabase.from('friends').delete().eq('from_user', user2).eq('to_user', user1);
+
   }
 
   Future<void> setOnline(String uid) async {

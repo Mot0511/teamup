@@ -105,23 +105,33 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
 
   Future<void> handleAppLink(Uri uri) async {
     final segments = uri.toString().split('/');
-    if (segments[2] == 'invite') {
-      final teamID = int.parse(segments[3]);
-      final CapabilityToJoin isCapableToJoin = await teamsRepository.isCapableToJoin(teamID, int.parse(segments[4]));
-      if (isCapableToJoin == CapabilityToJoin.notCapable && mounted) {
-        scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(content: Text('Неверная ссылка приглашения в команду')));
-        return;
-      }
-      if (isCapableToJoin == CapabilityToJoin.expiredInvite && mounted) {
-        scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(content: Text('Срок действия приглашения истек')));
-        return;
-      }
-      await teamsRepository.join(teamID);
-      final Team team = await teamsRepository.getTeam(teamID);
-      navigatorKey.currentState?.push(
-        MaterialPageRoute(builder: (_) => TeamView(team: team)),
-      );
+    switch (segments[2]) {
+      case 'invite':
+        final teamID = int.parse(segments[3]);
+        final CapabilityToJoin isCapableToJoin = await teamsRepository.isCapableToJoin(teamID, int.parse(segments[4]));
+        if (isCapableToJoin == CapabilityToJoin.notCapable && mounted) {
+          scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(content: Text('Неверная ссылка приглашения в команду')));
+          return;
+        }
+        if (isCapableToJoin == CapabilityToJoin.expiredInvite && mounted) {
+          scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(content: Text('Срок действия приглашения истек')));
+          return;
+        }
+        await teamsRepository.join(teamID);
+        final Team team = await teamsRepository.getTeam(teamID);
+        navigatorKey.currentState?.push(
+          MaterialPageRoute(builder: (_) => TeamView(team: team)),
+        );
+        break;
+
+      case 'profile':
+        final uid = segments[3];
+        final user = await userRepository.getUserdata(uid);
+        navigatorKey.currentState?.push(
+          MaterialPageRoute(builder: (_) => ProfileView(user: user)),
+        );
     }
+
   }
 
   @override
