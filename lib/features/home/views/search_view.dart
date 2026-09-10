@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:teamup/features/home/home.dart';
+import 'package:teamup/features/home/widgets/game_icon_widget.dart';
 import 'package:teamup/features/user/user.dart';
 import 'package:teamup/widgets/shimmer_widget.dart';
 
@@ -137,7 +138,7 @@ class _AllUsersViewState extends State<AllUsersView> {
                           ),
                         );
                       }
-                      return UserWidget(user: users![index]);
+                      return UserWidget(user: users![index], trailing: users![index].favouriteGame != null ? GameIcon(game: users![index].favouriteGame) : null);
                     },
                   )
                 : ListView.builder(

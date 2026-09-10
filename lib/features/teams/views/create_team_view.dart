@@ -190,7 +190,7 @@ class _CreateTeamViewState extends State<CreateTeamView> {
               children: members.map((member) => 
                 UserWidget(
                   user: member,
-                  trailing: member.uid != (userBloc.state as UserStateLoaded).user.uid && (widget.team == null || !widget.team!.isPublic)
+                  trailing: widget.team == null
                     ? IconButton(
                       onPressed: () {
                         members.remove(member);
@@ -234,7 +234,7 @@ class _CreateTeamViewState extends State<CreateTeamView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                if (widget.team != null && widget.team!.isPublic && widget.team!.users.where((user) => user.uid == supabase.auth.currentUser?.id).toList().isNotEmpty)
+                if (widget.team != null && widget.team!.users.where((user) => user.uid == supabase.auth.currentUser?.id).toList().isNotEmpty)
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor:  theme.colorScheme.error

@@ -120,7 +120,8 @@ class UserRepository {
   Future<void> emailSignUp(String email, String password) async {
     await supabase.auth.signUp(
       email: email,
-      password: password
+      password: password,
+      emailRedirectTo: 'teamup://auth',
     );
   }
  

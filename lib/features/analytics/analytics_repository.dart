@@ -55,11 +55,13 @@ class AnalyticsRepository {
 
   Future<void> logEvent(String eventName, {Map? properties}) async {
     if (supabase.auth.currentUser != null) {
-      await supabase.from('stats').insert([{
-        'event': eventName,
-        'properties': properties,
-        'timestamp': DateTime.now().millisecondsSinceEpoch
-      }]);
+      try {
+        await supabase.from('stats').insert([{
+          'event': eventName,
+          'properties': properties,
+          'timestamp': DateTime.now().millisecondsSinceEpoch
+        }]);
+      } on Exception catch (_) {}
     }
 
   }

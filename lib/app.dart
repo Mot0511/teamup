@@ -52,7 +52,7 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
 
     _authStateSubscription = supabase.auth.onAuthStateChange.listen((data) async {
       final userdata = supabase.auth.currentUser;
-      if (userdata?.id != null) {
+      if (userdata != null && userdata.emailConfirmedAt != null) {
         if (data.event == AuthChangeEvent.signedIn && Platform.isAndroid) {
           await FirebaseMessaging.instance.requestPermission(
             alert: true,

@@ -33,8 +33,10 @@ class ChatsRepository {
   }
 
   Future<void> addChat(Chat chat) async {
+    final uid = supabase.auth.currentUser?.id;
     await supabase.from('chats').insert(chat.toJSON());
     for (models.User user in chat.users) {
+      if (user.uid == uid) continue;
       await supabase.from('members').insert({
         'chat': chat.id,
         'member': user.uid

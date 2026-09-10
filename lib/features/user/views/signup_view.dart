@@ -52,7 +52,12 @@ class _SignupViewState extends State<SignupView> {
     }
 
     try {
-      await userRepository.emailSignUp(email, password);
+      userRepository.emailSignUp(email, password);
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => EmailConfirmationView())
+        );
+      }
     } on sb.AuthApiException catch (e) {
       switch (e.code) {
         case 'validation_failed':

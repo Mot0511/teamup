@@ -3,7 +3,7 @@
 ; Non-commercial use only
 
 #define MyAppName "Teamup"
-#define MyAppVersion "1.2.2"
+#define MyAppVersion "2.0.0"
 #define MyAppPublisher "Ballisty"
 #define MyAppURL "https://teamupp.ru"
 #define MyAppExeName "teamup.exe"
@@ -32,9 +32,9 @@ ArchitecturesInstallIn64BitMode=x64compatible
 DisableProgramGroupPage=yes
 ; Uncomment the following line to run in non administrative install mode (install for current user only).
 ;PrivilegesRequired=lowest
-OutputDir=E:\Apps\teamup
+OutputDir=D:\Apps\teamup
 OutputBaseFilename=teamup-setup
-SetupIconFile=E:\Apps\teamup\assets\images\icon.ico
+SetupIconFile=D:\Apps\teamup\assets\images\icon.ico
 SolidCompression=yes
 WizardStyle=modern dynamic windows11
 
@@ -46,32 +46,32 @@ Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\app_links_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\audioplayers_windows_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\connectivity_plus_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\crashpad_handler.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\crashpad_wer.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\dartjni.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\desktop_webview_window_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\file_selector_windows_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\firebase_core_plugin.lib"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\flutter_local_notifications_windows.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\flutter_webrtc_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\flutter_windows.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\libwebrtc.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\livekit_client_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\permission_handler_windows_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\sentry.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\teamup.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\teamup.exp"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\teamup.lib"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\url_launcher_windows_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\Webview2Loader.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\window_size_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\window_to_front_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\windows_notification_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Apps\teamup\build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\app_links_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\audioplayers_windows_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\connectivity_plus_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\crashpad_handler.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\crashpad_wer.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\dartjni.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\desktop_webview_window_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\file_selector_windows_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\firebase_core_plugin.lib"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\flutter_local_notifications_windows.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\flutter_webrtc_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\flutter_windows.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\libwebrtc.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\livekit_client_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\permission_handler_windows_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\sentry.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\teamup.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\teamup.exp"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\teamup.lib"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\url_launcher_windows_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\Webview2Loader.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\window_size_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\window_to_front_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\windows_notification_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Apps\teamup\build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

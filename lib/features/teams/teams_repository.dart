@@ -62,8 +62,10 @@ class TeamsRepository {
   }
 
   Future<void> addTeam(Team team) async {
+    final uid = supabase.auth.currentUser?.id;
     await supabase.from('chats').insert(team.toJSON());
     for (models.User user in team.users) {
+      if (user.uid == uid) continue;
       await supabase.from('members').insert({
         'chat': team.id,
         'member': user.uid
@@ -87,7 +89,7 @@ class TeamsRepository {
       await supabase.from('chats').delete().eq('id', team.id);
     }
     await supabase.from('members').delete().eq('member', uid).eq('chat', team.id);
-    await supabase.from('messages').delete().eq('chat', team.id);
+    await supabase.from('messages').delete().eq('chat', team.id); 
     await supabase.storage.from('main').remove(['team_icons/${team.id}.png']);
   }
 

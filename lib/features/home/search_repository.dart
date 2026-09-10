@@ -23,6 +23,7 @@ class SearchRepository {
   Function? onRemovePendingUser;
 
   final Map<int, ImageProvider> gameCoversCache = {};
+  final Map<int, ImageProvider> gameIconsCache = {};
 
   Future<List<User>> getUsers(String? request) async {
     if (request != null) {
@@ -37,7 +38,7 @@ class SearchRepository {
     
   }
 
-  /// Постраничная выборка для списка пользователей (стабильный порядок — по `username`).
+  /// Постраничная выборка для списка пользователей (стабильный порядок — по `username`). 
   Future<List<User>> getUsersPage({
     String? request,
     required int offset,
@@ -61,18 +62,29 @@ class SearchRepository {
 
   Future<ImageProvider> getGameCover(int id) async {
     final ImageProvider? avatarProvider = gameCoversCache[id];
-    if (avatarProvider != null) {
-      return avatarProvider;
-    }
+    if (avatarProvider != null) return avatarProvider;
     final storage = supabase.storage.from('main');
-    if (await storage.exists('games/$id.png')) {
-      final coverUrl = supabase.storage.from('main').getPublicUrl('games/$id.png');
+    if (await storage.exists('game_covers/$id.png')) {
+      final coverUrl = storage.getPublicUrl('game_covers/$id.png');
       final provider = NetworkImage(coverUrl);
       gameCoversCache[id] = provider;
       return provider;
     }
     return AssetImage('assets/images/game_cover.png');
    
+  }
+
+  Future<ImageProvider?> getGameIcon(int id) async {
+    final ImageProvider? iconProvider = gameIconsCache[id];
+    if (iconProvider != null) return iconProvider;
+    final storage = supabase.storage.from('main');
+    if (await storage.exists('game_icons/$id.png')) {
+      final coverUrl = storage.getPublicUrl('game_icons/$id.png');
+      final provider = NetworkImage(coverUrl);
+      gameIconsCache[id] = provider;
+      return provider;
+    }
+    return null;
   }
 
   Future<int?> getPendingTeamID(String uid) async {

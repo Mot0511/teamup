@@ -40,6 +40,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="teamup" android:host="home" />
+                <data android:scheme="teamup" android:host="auth" />
                 <data android:scheme="teamup" />
             </intent-filter>
         </activity>

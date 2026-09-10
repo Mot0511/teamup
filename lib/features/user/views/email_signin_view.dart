@@ -18,13 +18,11 @@ class _EmailSigninViewState extends State<EmailSigninView> {
 
   final userRepository = GetIt.I<UserRepository>();
 
-  final String emailError = '';
-  final String passwordError = '';
+  String emailError = '';
+  String passwordError = '';
 
   Future<void> submit() async {
-    if (passwordController.text.trim() != repeatPasswordController.text.trim()) return;
     await userRepository.emailSignIn(emailController.text.trim(), passwordController.text.trim());
-    
   }
 
   @override
@@ -66,12 +64,12 @@ class _EmailSigninViewState extends State<EmailSigninView> {
             child: Center(
               child: ElevatedButton(
                 onPressed: submit, 
-                child: Icon(Icons.arrow_forward_ios, color: Colors.white, size: 40),
                 style: ElevatedButton.styleFrom(
                   shape: CircleBorder(),
                   padding: EdgeInsets.all(20),
                   backgroundColor: theme.primaryColor
-                )
+                ),
+                child: Icon(Icons.arrow_forward_ios, color: Colors.white, size: 40),
               )
             )
           )
