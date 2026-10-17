@@ -1,14 +1,16 @@
 import 'dart:math';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:teamup/features/chats/chats.dart';
+import 'package:teamup/features/chats/utils/get_user_from_members.dart';
 import 'package:teamup/features/teams/teams.dart';
-import 'package:teamup/widgets/shimmer_widget.dart';
 import 'package:teamup/features/user/user.dart';
+import 'package:teamup/services/realtime_service.dart';
+import 'package:teamup/widgets/shimmer_widget.dart';
 
 class MessengerWidget extends StatefulWidget {
   const MessengerWidget({super.key, required this.chat});
@@ -19,7 +21,7 @@ class MessengerWidget extends StatefulWidget {
 }
 
 class _MessengerWidgetState extends State<MessengerWidget> {
-  final supabase = GetIt.I<SupabaseClient>();
+  final realtime = GetIt.I<RealtimeService>();
   final userBloc = GetIt.I<UserBloc>();
   final chatsRepository = GetIt.I<ChatsRepository>();
   final teamsRepository = GetIt.I<TeamsRepository>();
@@ -29,15 +31,21 @@ class _MessengerWidgetState extends State<MessengerWidget> {
   final scrollController = ScrollController();
 
   List<Message>? messages;
-  late RealtimeChannel channel;
+  void Function()? _chatUnsub;
 
   Message? editingMessage;
   Message? replyMessage;
   String tmpMessage = '';
   Uint8List? attachmentBytes;
+  final List<Uint8List> pendingAttachments = [];
 
   bool isMember = false;
 
+  String? currentUid() {
+    final state = userBloc.state;
+    if (state is UserStateLoaded) return state.user.uid;
+    return null;
+  }
 
   @override
   void initState() {
@@ -48,145 +56,162 @@ class _MessengerWidgetState extends State<MessengerWidget> {
   }
 
   void checkIsMember() {
-    final uid = supabase.auth.currentUser?.id;
+    final String? uid = currentUid();
     if (uid == null) return;
     isMember = widget.chat.users.map((user) => user.uid).toList().contains(uid);
     setState(() {});
   }
 
   Future<void> loadMessages() async {
-    final uid = supabase.auth.currentUser?.id;
-    if (uid == null) return;
-    messages = await chatsRepository.getMessages(uid, widget.chat.id);
+    messages = await chatsRepository.getMessages(widget.chat.id);
     _sortMessagesInPlace();
-    setMessagesReaded(uid);
+    setMessagesReaded();
     setState(() {});
     scrollToBottom();
   }
 
-  Future<void> setMessagesReaded(String uid) async {
+  Future<void> setMessagesReaded() async {
+    final uid = currentUid();
+    if (uid == null) return;
     if (messages == null) return;
     for (Message message in messages!) {
       if (message.user.uid != uid && !message.isReaded) {
-        await chatsRepository.setReaded(uid, message.id, widget.chat.id);
-        channel.sendBroadcastMessage(event: 'readed-message', payload: {'messageID': message.id});
+        await chatsRepository.setReaded(widget.chat.id, message);
       }
     }
   }
 
   void listenMessages() {
-    channel = supabase.channel('chat-${widget.chat.id}');
-    
-    channel.onBroadcast(
-      event: 'new-message',
-      callback: (payload) async {
-        final uid = supabase.auth.currentUser!.id;
-        if (payload['sender'] == uid) return;
-        final sender = widget.chat.users
-            .where((user) => user.uid == payload['sender'])
-            .toList()[0];
-        payload['sender'] = sender.toJSON();
-        if (payload['attachment'] != null) {
-          payload['attachment'] = await chatsRepository.getAttachment(payload['attachment']);
-        }
-        await chatsRepository.setReaded(uid, payload['id'], widget.chat.id);
-        messages?.add(Message.fromJSON(payload, true));
-        setState(() {});
-        scrollToBottomAnimated();
-        sortMessages();
-      },
-    );
-
-    channel.onBroadcast(
-      event: 'edit-message',
-      callback: (payload) async {
-        if (messages != null) {
-          for (int i = messages!.length - 1; i >= 0; i--) {
-            final message = messages![i];
-            if (message.id == payload['messageID']) {
-              message.text = payload['text'];
-              break;
-            }
-          }
-          setState(() {});
-        }
-      },
-    );
-
-    channel.onBroadcast(
-      event: 'delete-message', 
-      callback: (payload) {
-        messages = messages
-            ?.where((message) => message.id != payload['messageID'])
-            .toList();
-        setState(() {});
-        sortMessages();
-      },
-    );
-
-    channel.onBroadcast(
-      event: 'readed-message',
-      callback: (payload) {
-        if (messages == null) return;
-        for (int i = messages!.length - 1; i >= 0; i--) {
-          final Message message = messages![i];
-          if (message.id == payload['messageID']) {
-            message.isReaded = true;
-            setState(() {});
-            break;
-          }
-        }
-      },
-    );
-
-    channel.subscribe();
+    _chatUnsub = realtime.subscribe('/topic/chats/${widget.chat.id}', (payload) async {
+      if (payload is! Map<String, dynamic>) return;
+      final event = payload['event'];
+      switch (event) {
+        case 'SEND':
+          await onMessageSend(payload['payload'] as Map<String, dynamic>);
+          break;
+        case 'EDIT':
+          onMessageEdit(payload['payload'] as Map<String, dynamic>);
+          break;
+        case 'DELETE':
+          onMessageDelete((payload['payload']['id'] as num).toInt());
+          break;
+        case 'READ':
+          onMessageRead((payload['payload']['id'] as num).toInt());
+          break;
+      }
+    });
   }
-  
 
-  Future<void> onSendMessage() async {
-    final text = messageController.text.trim();
-    if (text == '' && attachmentBytes == null) return;
-    final Uint8List? bytesToSend = attachmentBytes;
+  Future<void> onMessageSend(Map<String, dynamic> data) async {
+    final String? uid = currentUid();
 
-    final message = Message(
-      id: DateTime.now().millisecondsSinceEpoch,
-      chatId: widget.chat.id,
-      user: (userBloc.state as UserStateLoaded).user,
-      text: text,
-      repliedMesssageID: replyMessage?.id,
-      attachment: bytesToSend != null ? MemoryImage(bytesToSend) : null,
-      time: DateTime.now().toUtc(),
-      isReaded: false
-    );
+    final User sender = getUserFromMembers(data['uid'], widget.chat.users);
+
+    final Message message = Message.fromJSON(data, sender: sender);
+
+    if (messages?.any((m) => m.id == message.id) ?? false) return;
+
+    if (uid != null && message.user.uid == uid) {
+      // Своё сообщение ещё не прочитано собеседником — отметка придёт
+      // событием READ из /topic/chats/{id}.
+      message.isReaded = false;
+      if (pendingAttachments.isNotEmpty) {
+        final bytes = pendingAttachments.removeAt(0);
+        await uploadAttachment(message.id, bytes);
+      }
+    } else {
+      await chatsRepository.setReaded(widget.chat.id, message);
+      message.isReaded = true;
+    }
 
     messages?.add(message);
+    if (mounted) setState(() {});
+    scrollToBottomAnimated();
+    sortMessages();
+  }
+
+  Future<void> uploadAttachment(int messageID, Uint8List bytes) async {
+    try {
+      await chatsRepository.uploadAttachment(bytes, messageID);
+      final provider = await chatsRepository.getAttachment(messageID);
+      if (messages == null) return;
+      for (int i = messages!.length - 1; i >= 0; i--) {
+        if (messages![i].id == messageID) {
+          messages![i].attachment = provider;
+          if (mounted) setState(() {});
+          break;
+        }
+      }
+    } on Exception catch (e) {
+      debugPrint('Failed to upload attachment: $e');
+    }
+  }
+
+  void onMessageEdit(Map<String, dynamic> data) {
+    final int messageId = (data['id'] as num).toInt();
+    final String text = '${data['text'] ?? ''}';
+    if (messages == null) return;
+    for (int i = messages!.length - 1; i >= 0; i--) {
+      if (messages![i].id == messageId) {
+        messages![i].text = text;
+        break;
+      }
+    }
+    setState(() {});
+  }
+
+  void onMessageDelete(int messageId) {
+    messages = messages?.where((message) => message.id != messageId).toList();
+    setState(() {});
+    sortMessages();
+  }
+
+  void onMessageRead(int messageId) {
+    if (messages == null) return;
+    for (int i = messages!.length - 1; i >= 0; i--) {
+      final Message message = messages![i];
+      if (message.id == messageId) {
+        message.isReaded = true;
+        setState(() {});
+        break;
+      }
+    }
+  }
+
+  Future<void> onSendMessage() async {
+    final String text = messageController.text.trim();
+    if (text == '' && attachmentBytes == null) return;
+
+    final int? repliedId = replyMessage?.id;
+    final Uint8List? bytesToSend = attachmentBytes;
+    if (bytesToSend != null) {
+      pendingAttachments.add(bytesToSend);
+    }
 
     attachmentBytes = null;
     setState(() {});
     messageController.text = '';
     focusNode.requestFocus();
-    replyMessage = null;  
-    scrollToBottomAnimated();
-    sortMessages();
+    replyMessage = null;
 
-    // Важно: дождаться загрузки вложения в Storage и записи в БД,
-    // иначе получатель может попытаться скачать файл до появления.
-    await chatsRepository.sendMessage(message, bytesToSend);
-    await channel.sendBroadcastMessage(
-      event: 'new-message',
-      payload: message.toJSON(),
-    );
+    await chatsRepository.sendMessage(widget.chat.id, text, repliedId);
   }
 
   void onEditMessage() {
-    final text = messageController.text.trim();
+    final String text = messageController.text.trim();
     if (text == '') return;
-    for (Message message in messages!) {
-      if (message.id == editingMessage!.id) message.text = text;
-      break;
+    if (editingMessage == null) return;
+    final int id = editingMessage!.id;
+    editingMessage!.text = text;
+    if (messages != null) {
+      for (Message message in messages!) {
+        if (message.id == id) {
+          message.text = text;
+          break;
+        }
+      }
     }
-    chatsRepository.editMessage(editingMessage!.id, text);
-    channel.sendBroadcastMessage(event: 'edit-message', payload: {'messageID': editingMessage!.id, 'text': text});
+    chatsRepository.editMessage(widget.chat.id, editingMessage!);
     editingMessage = null;
     messageController.text = tmpMessage;
     setState(() {});
@@ -222,8 +247,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
     messages = messages?.where((mess) => message.id != mess.id).toList();
     setState(() {});
     sortMessages();
-    chatsRepository.deleteMessage(message);
-    channel.sendBroadcastMessage(event: 'delete-message', payload: {'messageID': message.id});
+    chatsRepository.deleteMessage(widget.chat.id, message);
   }
 
   Future<void> onAttachImage() async {
@@ -240,7 +264,6 @@ class _MessengerWidgetState extends State<MessengerWidget> {
     }
   }
 
-  /// Прокрутка вниз после того, как [ListView] отрисовал элементы и посчитал высоту.
   void scrollToBottom() {
     void jumpToEnd() {
       if (!mounted || !scrollController.hasClients) return;
@@ -255,8 +278,6 @@ class _MessengerWidgetState extends State<MessengerWidget> {
         return;
       }
       jumpToEnd();
-      // Второй кадр: у сообщений переменная высота (текст, картинки) — maxScrollExtent
-      // может увеличиться после первого layout.
       WidgetsBinding.instance.addPostFrameCallback((_) => jumpToEnd());
     }
 
@@ -317,7 +338,7 @@ class _MessengerWidgetState extends State<MessengerWidget> {
   @override
   void dispose() {
     focusNode.dispose();
-    supabase.removeChannel(channel);
+    _chatUnsub?.call();
     super.dispose();
   }
 
@@ -339,9 +360,9 @@ class _MessengerWidgetState extends State<MessengerWidget> {
                       itemBuilder: (context, i) {
                         return Column(
                           children: [
-                            if (i == 0 || i > 0 && 
-                              (messages![i].time.day != messages![i - 1].time.day || 
-                              messages![i].time.month != messages![i - 1].time.month || 
+                            if (i == 0 || i > 0 &&
+                              (messages![i].time.day != messages![i - 1].time.day ||
+                              messages![i].time.month != messages![i - 1].time.month ||
                               messages![i].time.year != messages![i - 1].time.year))
                             Center(
                               child: Text(

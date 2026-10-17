@@ -1,21 +1,21 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+import 'package:teamup/features/analytics/analytics.dart';
 import 'package:teamup/features/home/home.dart';
-import 'package:teamup/features/teams/teams.dart';
+import 'package:teamup/features/teams/models/team.dart';
 import 'package:teamup/features/user/user.dart';
 import 'package:teamup/models/game.dart';
-import 'package:teamup/features/analytics/analytics.dart';
+import 'package:teamup/services/realtime_service.dart';
 
 class SearchRepository {
-  final supabase = GetIt.I<sb.SupabaseClient>();
-  final teamsRepository = GetIt.I<TeamsRepository>();
-  final analyticsRepository = GetIt.I<AnalyticsRepository>();
+  final dio = GetIt.I<Dio>();
+  final realtime = GetIt.I<RealtimeService>();
   final userBloc = GetIt.I<UserBloc>();
-  final userRepository = GetIt.I<UserRepository>();
+  final analyticsRepository = GetIt.I<AnalyticsRepository>();
 
-  sb.RealtimeChannel? channel;
-  int? currentPendingTeamID;
+  void Function()? _searchUnsub;
+  String? currentSearchId;
 
   Function? onTeamFormed;
   Function? onTeamFound;
@@ -25,249 +25,148 @@ class SearchRepository {
   final Map<int, ImageProvider> gameCoversCache = {};
   final Map<int, ImageProvider> gameIconsCache = {};
 
-  Future<List<User>> getUsers(String? request) async {
-    if (request != null) {
-      final res = await supabase.from('users').select('*, favouriteGame(*)').like('username', '%$request%');
-      final users = res.map((user) => User.fromJSON(user)).toList();
-      return users;
-    }
-
-    final res = await supabase.from('users').select('*, favouriteGame(*)');
-    final users = res.map((user) => User.fromJSON(user)).toList();
-    return users;
-    
-  }
-
-  /// Постраничная выборка для списка пользователей (стабильный порядок — по `username`). 
+  /// Постраничная выборка для списка пользователей.
+  /// Бэкенд пагинация идёт по страницам; поиск по имени выполняется локально.
   Future<List<User>> getUsersPage({
     String? request,
     required int offset,
     int limit = 15,
   }) async {
-    dynamic query = supabase.from('users').select('*, favouriteGame(*)');
+    final int page = (offset ~/ limit) + 1;
+    final res = await dio.get('/users/', queryParameters: {'page': page, 'limit': limit});
+    final List<User> users = (res.data as List)
+        .cast<Map>()
+        .map((user) => User.fromJSON(user))
+        .toList();
+
     if (request != null && request.isNotEmpty) {
-      query = query.like('username', '%$request%');
+      return users.where((user) => user.username.contains(request)).toList();
     }
-    final res = await query.order('username', ascending: true).range(offset, offset + limit - 1);
-    return (res as List).map((user) => User.fromJSON(user as Map)).toList();
+    return users;
   }
 
-
   Future<List<Game>> getGames() async {
-    final res = await supabase.from('games').select();
-    final games = res.map((game) => Game.fromJSON(game)).toList();
+    final res = await dio.get('/games/');
+    final games = (res.data as List)
+        .cast<Map>()
+        .map((game) => Game.fromJSON(game))
+        .toList();
     games.sort((a, b) => a.id.compareTo(b.id));
     return games;
   }
 
   Future<ImageProvider> getGameCover(int id) async {
-    final ImageProvider? avatarProvider = gameCoversCache[id];
-    if (avatarProvider != null) return avatarProvider;
-    final storage = supabase.storage.from('main');
-    if (await storage.exists('game_covers/$id.png')) {
-      final coverUrl = storage.getPublicUrl('game_covers/$id.png');
-      final provider = NetworkImage(coverUrl);
+    final ImageProvider? coverProvider = gameCoversCache[id];
+    if (coverProvider != null) return coverProvider;
+    try {
+      final res = await dio.get('/games/$id/url');
+      final provider = NetworkImage('${res.data}');
       gameCoversCache[id] = provider;
       return provider;
+    } on DioException {
+      return AssetImage('assets/images/game_cover.png');
     }
-    return AssetImage('assets/images/game_cover.png');
-   
   }
 
   Future<ImageProvider?> getGameIcon(int id) async {
     final ImageProvider? iconProvider = gameIconsCache[id];
     if (iconProvider != null) return iconProvider;
-    final storage = supabase.storage.from('main');
-    if (await storage.exists('game_icons/$id.png')) {
-      final coverUrl = storage.getPublicUrl('game_icons/$id.png');
-      final provider = NetworkImage(coverUrl);
+    try {
+      final res = await dio.get('/games/$id/url');
+      final provider = NetworkImage('${res.data}');
       gameIconsCache[id] = provider;
       return provider;
+    } on DioException {
+      return null;
     }
-    return null;
   }
 
+  /// Восстановление активного поиска после перезапуска: бэкенд не поддерживает,
+  /// поэтому всегда null.
   Future<int?> getPendingTeamID(String uid) async {
-    final pendingUsers = await supabase.from('pending_users').select().eq('pending_user', uid);
-    if (pendingUsers.isNotEmpty) return pendingUsers[0]['pending_team'];
     return null;
   }
 
   Future<SearchParams> restoreSearching(int pendingTeamID) async {
-    final pendingTeam = await supabase.from('pending_teams').select().eq('id', pendingTeamID).single();
-    currentPendingTeamID = pendingTeamID;
-    channel = supabase.channel('searching-$pendingTeamID');
-    listenTeams();
-    final pendingUsers = await supabase.from('pending_users').select('pending_user(*)').eq('pending_team', pendingTeamID);
-    onTeamFound!(pendingUsers.map((user) => User.fromJSON(user['pending_user'])).toList());
-    return SearchParams(
-      gameID: pendingTeam['game'],
-      age: pendingTeam['max_age'] - 1,
-      gender: pendingTeam['gender'],
-      teamSize: pendingTeam['size']
-    );
+    throw UnsupportedError('restore searching is not supported by backend');
   }
 
-  Future<void> startSearching(
-    User user, 
-    SearchParams params,
-  ) async {
+  Future<void> startSearching(User user, SearchParams params) async {
     analyticsRepository.logEvent('start_searching', properties: params.toJSON());
-    // Getting existing suitable pending teams
-    late final List pendingTeams;
-    if (params.gender == 'null') {
-      pendingTeams = await supabase
-        .from('pending_teams')
-        .select()
-        .eq('size', params.teamSize)
-        .eq('game', params.gameID)
-        .lte('min_age', params.age)
-        .gte('max_age', params.age);
-    } else {
-      pendingTeams = await supabase
-        .from('pending_teams')
-        .select()
-        .eq('gender', params.gender)
-        .eq('size', params.teamSize)
-        .eq('game', params.gameID)
-        .lte('min_age', params.age)
-        .gte('max_age', params.age);
-    }
+    final res = await dio.post('/searches/', queryParameters: {
+      'game': params.gameID,
+      'gender': params.gender,
+      'size': params.teamSize,
+      'age': params.age,
+    });
 
-    // If there are suitable pending teams, I add myself to the first one
-    if (pendingTeams.isNotEmpty) {
-      final pendingTeam = pendingTeams[0];
-      channel = supabase.channel('searching-${pendingTeam['id']}');
-      channel!.sendBroadcastMessage(event: 'new-member', payload: {'user': user.toJSON()});
-      // If I am the last necessery member, I create a team
-      if (pendingTeam['size'] - pendingTeam['users_count'] == 1) {
-        final teamName = TeamNameGenerator.createTeamName();
-        await supabase.from('chats').insert([
-          {
-            'id': pendingTeam['id'],
-            'name': teamName,
-            'is_team': true
-          }
-        ]);
-        final data = await supabase.from('pending_users').select('pending_user(*, favouriteGame(*))').eq('pending_team', pendingTeam['id']);
-        // and add my teammates
-        for (Map user in data) {
-          await supabase.from('members').insert({
-            'member': user['pending_user']['uid'],
-            'chat': pendingTeam['id']
-          });
-        }
-        // and myself to the team
-        await supabase.from('members').insert({
-          'member': user.uid,
-          'chat': pendingTeam['id']
-        });
-        final members = data.map((data) => User.fromJSON(data['pending_user'])).toList();
-        members.add(user);
-        // delete pending team
-        await supabase.from('pending_teams').delete().eq('id', pendingTeam['id']);
-        await supabase.from('pending_users').delete().eq('pending_team', pendingTeam['id']);
-        final team = Team(id: pendingTeam['id'], users: members, name: teamName, isPublic: false);
-        channel!.sendBroadcastMessage(event: 'team-formed', payload: {'team': team.toJSONWithMembers()});
-        onTeamFormed!(team);
-        return;
-      }
+    final data = (res.data) as Map<String, dynamic>;
 
-      // If I am not the last member, I just add myself
-      await supabase.from('pending_users').insert([{
-        'pending_user': user.uid,
-        'pending_team': pendingTeam['id']
-      }]);
-
-      await supabase
-        .from('pending_teams')
-        .update({
-          'users_count': pendingTeam['users_count'] + 1
-        })
-        .eq('id', pendingTeam['id']);
-
-      // Subscribing on creating new team
-      listenTeams();
-      final pending_users = await supabase.from('pending_users').select('pending_user(*, favouriteGame(*))').eq('pending_team', pendingTeam['id']);
-      onTeamFound!(pending_users.map((user) => User.fromJSON(user['pending_user'])).toList());
+  
+    if (data['result'] == 'FORMED') {
+      // Команда набрана сразу — команда уже создана на сервере.
+      final teamData = data['team'] as Map<String, dynamic>;
+      final chatUsers = await _getChatUsers((teamData['id'] as num).toInt());
+      final team = Team.fromJSON(teamData, users: chatUsers);
+      onTeamFormed!(team);
       return;
     }
 
-    // If there isn't any suitable team, I create my one
-    final teamID = DateTime.now().millisecondsSinceEpoch;
-    channel = supabase.channel('searching-$teamID');
-    await supabase.from('pending_teams').insert([{
-      'id': teamID,
-      'size': params.teamSize,
-      'users_count': 1,
-      'gender': params.gender,
-      'game': params.gameID,
-      'min_age': params.age - 1,
-      'max_age': params.age + 1
-    }]);
+    final search = (data['search'] ?? const {}) as Map<String, dynamic>;
+    final String? searchId = search['id']?.toString();
+    if (searchId != null) {
+      currentSearchId = searchId;
+      listenSearch();
+    }
 
-    // and add myself there
-    await supabase.from('pending_users').insert([{
-      'pending_user': user.uid,
-      'pending_team': teamID
-    }]);
-
-    currentPendingTeamID = teamID;
-    // Listening creating a new team
-    listenTeams();
-    onTeamFound!([user]);
+    final users = ((search['users']) as List?)
+            ?.map((u) => User.fromJSON(u))
+            .toList() ??
+        <User>[];
+    onTeamFound!(users);
   }
 
-  void listenTeams() {
-    channel!.onBroadcast(
-      event: 'new-member',
-      callback: (payload) async {
-        onNewPendingUser!(User.fromJSON(payload['payload']['user']));
-      }
-    );
+  Future<List<User>> _getChatUsers(int chatId) async {
+    final res = await dio.get('/chats/$chatId/users');
+    return (res.data as List).cast<Map>().map((user) => User.fromJSON(user)).toList();
+  }
 
-    channel!.onBroadcast(
-      event: 'left-member',
-      callback: (payload) async {
-        onRemovePendingUser!(payload['payload']['userID']);
-      }
-    );
+  void listenSearch() {
+    final String? searchId = currentSearchId;
+    if (searchId == null) return;
 
-    channel!.onBroadcast(
-      event: 'team-formed',
-      callback: (payload) async {
-        onTeamFormed!(Team.fromJSON(payload['payload']['team']));
-      }
-    );
+    _searchUnsub?.call();
+    _searchUnsub = realtime.subscribe('/topic/searches/$searchId', (payload) {
+      final String? event = payload['event']?.toString();
+      final dynamic eventPayload = payload['payload'];
 
-    channel!.subscribe();
+      switch (event) {
+        case 'NEW_USER':
+          onNewPendingUser!(User.fromJSON(eventPayload));
+          break;
+        case 'LEAVE_USER':
+          onRemovePendingUser!(eventPayload);
+          break;
+        case 'FORMED':
+          final teamData = (eventPayload) as Map<String, dynamic>;
+          _handleTeamFormed(teamData);
+          break;
+      }
+    });
+  }
+
+  Future<void> _handleTeamFormed(Map<String, dynamic> teamData) async {
+    final chatUsers = await _getChatUsers((teamData['id'] as num).toInt());
+    final team = Team.fromJSON(teamData, users: chatUsers);
+    onTeamFormed!(team);
   }
 
   Future<void> stopSearching(User user) async {
-    if (currentPendingTeamID != null) {
-      channel!.sendBroadcastMessage(event: 'left-member', payload: {'userID': user.uid});
-      supabase.removeChannel(channel!);
-      await supabase.from('pending_users').delete().eq('pending_user', user.uid);
-      final pendingTeams = (await supabase
-        .from('pending_teams')
-        .select()
-        .eq('id', currentPendingTeamID!));
-
-      if (pendingTeams.isNotEmpty) {
-        final team = pendingTeams[0];
-        if (team['users_count'] == 1) {
-          await supabase.from('pending_teams').delete().eq('id', team['id']);
-        } else {
-          await supabase.from('pending_teams')
-            .update(
-              {
-                'users_count': team['users_count'] - 1
-              }
-            )
-            .eq('id', team['id']);
-        }
-      }
-      currentPendingTeamID = null;
-    }
+    final String? searchId = currentSearchId;
+    if (searchId == null) return;
+    await dio.post('/searches/$searchId/leave');
+    currentSearchId = null;
+    _searchUnsub?.call();
+    _searchUnsub = null;
   }
 }

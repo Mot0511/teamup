@@ -1,125 +1,168 @@
-import 'package:flutter/foundation.dart';
+import 'dart:typed_data';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:teamup/features/chats/chats.dart';
-import 'package:teamup/features/user/models/models.dart' as models;
+import 'package:teamup/features/user/user.dart';
+import 'package:teamup/services/realtime_service.dart';
+import 'package:teamup/features/chats/utils/get_user_from_members.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 class ChatsRepository {
-  final SupabaseClient supabase = GetIt.I<SupabaseClient>();
+  final dio = GetIt.I<Dio>();
+  final realtime = GetIt.I<RealtimeService>();
   final Map<int, ImageProvider> attachmentProviders = {};
 
   Future<List<Chat>> getChats(String uid) async {
-    final data = await supabase
-      .from('members')
-      .select('chat(*)')
-      .eq('member', uid)
-      .eq('chat.is_team', false);
+    final res = await dio.get('/chats/');
+    final data = (res.data as List).cast<Map>().toList();
 
-      
     final List<Chat> chats = [];
     for (Map row in data) {
-      final chat = row['chat'];
-      if (chat == null) continue;
-      final members = await supabase.from('members').select('member(*, favouriteGame(*))').eq('chat', chat['id']);
-      final lastMessage = await supabase.from('messages').select('text').eq('chat', chat['id']).order('id', ascending: false).limit(1);
+      if (row['team'] == true) continue;
+      final chatId = (row['id'] as num).toInt();
+      final users = await getChatUsers(chatId);
+
+      String? lastMessage;
+      try {
+        final message = await dio.get('/messages/$chatId/last');
+        final text = '${message.data['text'] ?? ''}';
+        lastMessage = text.isNotEmpty ? text : 'Картинка';
+      } on DioException catch (_) {
+        lastMessage = null;
+      }
+
       chats.add(Chat(
-        id: chat['id'],
-        users: members.map((member) => models.User.fromJSON(member['member'])).toList(),
-        lastMessage: lastMessage.isNotEmpty ? lastMessage[0]['text'] != '' ? lastMessage[0]['text'] : 'Картинка' : null
+        id: chatId,
+        users: users,
+        lastMessage: lastMessage,
       ));
     }
     return chats;
   }
 
-  Future<void> addChat(Chat chat) async {
-    final uid = supabase.auth.currentUser?.id;
-    await supabase.from('chats').insert(chat.toJSON());
-    for (models.User user in chat.users) {
-      if (user.uid == uid) continue;
-      await supabase.from('members').insert({
-        'chat': chat.id,
-        'member': user.uid
-      });
-    }
+  /// Создаёт личный чат с партнёром и возвращает созданный чат (id от сервера).
+  Future<Chat> addChat(Chat chat, String uid) async {
+    final companion = chat.users.firstWhere((user) => user.uid != uid);
+    final res = await dio.post('/chats/', queryParameters: {'other': companion.uid});
+    final users = await getChatUsers((res.data['id'] as num).toInt());
+    return Chat.fromJSON(res.data, users: users);
+  }
+
+  Future<List<User>> getChatUsers(int chatId) async {
+    final res = await dio.get('/chats/$chatId/users');
+    return (res.data as List).cast<Map>().map((user) => User.fromJSON(user)).toList();
   }
 
   Future<Chat> getChat(int id) async {
-    final members = await supabase.from('members').select('member(*, favouriteGame(*))').eq('chat', id);
-    return Chat(
-      id: id,
-      users: members.map((member) => models.User.fromJSON(member['member'])).toList(),
-    );
+    final res = await dio.get('/chats/$id');
+    final users = await getChatUsers(id);
+    return Chat.fromJSON(res.data, users: users);
   }
 
-  Future<void> removeChat(Chat chat) async {
-    await supabase.from('chats').delete().eq('id', chat.id);
-    await supabase.from('members').delete().eq('chat', chat.id);
-    await supabase.from('messages').delete().eq('chat', chat.id);
+  /// Возвращает пользователя-собеседника (не текущего) в личном чате.
+  Future<User> getMessageSender(int chatID, String currentUid) async {
+    final users = await getChatUsers(chatID);
+    final result = users.where((user) => user.uid != currentUid).toList();
+    return result.isNotEmpty ? result.first : users.first;
   }
 
-  Future<List<Message>> getMessages(String uid, int chatID) async {
-    final data = await supabase.from('messages').select('*, sender(*, favouriteGame(*))').eq('chat', chatID);
-    final readedMessages = await getReadedMessages(uid, chatID);
+  Future<void> removeChat(int chatID) async {
+    await dio.delete('/chats/$chatID');
+  }
+
+  Future<List<Message>> getMessages(int chatID) async {
+    final res = await dio.get('/messages/$chatID');
+    final data = (res.data as List).cast<Map>().toList();
+    final users = await getChatUsers(chatID);
+    List<int> readed = [];
+    try {
+      readed = await getReadedMessages(chatID);
+    } on DioException catch (_) {}
+
     final List<Message> messages = [];
     for (Map message in data) {
       if (message['attachment'] != null) {
-        message['attachment'] = await getAttachment(message['attachment']);
+        try {
+          message['attachment'] = await getAttachmentUrl((message['id'] as num).toInt());
+        } on DioException catch (_) {
+          message['attachment'] = null;
+        }
       }
+
+      final User sender = getUserFromMembers(message['uid'], users);
+
       messages.add(
         Message.fromJSON(
           message,
-          readedMessages.contains(message['id'])
-        )
+          sender: sender,
+          isReaded: readed.contains(message['id']),
+        ),
       );
     }
     return messages;
   }
 
-  Future<void> sendMessage(Message message, Uint8List? attachment) async {
-    if (attachment != null) {
-      await supabase.storage.from('main').uploadBinary('attachments/${message.id}.png', attachment);
-    }
-    await supabase.from('messages').insert(message.toJSON());
+  /// Отправка сообщения. Сервер сам назначает id и рассылает событие SEND.
+  Future<void> sendMessage(int chatId, String text, int? repliedId) async {
+    realtime.publish('/app/chats/$chatId', body: {
+      'event': 'SEND',
+      'payload': {
+        'text': text,
+        'localDateTime': DateTime.now().toIso8601String(),
+        'zoneId': tz.local.name,
+        'repliedMessage': repliedId,
+      }
+    });
   }
 
-  Future<void> editMessage(int id, String text) async {
-    await supabase.from('messages').update({
-      'text': text
-    }).eq('id', id);
+  Future<void> editMessage(int chatId, Message message) async {
+    realtime.publish('/app/chats/$chatId', body: {
+      'event': 'EDIT',
+      'payload': message.toJSON()
+    });
   }
 
-  Future<void> deleteMessage(Message message) async {
-    await supabase.from('messages').delete().eq('id', message.id);
-    if (message.attachment != null) {
-      supabase.storage.from('main').remove(['attachments/${message.id}.png']);
-    }
+  Future<void> deleteMessage(int chatId, Message message) async {
+    realtime.publish('/app/chats/$chatId', body: {
+      'event': 'DELETE',
+      'payload': message.toJSON()
+    });
+  }
+
+  Future<void> uploadAttachment(Uint8List bytes, int messageID) async {
+    final form = FormData.fromMap({
+      'file': MultipartFile.fromBytes(bytes),
+    });
+    await dio.post('/messages/$messageID/attachment', data: form);
   }
 
   Future<ImageProvider> getAttachment(int id) async {
-    final ImageProvider? attachmentsProvider = attachmentProviders[id];
-    if (attachmentsProvider != null) {
-      return attachmentsProvider;
+    final ImageProvider? attachmentProvider = attachmentProviders[id];
+    if (attachmentProvider != null) {
+      return attachmentProvider;
     }
-    final storage = supabase.storage.from('main');
-    final imageUrl = storage.getPublicUrl('attachments/$id.png');
-    final provider = NetworkImage(imageUrl);
+    final url = await getAttachmentUrl(id);
+    final provider = NetworkImage(url);
     attachmentProviders[id] = provider;
     return provider;
   }
 
-  Future<void> setReaded(String uid, int messageID, int chatID) async {
-    await supabase.from('readed_messages').insert([{
-      'user': uid,
-      'message': messageID,
-      'chat': chatID
-    }]);
+  Future<String> getAttachmentUrl(int id) async {
+    final res = await dio.get('/messages/$id/attachment');
+    return res.data;
   }
 
-  Future<List<int>> getReadedMessages(String uid, int chatID) async {
-    final data = await supabase.from('readed_messages').select('message').eq('chat', chatID);
-    final List<int> messages = data.map((e) => e['message'] as int).toList();
+  Future<void> setReaded(int chatId, Message message) async {
+    realtime.publish('/app/chats/$chatId', body: {
+      'event': 'READ',
+      'payload': message.toJSON()
+    });
+  }
 
-    return messages;
+  Future<List<int>> getReadedMessages(int chatID) async {
+    final res = await dio.get('/chats/$chatID/reads');
+    return (res.data as List).map((e) => (e as num).toInt()).toList();
   }
 }

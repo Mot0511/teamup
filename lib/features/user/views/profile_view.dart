@@ -6,7 +6,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import 'package:teamup/features/chats/chats.dart';
 import 'package:teamup/features/home/home.dart';
 import 'package:teamup/features/teams/teams.dart';
@@ -30,14 +29,12 @@ class _ProfileViewState extends State<ProfileView> {
   final userRepository = GetIt.I<UserRepository>();
   final chatsRepository = GetIt.I<ChatsRepository>();
 
-  final supabase = GetIt.I<sb.SupabaseClient>();
-
   FriendState? friendState;
   List<User> friends = [];
   List<User> friendRequests = [];
 
   void loadFriends() async {
-    final uid = supabase.auth.currentUser?.id;
+    final uid = await userRepository.currentUid();
     if (uid != null && friends.isEmpty) {
       final List<Friendship> friendships = await userRepository.getFriends(
         widget.user != null ? widget.user!.uid : uid
@@ -115,12 +112,12 @@ class _ProfileViewState extends State<ProfileView> {
     }
 
     final chat = Chat(
-      id: DateTime.now().millisecondsSinceEpoch,
+      id: 0,
       users: [userState.user, widget.user!],
     );
-    await chatsRepository.addChat(chat);
-    chatsBloc.add(AddChat(chat: chat));
-    if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => ChatView(chat: chat)));
+    final Chat created = await chatsRepository.addChat(chat, userState.user.uid);
+    chatsBloc.add(AddChat(chat: created));
+    if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => ChatView(chat: created)));
   }
 
   Future<void> onChooseGame(User user) async {

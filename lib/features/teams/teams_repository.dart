@@ -1,133 +1,106 @@
-import 'dart:math';
+import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get_it/get_it.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:teamup/features/teams/teams.dart';
-import 'package:teamup/features/user/models/models.dart' as models;
+import 'package:teamup/features/user/user.dart';
 import 'package:teamup/models/game.dart';
 
 enum CapabilityToJoin {capable, notCapable, expiredInvite}
 
 class TeamsRepository {
-  final supabase = GetIt.I<SupabaseClient>();
+  final dio = GetIt.I<Dio>();
 
   final Map<int, ImageProvider> iconProviders = {};
 
   Future<List<Team>> getTeams([String? uid]) async {
-    var data;
+
+    late dynamic res;
     if (uid != null) {
-      data = await supabase
-        .from('members')
-        .select('chat(*, game(*))')
-        .eq('member', uid)
-        .eq('chat.is_team', true);
+      res = await dio.get('/teams/');
     } else {
-      data = await supabase
-        .from('members')
-        .select('chat(*, game(*))')
-        .eq('chat.is_public', true)
-        .eq('chat.is_team', true);
+      res = await dio.get('/teams/public');
     }
-    
+
+    final data = (res.data as List).cast<Map>().toList();
+
     final List<Team> teams = [];
     final List<int> added = [];
     for (Map row in data) {
-      final team = row['chat'];
-      if (team == null) continue;
-      if (added.contains(team['id'])) continue;
-      final members = await supabase.from('members').select('member(*, favouriteGame(*))').eq('chat', team['id']);
+      final dynamic teamId = row['id'];
+      if (teamId == null) continue;
+      if (row['team'] != true) continue;
+      final int id = (teamId as num).toInt();
+      if (added.contains(id)) continue;
+
+      final users = await getTeamUsers(id);
       teams.add(Team(
-        id: team['id'],
-        users: members.map((member) => models.User.fromJSON(member['member'])).toList(),
-        name: team['name'],
-        isPublic: team['is_public'],
-        game: team['game'] != null ? Game.fromJSON(team['game']) : null
+        id: id,
+        users: users,
+        name: '${row['name'] ?? ''}',
+        isPublic: row['public'] ?? false,
+        game: row['game'] != null ? Game.fromJSON(row['game']) : null,
       ));
-      added.add(team['id']);
+      added.add(id);
     }
     return teams;
   }
 
   Future<Team> getTeam(int id) async {
-    final teams_data = (await supabase.from('chats').select().eq('id', id))[0];
-    final members =  await supabase.from('members').select('member(*, favouriteGame(*))').eq('chat', id);
+    final res = await dio.get('/chats/$id');
+    final users = await getTeamUsers(id);
     return Team(
       id: id,
-      users: members.map((member) => models.User.fromJSON(member['member'])).toList(),
-      name: teams_data['name'],
-      isPublic: teams_data['is_public']
+      users: users,
+      name: res.data['name'] ?? '',
+      isPublic: res.data['public'] ?? false,
+      game: res.data['game'] != null ? Game.fromId(int.parse('${res.data['game']}')) : null,
     );
   }
 
-  Future<void> addTeam(Team team) async {
-    final uid = supabase.auth.currentUser?.id;
-    await supabase.from('chats').insert(team.toJSON());
-    for (models.User user in team.users) {
-      if (user.uid == uid) continue;
-      await supabase.from('members').insert({
-        'chat': team.id,
-        'member': user.uid
-      });
-    }
+  Future<List<User>> getTeamUsers(int id) async {
+    final res = await dio.get('/chats/$id/users');
+    return (res.data as List)
+    .cast<Map>()
+    .map((user) => User.fromJSON(user)).toList();
   }
 
-  Future<void> editTeam(Team team, List<models.User> addedMembers, List<models.User> removedMembers) async {
-    await supabase.from('chats').update(team.toJSON()).eq('id', team.id);
-    await supabase.from('members').insert(addedMembers.map((member) => {
-      'member': member.uid,
-      'chat': team.id
-    }).toList());
-    for (models.User user in removedMembers) {
-      await supabase.from('members').delete().eq('chat', team.id).eq('member', user.uid);
-    }
+  Future<Team> addTeam(Team team) async {
+    final res = await dio.post("/teams/", data: {
+      'name': team.name,
+      'gameId': team.game?.id,
+      'isPublic': team.isPublic
+    });
+    return Team.fromJSON(res.data);
   }
 
-  Future<void> removeTeam(Team team, String uid) async {
-    if (team.users.length == 1) {
-      await supabase.from('chats').delete().eq('id', team.id);
-    }
-    await supabase.from('members').delete().eq('member', uid).eq('chat', team.id);
-    await supabase.from('messages').delete().eq('chat', team.id); 
-    await supabase.storage.from('main').remove(['team_icons/${team.id}.png']);
+  Future<void> editTeam(Team team, List<User> addedMembers, List<User> removedMembers) async {
+    await dio.put("/teams/", data: {
+      'teamId': team.id,
+      'newName': team.name,
+      'addedMembers': addedMembers,
+      'removedMembers': removedMembers
+    });
   }
 
-  Future<void> join(int teamId) async {
-    final String? uid = supabase.auth.currentUser?.id;
-    if (uid == null) return;
-    await supabase.from('members').insert([{
-      'member': uid,
-      'chat': teamId
-    }]);
+  Future<void> removeTeam(int chatID) async {
+    await dio.delete('/teams/$chatID');
   }
 
   Future<String> getInviteLink(int teamID) async {
-    final invitations = await supabase.from('invitations').select('number, expiredAt').eq('teamID', teamID);
-    int number = Random.secure().nextInt(100000) + 1;
-    if (invitations.isNotEmpty) {
-      await supabase.from('invitations').update({
-        'number': number,
-        'expiredAt': DateTime.now().add(Duration(days: 5)).toIso8601String()
-      }).eq('teamID', teamID);
-    } else {
-      await supabase.from('invitations').insert([{
-        'number': number,
-        'teamID': teamID,
-        'expiredAt': DateTime.now().add(Duration(days: 5)).toIso8601String()
-      }]);
-    }
-
-    return 'https://teamupp.ru/invite/$teamID/$number';
+    final res = await dio.get('/$teamID/invitation');
+    return res.data;
   }
 
-  Future<CapabilityToJoin> isCapableToJoin(int teamID, int number) async {
-    final invite = await supabase.from('invitations').select().eq('teamID', teamID);
-    if (invite.isEmpty) return CapabilityToJoin.notCapable;
-    final expiredAt = DateTime.parse(invite[0]['expiredAt']);
-    if (expiredAt.isBefore(DateTime.now())) return CapabilityToJoin.expiredInvite;
-    if (invite[0]['number'] == number) return CapabilityToJoin.capable;
-    return CapabilityToJoin.notCapable;
+  Future<Team> acceptInvitation(int teamID, int number) async {
+    final res = await dio.post('/$teamID/invitation/$number/accept');
+    return Team.fromJSON(res.data);
+  }
+
+  Future<void> join(int teamID) async {
+    return;
   }
 
   Future<ImageProvider> getIcon(int id) async {
@@ -135,26 +108,13 @@ class TeamsRepository {
     if (iconProvider != null) {
       return iconProvider;
     }
-    final storage = supabase.storage.from('main');
-    if (await storage.exists('team_icons/$id.png')){
-      final imageUrl = supabase.storage.from('main').getPublicUrl('team_icons/$id.png');
-      final provider = NetworkImage(imageUrl);
-      iconProviders[id] = provider;
-      return provider;
-    }
     final provider = AssetImage('assets/images/default_team_icon.png');
     iconProviders[id] = provider;
     return provider;
-
   }
 
   Future<void> uploadIcon(int id, Uint8List file) async {
     iconProviders[id] = MemoryImage(file);
-    await supabase.storage.from('main').uploadBinary(
-      'team_icons/$id.png', 
-      file, 
-      fileOptions: FileOptions(upsert: true)
-    );
   }
 
   void updateIconCache(int id, ImageProvider provider) async {

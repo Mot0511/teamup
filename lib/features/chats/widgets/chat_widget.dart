@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:teamup/features/chats/chats.dart';
 import 'package:teamup/features/user/user.dart';
 
@@ -16,7 +14,6 @@ class ChatWidget extends StatefulWidget {
 class _ChatWidgetState extends State<ChatWidget> {
   final userBloc = GetIt.I<UserBloc>();
   final chatsBloc = GetIt.I<ChatsBloc>();
-  final supabase = GetIt.I<SupabaseClient>();
 
   Offset? tapPosition;
 

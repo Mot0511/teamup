@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:teamup/features/chats/chats.dart';
 import 'package:teamup/features/user/user.dart';
 import 'package:teamup/features/analytics/analytics.dart';
+import 'package:teamup/services/realtime_service.dart';
 
 class ChatView extends StatefulWidget {
   const ChatView({super.key, required this.chat});
@@ -19,8 +19,9 @@ class _ChatViewState extends State<ChatView> {
   final userBloc = GetIt.I<UserBloc>();
   final userRepository = GetIt.I<UserRepository>();
   final analyticsRepository = GetIt.I<AnalyticsRepository>();
-  final supabase = GetIt.I<SupabaseClient>();
-  late RealtimeChannel isOnlineChannel;
+  final realtime = GetIt.I<RealtimeService>();
+
+  void Function()? _statusUnsub;
 
   bool isOnline = false;
 
@@ -33,29 +34,27 @@ class _ChatViewState extends State<ChatView> {
 
   Future<void> getIsOnline() async {
     final user = (userBloc.state as UserStateLoaded).user;
-    final user1 = widget.chat.users[0];
-    final user2 = widget.chat.users[1];
+    final user1 = widget.chat.users.isEmpty ? null : widget.chat.users[0];
+    final user2 = widget.chat.users.length > 1 ? widget.chat.users[1] : null;
 
-    final companionID = user1.uid == user.uid ? user2.uid : user1.uid;
+    if (user1 == null) return;
+    final String companionID = user2 == null || user1.uid == user.uid ? user2?.uid ?? user1.uid : user1.uid;
     isOnline = await userRepository.getIsOnline(companionID);
-    setState(() {});
-    
-    isOnlineChannel = supabase.channel('isOnline-$companionID');
-    isOnlineChannel.onBroadcast(
-      event: 'online',
-      callback: (payload) => setState(() => isOnline = true)
-    );
-    isOnlineChannel.onBroadcast(
-      event: 'offline',
-      callback: (payload) => setState(() => isOnline = false)
-    );
+    if (mounted) setState(() {});
 
-    isOnlineChannel.subscribe();
+    _statusUnsub = realtime.subscribe('/topic/user/$companionID/status', (payload) {
+      final bool online = payload is bool
+          ? payload
+          : payload is Map<String, dynamic>
+              ? payload['body'] == true || '${payload['body']}' == 'true'
+              : false;
+      if (mounted) setState(() => isOnline = online);
+    });
   }
 
   @override
   void dispose() {
-    supabase.removeChannel(isOnlineChannel);
+    _statusUnsub?.call();
     super.dispose();
   }
 

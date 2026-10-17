@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+import 'package:provider/provider.dart';
+import 'package:teamup/features/user/providers/auth_provider.dart';
 import 'package:teamup/features/user/user.dart';
 import 'package:teamup/widgets/widgets.dart';
 
@@ -51,26 +52,8 @@ class _SignupViewState extends State<SignupView> {
       return;
     }
 
-    try {
-      userRepository.emailSignUp(email, password);
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => EmailConfirmationView())
-        );
-      }
-    } on sb.AuthApiException catch (e) {
-      switch (e.code) {
-        case 'validation_failed':
-          error = 'Ты ввел некорректный адрес электронной почты';
-          setState(() {});
-          return;
-        case 'over_email_send_rate_limit':
-          error = 'Слишком много запросов, попробуй чуть позже';
-          setState(() {});
-          return;
-      }
-      print(e.message);
-    }
+    final authProvider = context.read<AuthProvider>();
+    await authProvider.register(email, password);
   }
 
   @override

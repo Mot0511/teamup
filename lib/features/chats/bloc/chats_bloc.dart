@@ -31,7 +31,7 @@ class ChatsBloc extends Bloc<ChatsEvent, ChatsState> {
       if (state is ChatsStateLoaded) {
         try {
           final List<Chat> chats = (state as ChatsStateLoaded).chats;
-          await chatsRepository.removeChat(event.chat);
+          await chatsRepository.removeChat(event.chat.id);
           emit(ChatsStateInitial());
           chats.remove(event.chat);
           emit(ChatsStateLoaded(chats: chats));

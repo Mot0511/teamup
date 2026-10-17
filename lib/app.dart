@@ -1,22 +1,9 @@
-import 'dart:async';
-import 'dart:io';
-import 'package:app_links/app_links.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
-import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:teamup/features/chats/chats.dart';
+import 'package:teamup/features/user/auth_gate.dart';
 import 'package:teamup/features/user/user.dart';
-import 'package:teamup/features/home/home.dart';
-import 'package:teamup/features/teams/teams.dart';
-import 'package:teamup/loading.dart';
-import 'package:teamup/nav_screen.dart';
-import 'package:teamup/providers/notifications_provider.dart';
-import 'package:teamup/services/notifications_service.dart';
 import 'package:teamup/theme.dart';
-import 'package:flutter_window_close/flutter_window_close.dart';
-import 'package:teamup/utils/fix_uid.dart';
 
 enum LoginState {notLogined, noUserdata, logined}
 
@@ -28,160 +15,58 @@ class Teamup extends StatefulWidget {
 }
 
 class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
-
-  final supabase = GetIt.I<SupabaseClient>();
-  late final StreamSubscription<AuthState> _authStateSubscription;
-  StreamSubscription? appLinksSub;
-
   final userBloc = GetIt.I<UserBloc>();
-  final searchBloc = GetIt.I<SearchBloc>();
-  final chatsRepository = GetIt.I<ChatsRepository>();
-  final teamsRepository = GetIt.I<TeamsRepository>();
   final userRepository = GetIt.I<UserRepository>();
-  final searchRepository = GetIt.I<SearchRepository>();
-  final notificationsService = GetIt.I<NotificationsService>();
+  final storage = GetIt.I<FlutterSecureStorage>();
 
-  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-  final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+  final navigatorKey = GetIt.I<GlobalKey<NavigatorState>>();
+  final scaffoldMessengerKey = GetIt.I<GlobalKey<ScaffoldMessengerState>>();
   
-  final appLinks = AppLinks();
-
   void initState() {
     super.initState();
-    
-
-    _authStateSubscription = supabase.auth.onAuthStateChange.listen((data) async {
-      final userdata = supabase.auth.currentUser;
-      if (userdata != null && userdata.emailConfirmedAt != null) {
-        if (data.event == AuthChangeEvent.signedIn && Platform.isAndroid) {
-          await FirebaseMessaging.instance.requestPermission(
-            alert: true,
-            badge: true,
-            sound: true,
-          );
-        }
-        await notificationsService.setFcmToken(userdata!.id);
-        final users = await supabase.from('users').select().eq('uid', userdata.id);
-        if (users.isEmpty) {
-          navigatorKey.currentState?.pushReplacement(
-            MaterialPageRoute(builder: (_) => UserFormView(userdata: userdata))
-          );
-          return;
-        }
-        navigatorKey.currentState?.pushReplacement(
-          MaterialPageRoute(builder: (_) => NavScreen())
-        );
-        
-        userBloc.add(LoadUser(uid: userdata.id));
-        await userRepository.setOnline(userdata.id);
-
-        final notificationsProvider = Provider.of<NotificationsProvider>(context, listen: false);
-        await notificationsService.setListeners(navigatorKey, userdata, notificationsProvider, context);
-        
-        WidgetsBinding.instance.addObserver(this);
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          initAppLinks();
-        });
-        if (Platform.isWindows) {
-          FlutterWindowClose.setWindowShouldCloseHandler(() async {
-            await userRepository.setOffline(userdata.id);
-            return true;
-          });
-        }
-      }
-    });
   }
 
-  Future<void> initAppLinks() async {
-    final link = await appLinks.getInitialLink();
-    if (link != null) {
-      handleAppLink(link);
-    }
-
-    appLinksSub = appLinks.uriLinkStream.listen((uri) {
-      handleAppLink(uri);
-    });
-  }
-
-  Future<void> handleAppLink(Uri uri) async {
-    final segments = uri.toString().split('/');
-    switch (segments[2]) {
-      case 'invite':
-        final teamID = int.parse(segments[3]);
-        final CapabilityToJoin isCapableToJoin = await teamsRepository.isCapableToJoin(teamID, int.parse(segments[4]));
-        if (isCapableToJoin == CapabilityToJoin.notCapable && mounted) {
-          scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(content: Text('Неверная ссылка приглашения в команду')));
-          return;
-        }
-        if (isCapableToJoin == CapabilityToJoin.expiredInvite && mounted) {
-          scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(content: Text('Срок действия приглашения истек')));
-          return;
-        }
-        await teamsRepository.join(teamID);
-        final Team team = await teamsRepository.getTeam(teamID);
-        navigatorKey.currentState?.push(
-          MaterialPageRoute(builder: (_) => TeamView(team: team)),
-        );
-        break;
-
-      case 'profile':
-        final uid = segments[3];
-        final user = await userRepository.getUserdata(uid);
-        navigatorKey.currentState?.push(
-          MaterialPageRoute(builder: (_) => ProfileView(user: user)),
-        );
-    }
-
-  }
-
-  @override
-  Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
-    super.didChangeAppLifecycleState(state);
-    final uid = supabase.auth.currentUser?.id;
-    final channel = supabase.channel('isOnline-$uid');
-    if (state == AppLifecycleState.resumed && uid != null) {
-      await userRepository.setOnline(uid);
-      channel.sendBroadcastMessage(event: 'online', payload: {});
-      notificationsService.isOnline = true;
-      final pendingTeamID = await searchRepository.getPendingTeamID(uid);
-      if (pendingTeamID == null && userBloc.state is UserStateLoaded) {
-        searchBloc.add(StopSearching(user: (userBloc.state as UserStateLoaded).user));
-      }
-    } else if ( 
-      (state == AppLifecycleState.paused || 
-      state == AppLifecycleState.inactive || 
-      state == AppLifecycleState.detached) && uid != null
-    ) {
-      await userRepository.setOffline(uid);
-      channel.sendBroadcastMessage(event: 'offline', payload: {});
-      notificationsService.isOnline = false;
-    }
-  }
+  // @override
+  // Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
+  //   super.didChangeAppLifecycleState(state);
+  //   final uid = supabase.auth.currentUser?.id;
+  //   final channel = supabase.channel('isOnline-$uid');
+  //   if (state == AppLifecycleState.resumed && uid != null) {
+  //     await userRepository.setOnline();
+  //     channel.sendBroadcastMessage(event: 'online', payload: {});
+  //     notificationsService.isOnline = true;
+  //     final pendingTeamID = await searchRepository.getPendingTeamID(uid);
+  //     if (pendingTeamID == null && userBloc.state is UserStateLoaded) {
+  //       searchBloc.add(StopSearching(user: (userBloc.state as UserStateLoaded).user));
+  //     }
+  //   } else if ( 
+  //     (state == AppLifecycleState.paused || 
+  //     state == AppLifecycleState.inactive || 
+  //     state == AppLifecycleState.detached) && uid != null
+  //   ) {
+  //     await userRepository.setOffline();
+  //     channel.sendBroadcastMessage(event: 'offline', payload: {});
+  //     notificationsService.isOnline = false;
+  //   }
+  // }
 
 
-  Future<void> onResumeApp() async {
-    final uid = supabase.auth.currentUser?.id;
-    if (uid != null) {  
-      await userRepository.setOnline(uid);
-      notificationsService.isOnline = true;
-      final pendingTeamID = await searchRepository.getPendingTeamID(uid);
-      if (pendingTeamID == null && userBloc.state is UserStateLoaded) {
-        searchBloc.add(StopSearching(user: (userBloc.state as UserStateLoaded).user));
-      }
-    }
-  }
+  // Future<void> onResumeApp() async {
+  //   await userRepository.setOnline();
+  //   notificationsService.isOnline = true;
+  //   final pendingTeamID = await searchRepository.getPendingTeamID(uid);
+  //   if (pendingTeamID == null && userBloc.state is UserStateLoaded) {
+  //     searchBloc.add(StopSearching(user: (userBloc.state as UserStateLoaded).user));
+  //   }
+  // }
 
-  Future<void> onStopApp() async {
-    final uid = supabase.auth.currentUser?.id;
-    if (uid != null) {
-      await userRepository.setOffline(uid);
-      notificationsService.isOnline = false;
-    }
-  }
+  // Future<void> onStopApp() async {
+  //   await userRepository.setOffline();
+  //   notificationsService.isOnline = false;
+  // }
 
   @override
   void dispose() {
-    _authStateSubscription.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -192,18 +77,7 @@ class _TeamupState extends State<Teamup> with WidgetsBindingObserver {
       theme: theme,
       navigatorKey: navigatorKey,
       scaffoldMessengerKey: scaffoldMessengerKey,
-      home: StreamBuilder(
-        stream: supabase.auth.onAuthStateChange,
-        builder: (context, snap) {
-          if (!snap.hasData) {
-            return Loading();
-          }
-          if (snap.data?.session == null) {
-            return SigninView();
-          }
-          return NavScreen();
-        }
-      )
+      home: AuthGate()
     );
   }
 }

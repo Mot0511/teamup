@@ -1,8 +1,7 @@
-import 'dart:collection';
-
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:teamup/features/user/user.dart';
 import 'package:teamup/widgets/widgets.dart';
 
 class ResetPasswordView extends StatefulWidget {
@@ -13,20 +12,16 @@ class ResetPasswordView extends StatefulWidget {
 }
 
 class _ResetPasswordViewState extends State<ResetPasswordView> {
-  final supabase = GetIt.I<SupabaseClient>();
+  final userRepository = GetIt.I<UserRepository>();
 
   final emailController = TextEditingController(text: "Mat0511@yandex.ru");
 
   String? emailError;
 
   Future<void> resetPassword() async {
-    await supabase.auth.resetPasswordForEmail(
-      emailController.text.trim(),
-      redirectTo: 'http://localhost:3000/reset-password'
-    );
     try {
-      
-    } on AuthApiException catch (e) {
+      await userRepository.resetPassword(emailController.text.trim());
+    } on DioException catch (e) {
       emailError = 'Ошибка: ${e.message}';
       setState(() {});
     }

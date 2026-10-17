@@ -4,12 +4,20 @@ import 'package:teamup/features/user/user.dart';
 abstract class UserEvent extends Equatable {}
 
 class LoadUser extends UserEvent {
-  final String uid;
 
-  LoadUser({required this.uid});
+  LoadUser();
 
   @override
-  List get props => [uid];
+  List get props => [];
+}
+
+class SetUser extends UserEvent {
+  final User user;
+
+  SetUser({required this.user});
+
+  @override
+  List get props => [user];
 }
 
 class UpdateUser extends UserEvent {

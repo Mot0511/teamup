@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:teamup/features/user/providers/auth_provider.dart';
 import 'package:teamup/features/user/user.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:teamup/features/user/views/reset_password_view.dart';
@@ -15,10 +17,8 @@ class SigninView extends StatefulWidget {
 }
 
 class _SigninViewState extends State<SigninView> {
-  final UserRepository userRepository = GetIt.I<UserRepository>();
-
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
+  final emailController = TextEditingController(text: "Mat0511@yandex.ru");
+  final passwordController = TextEditingController(text: "motik0511");
 
   String? emailError;
   String? passwordError;
@@ -42,20 +42,39 @@ class _SigninViewState extends State<SigninView> {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
 
-
+    final authProvider = context.read<AuthProvider>();
     try {
-      await userRepository.emailSignIn(email, password);
-    } on AuthApiException catch (e) {
-      if (e.code == 'invalid_credentials') {
-        passwordError = 'Неверная почта или пароль';
-        setState(() {});
-      }
+      await authProvider.login(email, password);
+    } on AuthException catch (e) {
+      setState(() => passwordError = e.message);
     }
   }
 
-  Future<void> onForgotPassword() async {
-    final Uri url = Uri.parse('https://teamupp.ru/password/forgot');
-    await launchUrl(url);
+  Future<void> onGoogleSignIn() async {
+    final authProvider = context.read<AuthProvider>();
+    await authProvider.googleLogin();
+  }
+
+  bool discordLoading = false;
+
+  Future<void> onDiscordSignIn() async {
+    if (discordLoading) return;
+    setState(() => discordLoading = true);
+
+    final authProvider = context.read<AuthProvider>();
+    try {
+      await authProvider.discordLogin();
+    } catch (e) {
+      debugPrint('Discord login failed: $e');
+    } finally {
+      if (mounted) setState(() => discordLoading = false);
+    }
+  }
+
+  void onForgotPassword() {
+    if (mounted) {
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => ResetPasswordView()));
+    }
   }
 
   @override
@@ -111,9 +130,9 @@ class _SigninViewState extends State<SigninView> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SocialProviderWidget(provider: 'google', onClick: userRepository.googleSignIn),
+                SocialProviderWidget(provider: 'google', onClick: onGoogleSignIn),
                 SizedBox(width: 20),
-                SocialProviderWidget(provider: 'discord', onClick: userRepository.discordSignIn)
+                SocialProviderWidget(provider: 'discord', onClick: onDiscordSignIn)
               ],
             )
           ),

@@ -57,7 +57,7 @@ class _FiltersButtonWidgetState extends State<FiltersButtonWidget> with SingleTi
 
     searchRepository.onTeamFormed = (Team team) async {
       if (!kIsWeb && Platform.isWindows && !notificationsService.isOnline) notificationsService.showNotification(DateTime.now().millisecondsSinceEpoch.toString(), 'Команда сформирована', '');
-      searchBloc.add(StopSearching(user: (userBloc.state as UserStateLoaded).user));
+      searchBloc.add(GetReady());
       await AudioPlayer().play(AssetSource('audio/team_formed.mp3'));
       analyticsRepository.logEvent('finish_searching', properties: getParams()!.toJSON());
       Navigator.push(context, MaterialPageRoute(builder: (_) => TeamView(team: team)));
@@ -72,6 +72,7 @@ class _FiltersButtonWidgetState extends State<FiltersButtonWidget> with SingleTi
     };
     searchRepository.onRemovePendingUser = (String userID) {
       pendingUsers = pendingUsers.where((pendingUser) => pendingUser.uid != userID).toList();
+      setState(() {});
     };
     
     currentTeamSize = prefs.getString('currentTeamSize') ?? '2';
@@ -133,7 +134,7 @@ class _FiltersButtonWidgetState extends State<FiltersButtonWidget> with SingleTi
     if (homeProvider.games == null) {
       await homeProvider.loadGames();
     }
-    final currentGameID = prefs.getString('currentGame') ?? '206';
+    final currentGameID = '206';
     currentGame = homeProvider.games!.firstWhere((game) => game.id.toString() == currentGameID);
     if (mounted) {
       setState(() {});
@@ -211,7 +212,7 @@ class _FiltersButtonWidgetState extends State<FiltersButtonWidget> with SingleTi
                         currentGame: currentGame!, 
                         onSetGame: (Game game) => setState(() => currentGame = game),
                         currentGender: currentGender, 
-                        onSetGender: (String gender) => setState(() => currentGender = gender), 
+                        onSetGender: (String gender) => setState(() => currentGender = gender),
                         currentTeamSize: currentTeamSize, 
                         onSetTeamSize: (String teamSize) => setState(() => currentTeamSize = teamSize),
                         animationController: searchAnimationController,

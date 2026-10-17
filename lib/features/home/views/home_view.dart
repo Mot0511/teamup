@@ -75,15 +75,10 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
   Future<void> checkVersion() async {
     final platformInfo = await PackageInfo.fromPlatform();
     appVersion = platformInfo.version;
-    try {
-      final res = await supabase.functions.invoke(
-        'check-version',
-      );
-      updateInfo = UpdateInfo.fromJSON(res.data);
+    updateInfo = UpdateInfo(currentVersion: '1.0', newFeatures: ['sldjflasdf']);
       if (mounted) {
         setState(() {});
       }
-    } on FunctionException catch (e) {}
   }
 
   @override

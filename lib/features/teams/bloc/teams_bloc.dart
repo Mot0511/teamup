@@ -40,15 +40,15 @@ class TeamsBloc extends Bloc<TeamsEvent, TeamsState> {
           if (event.choosenIconBytes != null) {
             teamsRepository.uploadIcon(event.team.id, event.choosenIconBytes!);
           }
-          await teamsRepository.addTeam(event.team);
+          final Team team = await teamsRepository.addTeam(event.team);
 
           final List<Team> publicTeams = (state as TeamsStateLoaded).publicTeams;
           final List<Team> privateTeams = (state as TeamsStateLoaded).privateTeams;
           emit(TeamsStateInitial());
-          if (event.team.isPublic) {
-            publicTeams.add(event.team);
+          if (team.isPublic) {
+            publicTeams.add(team);
           } else {
-            privateTeams.add(event.team);
+            privateTeams.add(team);
           }
           emit(TeamsStateLoaded(publicTeams: publicTeams, privateTeams: privateTeams));
         } on Exception catch (e) {
@@ -85,17 +85,10 @@ class TeamsBloc extends Bloc<TeamsEvent, TeamsState> {
         try {
           List<Team> publicTeams = (state as TeamsStateLoaded).publicTeams;
           List<Team> privateTeams = (state as TeamsStateLoaded).privateTeams;
-          await teamsRepository.removeTeam(event.team, event.uid);
+          await teamsRepository.removeTeam(event.team.id);
           emit(TeamsStateInitial());
-          if (event.team.isPublic) {
-            for (Team publicTeam in publicTeams) {
-              if (publicTeam.id == event.team.id) {
-                publicTeam.users = publicTeam.users.where((user) => user.uid != event.uid).toList();
-              }
-            }
-          } else {
-            privateTeams = privateTeams.where((chat) => chat.id != event.team.id).toList();
-          }
+          publicTeams = publicTeams.where((team) => team.id != event.team.id).toList();
+          privateTeams = privateTeams.where((team) => team.id != event.team.id).toList();
           emit(TeamsStateLoaded(publicTeams: publicTeams, privateTeams: privateTeams));
         } on Exception catch (e) {
           emit(TeamsStateError(e: e));

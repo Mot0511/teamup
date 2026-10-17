@@ -1,10 +1,7 @@
-import 'dart:io';
-import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:teamup/features/home/home.dart';
 import 'package:teamup/features/teams/teams.dart';
 import 'package:teamup/features/teams/widgets/box_button_widget.dart';
@@ -25,7 +22,7 @@ class _CreateTeamViewState extends State<CreateTeamView> {
   late int id;
 
   final nameController = TextEditingController();
-  List members = [];
+  List<User> members = [];
   List<User> addedMembers = [];
   List<User> removedMembers = [];
 
@@ -37,7 +34,7 @@ class _CreateTeamViewState extends State<CreateTeamView> {
   final teamsRepository = GetIt.I<TeamsRepository>();
   final userBloc = GetIt.I<UserBloc>();
   final teamsBloc = GetIt.I<TeamsBloc>();
-  final supabase = GetIt.I<SupabaseClient>();
+  final userRepository = GetIt.I<UserRepository>();
 
   String? nameError;
 
@@ -86,7 +83,7 @@ class _CreateTeamViewState extends State<CreateTeamView> {
     }
     final team = Team(id: id, users: members, name: name, isPublic: isPublic, game: teamGame);
     teamsBloc.add(AddTeam(team: team, choosenIconBytes: choosenIconBytes));
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => TeamView(team: team)));
+    Navigator.pop(context);
   }
 
   void editTeamHandler(context) {
@@ -124,8 +121,9 @@ class _CreateTeamViewState extends State<CreateTeamView> {
     setState(() {});
   }
 
-  void leaveTeam() {
-    final uid = supabase.auth.currentUser!.id;
+  void leaveTeam() async {
+    final String? uid = await userRepository.currentUid();
+    if (uid == null) return;
     teamsBloc.add(RemoveTeam(team: widget.team!, uid: uid));
     Navigator.of(context).pop();
     Navigator.of(context).pop();
@@ -234,7 +232,7 @@ class _CreateTeamViewState extends State<CreateTeamView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                if (widget.team != null && widget.team!.users.where((user) => user.uid == supabase.auth.currentUser?.id).toList().isNotEmpty)
+                if (widget.team != null && widget.team!.users.where((user) => user.uid == (userBloc.state as UserStateLoaded).user.uid).toList().isNotEmpty)
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor:  theme.colorScheme.error

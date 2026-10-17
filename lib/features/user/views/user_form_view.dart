@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import 'package:teamup/features/home/home.dart';
+import 'package:teamup/features/user/models/account.dart';
+import 'package:teamup/features/user/providers/auth_provider.dart';
 import 'package:teamup/features/user/user.dart';
 import 'package:teamup/models/game.dart';
 import 'package:teamup/nav_screen.dart';
@@ -12,8 +13,8 @@ import 'package:teamup/services/notifications_service.dart';
 import 'package:teamup/widgets/widgets.dart';
 
 class UserFormView extends StatefulWidget {
-  UserFormView({super.key, required this.userdata});
-  final sb.User userdata;
+  UserFormView({super.key, required this.account});
+  final Account account;
 
   @override
   State<UserFormView> createState() => _UserFormViewState();
@@ -72,28 +73,26 @@ class _UserFormViewState extends State<UserFormView> {
       return;
     }
     final user = User(
-      uid: widget.userdata.id,
-      email: widget.userdata.email ?? '',
+      uid: widget.account.uid,
+      email: widget.account.email,
       username: username,
       age: int.parse(age),
       gender: gender,
       favouriteGame: choosenGame
     );
     await userRepository.addUserdata(user);
-    userBloc.add(LoadUser(uid: widget.userdata.id));
+    userBloc.add(LoadUser());
     if (choosenGame != null) {
       await prefs.setString('currentGame', choosenGame!.id.toString());
     } 
-    await notificationsService.setFcmToken(widget.userdata.id);
-    await userRepository.setOnline(widget.userdata.id);
+    await notificationsService.setFcmToken(widget.account.uid);
+    userRepository.setOnline();
     if (mounted) {
       await analyticsRepository.logSignup(user, context);
-      if (mounted) {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) =>
-          NavScreen()
-        ));
-      }
     }
+
+    final authProvider = context.read<AuthProvider>();
+    await authProvider.createProfile(user);
   }
 
   Future<void> chooseGame() async {

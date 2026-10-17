@@ -56,9 +56,8 @@ class VoiceService {
       }
     });
 
-    final ip = await getServerIP();
     await room!.connect(
-      'ws://$ip:7880',
+      'ws://178.141.247.121:7880',
       token,
       connectOptions: ConnectOptions(
         autoSubscribe: true,

@@ -6,33 +6,23 @@ class Team extends Chat {
   String name;
   bool isPublic;
   Game? game;
-  
-  Team({required super.id, required super.users, required this.name, required this.isPublic, this.game});
 
-  factory Team.fromJSON(Map data) {
+  Team({
+    required super.id,
+    required super.users,
+    required this.name,
+    required this.isPublic,
+    this.game,
+  });
+
+  factory Team.fromJSON(Map data, {List<User>? users}) {
+    final dynamic game = data['game'];
     return Team(
-      id: data['id'],
-      users: data['users'].map((data) => User.fromJSON(data)).toList(),
-      name: data['name'],
-      isPublic: data['is_public'],
-      game: data['game'] != null ? Game.fromJSON(data['game']) : null,
+      id: (data['id'] as num).toInt(),
+      users: users ?? const [],
+      name: '${data['name'] ?? ''}',
+      isPublic: data['public'] ?? false,
+      game: game != null ? Game.fromJSON(game) : null,
     );
-  }
-
-  @override
-  Map toJSON() {
-    return {
-      'id': id,
-      'name': name,
-      'is_team': true,
-      'is_public': isPublic,
-      'game': game?.id
-    };
-  }
-
-  Map toJSONWithMembers() {
-    final data = toJSON();
-    data['users'] = users.map((user) => user.toJSON()).toList();
-    return data;
   }
 }

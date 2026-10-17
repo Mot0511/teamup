@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:teamup/features/chats/chats.dart';
 import 'package:teamup/features/teams/teams.dart';
 import 'package:teamup/features/teams/widgets/connect_status_widget.dart';
@@ -24,7 +22,7 @@ class _TeamViewState extends State<TeamView> {
   ConnectStatus? connectStatus;
 
   final userBloc = GetIt.I<UserBloc>();
-  final supabase = GetIt.I<SupabaseClient>();
+  final userRepository = GetIt.I<UserRepository>();
   final analyticsRepository = GetIt.I<AnalyticsRepository>();
   final voiceService = GetIt.I<VoiceService>();
 
@@ -53,14 +51,15 @@ class _TeamViewState extends State<TeamView> {
   Future<void> join(bool isVoiceOn, bool isSoundOn) async {
     connectStatus = ConnectStatus.connecting;
     setState(() {});
-    final uid = supabase.auth.currentUser!.id;
+    final String? uid = await userRepository.currentUid();
+    if (uid == null) return;
     voiceService.onPeersChanged = (List<String> peers) => setState(() => this.peers = peers);
-    await voiceService.connect(
-      uid,
-      widget.team.id,
-      isVoiceOn,
-      isSoundOn,
-    );
+    // await voiceService.connect(
+    //   uid,
+    //   widget.team.id,
+    //   isVoiceOn,
+    //   isSoundOn,
+    // );
     connectStatus = ConnectStatus.connectedWithoutMicro;
     setState(() {});
   }

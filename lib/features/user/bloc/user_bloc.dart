@@ -8,12 +8,13 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     on<LoadUser>((event, emit) async {
       emit(UserStateLoading());
       try {
-        final User user = await userRepository.getUserdata(event.uid);
+        final User user = await userRepository.getMe();
         final analyticsRepository = GetIt.I<AnalyticsRepository>();
         analyticsRepository.logOpenApp(user);
         emit(UserStateLoaded(user: user));
       } on Exception catch (e) {
         emit(UserStateError(e: e));
+        rethrow;
       }
     });
 

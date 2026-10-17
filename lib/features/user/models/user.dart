@@ -10,37 +10,39 @@ class User {
   Game? favouriteGame;
 
   User({
-    required this.uid, 
-    required this.username, 
-    this.description, 
-    required this.email, 
-    required this.gender, 
-    required this.age, 
-    this.favouriteGame, 
+    required this.uid,
+    required this.username,
+    this.description,
+    required this.email,
+    required this.gender,
+    required this.age,
+    this.favouriteGame,
   });
 
   factory User.fromJSON(Map data) {
+    final dynamic game = data['favouriteGame'];
     return User(
-      uid: data['uid'],
-      username: data['username'],
-      description: data['description'],
-      email: data['email'],
-      gender: data['gender'],
-      age: data['age'],
-      favouriteGame: data['favouriteGame'] != null && data['favouriteGame'].runtimeType != int ? Game.fromJSON(data['favouriteGame']) : null,
+      uid: '${data['uid']}',
+      username: '${data['username']}',
+      description: data['description']?.toString(),
+      email: '${data['email'] ?? ''}',
+      gender: '${data['gender'] ?? ''}',
+      age: data['age'] is num
+          ? (data['age'] as num).toInt()
+          : int.tryParse('${data['age']}') ?? 0,
+      favouriteGame: game != null
+          ? Game.fromJSON(game)
+          : null,
     );
   }
 
   Map<String, dynamic> toJSON() {
     return {
-      'uid': uid,
       'username': username,
       'description': description,
-      'email': email,
       'gender': gender,
       'age': age,
-      'favouriteGame': favouriteGame?.id,
+      'game': favouriteGame?.id,
     };
   }
-
 }

@@ -7,43 +7,56 @@ class Message {
   final User user;
   String text;
   final int? repliedMesssageID;
-  final ImageProvider? attachment;
+  ImageProvider? attachment;
   DateTime time;
-  bool isReaded = false;
+  bool isReaded;
 
   Message({
-    required this.id, 
-    required this.chatId, 
-    required this.user, 
-    required this.text, 
+    required this.id,
+    required this.chatId,
+    required this.user,
+    required this.text,
     this.repliedMesssageID,
     this.attachment,
     required this.time,
-    required this.isReaded
+    required this.isReaded,
   });
 
-  factory Message.fromJSON(Map data, bool isReaded) {
+  factory Message.fromJSON(
+    Map data, {
+    required User sender,
+    bool isReaded = false,
+  }) {
+    final dynamic chat = data['chat'];
+    final int chatId = chat is Map
+        ? ((chat['id'] as num?)?.toInt() ?? 0)
+        : int.tryParse('${data['chat']}') ?? 0;
+
+    final dynamic attachment = data['attachment'];
     return Message(
-      id: data['id'],
-      chatId: data['chat'],
-      user: User.fromJSON(data['sender']),
-      text: data['text'],
-      repliedMesssageID: data['repliedMessage'],
-      attachment: data['attachment'],
-      time: DateTime.parse(data['time']).toLocal(),
-      isReaded: isReaded
+      id: (data['id'] as num).toInt(),
+      chatId: chatId,
+      user: sender,
+      text: '${data['text'] ?? ''}',
+      repliedMesssageID: data['repliedMessage'] != null
+          ? int.tryParse('${data['repliedMessage']}')
+          : null,
+      attachment: attachment != null
+          ? NetworkImage('$attachment')
+          : null,
+      time: DateTime.tryParse('${data['sendedAt']}')?.toLocal() ?? DateTime.now(),
+      isReaded: isReaded,
     );
   }
 
-  Map<String, dynamic> toJSON() {
+
+  Map toJSON() {
     return {
       'id': id,
-      'chat': chatId,
-      'sender': user.uid,
       'text': text,
-      'repliedMessage': repliedMesssageID,
-      'attachment': attachment != null ? id : null,
-      'time': time.toString()
+      'localDateTime': DateTime.now().toIso8601String(),
+      'zoneId': DateTime.now().timeZoneName,
     };
   }
+
 }

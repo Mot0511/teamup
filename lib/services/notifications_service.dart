@@ -1,13 +1,12 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:teamup/features/chats/chats.dart';
 import 'package:teamup/features/teams/teams.dart';
-import 'package:teamup/features/user/models/models.dart' as models;
 import 'package:teamup/features/user/user.dart';
 import 'package:teamup/providers/notifications_provider.dart';
 import 'package:windows_notification/notification_message.dart';
@@ -17,37 +16,47 @@ enum OS {android, windows, web}
 
 Future<void> notificationHandler(RemoteMessage message, navigatorKey) async {
   await Firebase.initializeApp();
-  final chatsRepository = ChatsRepository();
-  final teamsRepository = TeamsRepository();
-  final userRepository = UserRepository();
-  final type = message.data['screen'].split('/')[0];
-  final id = message.data['screen'].split('/')[1];
+  final chatsRepository = GetIt.I<ChatsRepository>();
+  final userRepository = GetIt.I<UserRepository>();
+  final data = message.data;
+  final type = data['type'];
 
-  if (type == 'chat') {
-    final chat = await chatsRepository.getChat(int.parse(id));
-    navigatorKey.currentState?.push(
-      MaterialPageRoute(builder: (_) => ChatView(chat: chat))
-    );
-  } else if (type == 'team') {
-    final team = await teamsRepository.getTeam(int.parse(id));
-    navigatorKey.currentState?.push(
-      MaterialPageRoute(builder: (_) => TeamView(team: team))
-    );
-  } else if (type == 'friend') {
-    final user = await userRepository.getUserdata(id);
-    navigatorKey.currentState?.push(
-      MaterialPageRoute(builder: (_) => ProfileView(user: user))
-    );
+  if (type == 'new_message') {
+    final chatId = int.tryParse('${data['chatId']}');
+    if (chatId != null) {
+      final chat = await chatsRepository.getChat(chatId);
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(builder: (_) => ChatView(chat: chat))
+      );
+    }
+  } else if (type == 'search_complete') {
+    // uid — участник набранной команды; открываем команду через его/её чаты нельзя,
+    // поэтому открываем профиль.
+    final uid = data['uid'];
+    if (uid != null) {
+      final user = await userRepository.getUserdata(uid);
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(builder: (_) => ProfileView(user: user))
+      );
+    }
+  } else if (type == 'friend_request') {
+    final fromUser = data['fromUser'];
+    if (fromUser != null) {
+      final user = await userRepository.getUserdata(fromUser);
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(builder: (_) => ProfileView(user: user))
+      );
+    }
   }
 }
 
 class NotificationsService {
   bool isOnline = false;
   bool isInChat = false;
-  
+
   late final String userID;
 
-  final supabase = GetIt.I<SupabaseClient>();
+  final dio = GetIt.I<Dio>();
   final userRepository = GetIt.I<UserRepository>();
   final chatsRepository = GetIt.I<ChatsRepository>();
   final teamsRepository = GetIt.I<TeamsRepository>();
@@ -56,84 +65,44 @@ class NotificationsService {
     if (!kIsWeb && Platform.isAndroid) {
       final fcmToken = await FirebaseMessaging.instance.getToken();
       if (fcmToken != null) {
-        final token = await supabase.from('fcm_tokens').select().eq('user_id', uid);
-        if (token.isEmpty) {
-          await supabase.from('fcm_tokens').insert([
-            {
-              'user_id': uid,
-              'fcm_token': fcmToken
-            }
-          ]);
-        } else if (token[0]['fcm_token'] != fcmToken) {
-          await supabase.from('fcm_tokens').update(
-            {
-              'fcm_token': fcmToken
-            } 
-          ).eq('user_id', uid);
-        }
+        await dio.post('/fcm/token', queryParameters: {'fcm_token': fcmToken});
+      }
+    }
+  }
+
+  Future<void> deleteFcmToken() async {
+    if (!kIsWeb && Platform.isAndroid) {
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      if (fcmToken != null) {
+        await dio.delete('/fcm/token', queryParameters: {'fcm_token': fcmToken});
       }
     }
   }
 
   Future<void> redirect(message, navigatorKey) async {
     if (message != null) {
-      final type = message.data['screen'].split('-')[0];
-      final id = message.data['screen'].split('-')[1];
-
-      if (type == 'chat') {
-        final chat = await chatsRepository.getChat(int.parse(id));
-        navigatorKey.currentState?.push(
-          MaterialPageRoute(builder: (_) => ChatView(chat: chat))
-        );
-      } else {
-        final team = await teamsRepository.getTeam(int.parse(id));
-        navigatorKey.currentState?.push(
-          MaterialPageRoute(builder: (_) => TeamView(team: team))
-        );
+      final data = message.data;
+      final type = data['type'];
+      if (type == 'new_message') {
+        final chatId = int.tryParse('${data['chatId']}');
+        if (chatId != null) {
+          final chat = await chatsRepository.getChat(chatId);
+          navigatorKey.currentState?.push(
+            MaterialPageRoute(builder: (_) => ChatView(chat: chat))
+          );
+        }
       }
     }
   }
 
-  Future<void> setListeners(GlobalKey<NavigatorState> navigatorKey, userdata, NotificationsProvider notificationsProvider, BuildContext context) async {
-    if (userdata != null) {
-      final userID = userdata.id;
-      if (!kIsWeb && Platform.isAndroid) {
-        FirebaseMessaging.instance.onTokenRefresh.listen((fcmToken) async {
-          await supabase.from('fcm_tokens').delete().eq('user_id', userID);
-          await supabase.from('fcm_tokens').insert(
-            {
-              'user_id': userID,
-              'fcm_token': fcmToken
-            }
-          );
-        });
+  Future<void> setListeners(GlobalKey<NavigatorState> navigatorKey, BuildContext context) async {
+    if (!kIsWeb && Platform.isAndroid) {
+      FirebaseMessaging.instance.onTokenRefresh.listen((fcmToken) async {
+        await dio.post('/fcm/token', queryParameters: {'fcm_token': fcmToken});
+      });
 
-        // FirebaseMessaging.onMessage.listen((message) {
-        //   notificationsProvider.showNotification(AssetImage('assets/images/default_avatar.png'), 'Matvey', 'Hello');
-        // });
-        FirebaseMessaging.onMessageOpenedApp.listen((message) => notificationHandler(message, navigatorKey));
-        FirebaseMessaging.instance.getInitialMessage().then((message) => redirect(message, navigatorKey));
-      }
-
-      final data = await supabase.from('members').select('chat').eq('member', userID);
-        final chats = data.map((chat) => chat['chat']);
-        final channel = supabase.channel('notification-channel');
-        channel.onPostgresChanges(
-          table: 'messages',
-          event: PostgresChangeEvent.insert,
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.inFilter,
-            column: 'chat',
-            value: chats
-          ),
-          callback: (payload) async {
-            final models.User sender = await userRepository.getUserdata(payload.newRecord['sender']);
-            if (sender.uid != userID && !isOnline && Platform.isWindows) {
-              showNotification(payload.newRecord['id'].toString(), sender.username, payload.newRecord['text']);
-            }
-          }
-        );
-        channel.subscribe();
+      FirebaseMessaging.onMessageOpenedApp.listen((message) => notificationHandler(message, navigatorKey));
+      FirebaseMessaging.instance.getInitialMessage().then((message) => redirect(message, navigatorKey));
     }
   }
 

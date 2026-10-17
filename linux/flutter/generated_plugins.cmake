@@ -7,6 +7,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   awesome_notifications
   desktop_webview_window
   file_selector_linux
+  flutter_secure_storage_linux
   flutter_webrtc
   flutter_window_close
   gtk
